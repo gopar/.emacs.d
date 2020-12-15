@@ -25,3 +25,5 @@ ignoreme.el
 .cache/
 /README.el
 lisp/private/
+request/
+transient/

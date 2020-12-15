@@ -1,0 +1,6 @@
+[submodule "org"]
+	path = org
+	url = git@github.com:gopar/GTD.git
+[submodule "elpa"]
+	path = elpa
+	url = git@github.com:gopar/elpa.git
