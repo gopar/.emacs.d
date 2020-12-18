@@ -440,7 +440,7 @@ All general org mode settings
      (sequence "NEXT(n)" "IN-PROGRESS(i!)" "TODO(t)" "WAITING(w@/@)" "SOMEDAY(s!)" "PROJ(p)" "REPEAT(r)" "|" "DONE(d@)" "CANCELED(c@)" "DELEGATED(d@)")))
   ;; global Effort estimate values
   (org-global-properties
-   '(("EFFORT_ALL" . "0:30 1:00 2:00 3:00 4:00 5:00 6:00 7:00 10:00")
+   '(("EFFORT_ALL" . "0:30 1:00 2:00 3:00 5:00 8:00 10:00")
      ("POINTS_ALL" . "1 2 3 5 8 13")))
   ;; Needed to allow helm to compute all refile options in buffer
   (org-outline-path-complete-in-steps nil)
@@ -451,7 +451,7 @@ All general org mode settings
   ;; (org-refile-targets '((org-agenda-files :level .  1)))
   (org-refile-targets '(("~/.emacs.d/org/gtd.org" :maxlevel . 3)
                         ("~/.emacs.d/org/someday.org" :level . 1)
-                        ("~/.emacs.d/org/tickler.org" :maxlevel . 2)))
+                        ("~/.emacs.d/org/tickler.org" :maxlevel . 1)))
   :config
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -460,7 +460,9 @@ All general org mode settings
      (python . t)
      (java . t)
      (emacs-lisp . t)
-     (shell . t))))
+     (shell . t)))
+  ;; Save history throughout sessions
+  (org-clock-persistence-insinuate))
 #+END_SRC
 
 *** Org Tempo
@@ -484,6 +486,8 @@ Mode for time management. Pretty usefull. I use it a lot.
 (use-package org-clock
   :after org
   :custom
+  ;; Save clock history accross emacs sessions (read var for required info)
+  (org-clock-persist t)
   ;; If idle for more than 15 mins, resolve by asking what to do with clock
   (org-clock-idle-time 15)
   ;; Set clock in frame title, instead of mode line
@@ -495,7 +499,8 @@ Mode for time management. Pretty usefull. I use it a lot.
   ;; Put all clocking info int the "CLOCKING" drawer
   (org-clock-into-drawer "CLOCKING")
   ;; Setup default clocktable summary
-  (org-clock-clocktable-default-properties '(:maxlevel 2 :scope file :formula % :properties ("Effort" "Points") :sort (5 . ?t) :compact t :block today))
+  (org-clock-clocktable-default-properties
+   '(:maxlevel 2 :scope file :formula % :properties ("Effort" "Points") :sort (5 . ?t) :compact t :block today))
   :bind (:map global-map
          ("C-c j" . (lambda () (interactive) (org-clock-jump-to-current-clock)))))
 
@@ -516,7 +521,7 @@ Mode for time management. Pretty usefull. I use it a lot.
   (org-agenda-custom-commands
    '(("h" "Agenda and Home tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
-       (todo))
+       (todo "NEXT|WAITING|PROJ|IN-PROGRESS"))
       ((org-agenda-sorting-strategy '(priority-down))))
 
      ("w" "Agenda and Work tasks"
@@ -528,7 +533,12 @@ Mode for time management. Pretty usefull. I use it a lot.
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
        (todo "IN-PROGRESS"))
       ((org-agenda-sorting-strategy '(priority-down))))
-)))
+
+     ("r" "Weekly Review"
+      ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
+       (todo))
+      ((org-agenda-sorting-strategy '(priority-down))
+       (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org"))))))
 #+END_SRC
 
 *** Org Capture
@@ -549,12 +559,24 @@ Templating system for creating entries
      ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/inbox.org")
       "* TODO %? :freetime:emacs:\n %U")
      ("p" "Project" entry (file "~/.emacs.d/org/gtd.org")
-      "* PROJECT %? [%] \n %U\n** TODO Add entry")
+      "* PROJ %? [%] :project: \n :PROPERTIES: \n :TRIGGER: next-sibling todo!(NEXT) \n :END: \n%U \n** TODO Add entry")
      ("w" "Work" entry (file "~/.emacs.d/org/work/work.org")
       "* TODO %? :work:\n %U")
      ("t" "Tickler" entry (file "~/.emacs.d/org/tickler.org")
-     "* %? \n %U"))))
+      "* %? \n %U"))))
 #+END_SRC
+
+*** Org Tables
+
+Unconditionally have org tables everywhere.
+Having this of for now since I don't really need it.
+
+#+begin_src
+(use-package org-table
+  :defer t
+  :ensure nil
+  :hook (prog-mode . turn-on-orgtbl))
+#+end_src
 
 *** Org Links
 Package that takes care of how links are handled in org mode
@@ -612,6 +634,21 @@ For working with org code source examples
     (setq org-pomodoro-length 60
           org-pomodoro-short-break-length 20)))
 #+END_SRC
+
+*** [[https://www.nongnu.org/org-edna-el/][Org Edna]]
+Allows specifying conditions which must be fulfilled before
+a task can be completed and actions to take once it is.
+
+NOTE: For some reason can't complex triggers to work grrrr
+#+begin_src emacs-lisp
+(use-package org-edna
+  :defer t
+  :ensure t
+  :custom
+  (org-edna-use-inheritance t)
+  ;; Global minor mode, lets enable it once
+  :hook (after-init . org-edna-mode))
+#+end_src
 
 *** Org Private
 My private stuff
@@ -936,12 +973,12 @@ Need to figure out why
 #+end_src
 
 *** Eshell Compile
-Smart deferring of commands to compile buffer
+Dumb deferring of commands to compile buffer
 #+begin_src emacs-lisp
 (use-package em-compile
   :defer t
   :ensure nil
-  :load-path "lisp/eshell")
+  :load-path "lisp/eshell/module/")
 #+end_src
 
 ** EWW
@@ -1620,7 +1657,7 @@ the package's repo give a link on how to fix it.
 For now i'll have it around in case I need to run `exec-path-from-shell-initialize` manually
 but will setup env vars manually
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC
 (use-package exec-path-from-shell
   :ensure t
   :defer t)
@@ -2379,13 +2416,14 @@ All of these are mainly used in eshell (now that i'm using that as my main shell
 
 *** Company
 Main to provide completion in eshell (works good except when in strings :/)
-#+begin_src emacs-lisp
+
+DEPRECATED - No longer use, in favor of [[*[[https://github.com/dieggsy/esh-autosuggest/\][Eshell autosuggest]\]][esh-autosuggest-mode]]. Keeping as reference
+#+begin_src
 (use-package company-pcomplete
   :defer t
   :ensure nil
   :load-path "lisp/company-pcomplete"
-  ;; :hook (eshell-mode . (lambda () (setq-local company-backends '((company-pcomplete :with company-files)))))
-  )
+  :hook (eshell-mode . (lambda () (setq-local company-backends '((company-pcomplete :with company-files))))))
 #+end_src
 
 *** [[https://github.com/zwild/pcmpl-homebrew/][Homebrew]]
@@ -2540,4 +2578,11 @@ Disabling for now since it looks like it needs some kinks worked out
   :defer t
   :ensure t
   :hook org-agenda-mode)
+#+end_src
+
+** [[https://github.com/akermu/emacs-libvterm][vterm]]
+#+begin_src emacs-lisp
+(use-package vterm
+  :defer t
+  :ensure t)
 #+end_src
