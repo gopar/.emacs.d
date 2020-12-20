@@ -387,6 +387,14 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
   (interactive)
   (jump-to-register ?`))
 
+;; Originally from here: https://stackoverflow.com/a/59001859/2178312
+(defun gopar/get-schedule-or-deadline-if-available ()
+  (let ((scheduled (org-get-scheduled-time (point)))
+        (deadline (org-get-deadline-time (point))))
+    (if (not (or scheduled deadline))
+        (format " ")
+      "   ")))
+
 #+END_SRC
 
 *** Org Core
@@ -452,6 +460,20 @@ All general org mode settings
   (org-refile-targets '(("~/.emacs.d/org/gtd.org" :maxlevel . 3)
                         ("~/.emacs.d/org/someday.org" :level . 1)
                         ("~/.emacs.d/org/tickler.org" :maxlevel . 1)))
+  ;; Lets customize which modules we load up
+  (org-modules '(ol-w3m
+                 ol-bbdb
+                 ol-bibtex
+                 ol-docview
+                 ol-gnus
+                 ol-info
+                 ol-irc
+                 ol-mhe
+                 ol-rmail
+                 ol-eww
+                 ;; Stuff I've enabled below
+                 org-habit
+                 org-checklist))
   :config
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -515,13 +537,20 @@ Mode for time management. Pretty usefull. I use it a lot.
   (org-agenda-files "~/.emacs.d/org/agenda-files.org")
   ;; TODO entries that can't be marked as done b/c of children are shown as dimmed in agenda view
   (org-agenda-dim-blocked-tasks t)
+  ;; Start the view on sunday so I can get an overview of upcoming week
+  (org-agenda-start-on-weekday 0)
   ;; Don't really use diary though
   ;; (org-agenda-include-diary t)
+  (org-agenda-prefix-format
+   '((agenda . " %i %-12:c%?-12t% s")
+     (todo . " %i %-10:c %-5e %(gopar/get-schedule-or-deadline-if-available)")
+     (tags . " %i %-12:c")
+     (search . " %i %-12:c")))
   ;; Lets define some custom cmds in agenda menu
   (org-agenda-custom-commands
    '(("h" "Agenda and Home tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
-       (todo "NEXT|WAITING|PROJ|IN-PROGRESS"))
+       (todo "NEXT|WAITING|IN-PROGRESS"))
       ((org-agenda-sorting-strategy '(priority-down))))
 
      ("w" "Agenda and Work tasks"
@@ -648,6 +677,22 @@ NOTE: For some reason can't complex triggers to work grrrr
   (org-edna-use-inheritance t)
   ;; Global minor mode, lets enable it once
   :hook (after-init . org-edna-mode))
+#+end_src
+
+*** [[https://www.orgroam.com/][Org Roam]]
+A neat knowledge base in org
+
+#+begin_src emacs-lisp
+(use-package org-roam
+  :defer t
+  :ensure t
+  :init
+  ;; These have to be defined before package is loaded
+  (setq org-roam-directory (expand-file-name "./org/org-roam"))
+  :custom
+  (org-roam-tag-sources '(prop vanilla))
+  ;; (org-roam-capture-templates)
+  :hook (after-init . org-roam-mode))
 #+end_src
 
 *** Org Private
