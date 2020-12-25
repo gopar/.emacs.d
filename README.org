@@ -2781,9 +2781,9 @@ Disabling for now since it looks like it needs some kinks worked out
 Runs Pytest in a magit like interface.
 
 #+begin_src emacs-lisp
-;; (use-package python-pytest
-;;   :defer t
-;;   :ensure t
-;;   :bind (:map python-mode-map
-;;          ("C-c C-t" . python-pytest-dispatch)))
+(use-package python-pytest
+  :defer t
+  :ensure t
+  :bind (:map python-mode-map
+         ("C-c C-t" . python-pytest-dispatch)))
 #+end_src
