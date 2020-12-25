@@ -61,9 +61,7 @@ Update a lot of defaults that I have no idea why they aren't defaults
       echo-keystrokes 0.1
       ;; Stop cursor from going into minibuffer prompt text
       minibuffer-prompt-properties '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)
-      ;; increate garbarge collection
-      ;;gc-cons-threshold .6
-)
+      redisplay-dont-pause t)
 
 ;; Smoother scrolling. Stolen from
 ;; https://www.reddit.com/r/emacs/comments/fwmqc8/how_to_stop_emacs_from_half_scrolling_from_bottom/fmpc2k1
@@ -379,12 +377,14 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
 (defun gopar/save-window-config-and-show-work-agenda ()
   (interactive)
   (window-configuration-to-register ?`)
+  (org-save-all-org-buffers)
   (org-agenda nil "w")
   (delete-other-windows)
-  (find-file-other-window "~/.emacs.d/org/break_checklist.org"))
+  (find-file-other-window "~/.emacs.d/org/private/break_checklist.org"))
 
 (defun gopar/load-window-config-and-close-work-agenda ()
   (interactive)
+  (org-save-all-org-buffers)
   (jump-to-register ?`))
 
 ;; Originally from here: https://stackoverflow.com/a/59001859/2178312
@@ -411,14 +411,18 @@ All general org mode settings
   (org-use-sub-superscripts nil)
   ;; Should everything be hidden?
   (org-startup-folded nil)
+  (org-M-RET-may-split-line '((default . nil)))
   ;; Show as utf-8 chars
   (org-pretty-entities t)
   ;; put timestamp when finished a todo
-  (org-log-done t)
+  (org-log-done 'time)
   ;; timestamp when we reschedule
   (org-log-reschedule t)
+  ;;
+  (org-deadline-warning-days 10)
   ;; Indent the stars instead of piling them
   (org-startup-indented t)
+  (org-image-actual-width nil)
   ;; Save notes into log drawer
   (org-log-into-drawer t)
   ;;
@@ -448,8 +452,8 @@ All general org mode settings
      (sequence "NEXT(n)" "IN-PROGRESS(i!)" "TODO(t)" "WAITING(w@/@)" "SOMEDAY(s!)" "PROJ(p)" "REPEAT(r)" "|" "DONE(d@)" "CANCELED(c@)" "DELEGATED(d@)")))
   ;; global Effort estimate values
   (org-global-properties
-   '(("EFFORT_ALL" . "0:30 1:00 2:00 3:00 5:00 8:00 10:00")
-     ("POINTS_ALL" . "1 2 3 5 8 13")))
+   '(("Effort_ALL" . "0:30 1:00 2:00 3:00 5:00 8:00 10:00")
+     ("Points_ALL" . "1 2 3 5 8 13")))
   ;; Needed to allow helm to compute all refile options in buffer
   (org-outline-path-complete-in-steps nil)
   ;; Refile options
@@ -560,7 +564,7 @@ Mode for time management. Pretty usefull. I use it a lot.
 
      ("i" "In-Progress Tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
-       (todo "IN-PROGRESS"))
+       (todo "IN-PROGRESS|WAITING"))
       ((org-agenda-sorting-strategy '(priority-down))))
 
      ("r" "Weekly Review"
@@ -588,11 +592,11 @@ Templating system for creating entries
      ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/inbox.org")
       "* TODO %? :freetime:emacs:\n %U")
      ("p" "Project" entry (file "~/.emacs.d/org/gtd.org")
-      "* PROJ %? [%] :project: \n :PROPERTIES: \n :TRIGGER: next-sibling todo!(NEXT) \n :END: \n%U \n** TODO Add entry")
+      "* PROJ %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) \n:ORDERED: t \n:END: \n%U \n** TODO Add entry")
      ("w" "Work" entry (file "~/.emacs.d/org/work/work.org")
       "* TODO %? :work:\n %U")
      ("t" "Tickler" entry (file "~/.emacs.d/org/tickler.org")
-      "* %? \n %U"))))
+      "* %? \nSCHEDULED: %^{Schedule}t \n%U"))))
 #+END_SRC
 
 *** Org Tables
@@ -639,6 +643,17 @@ For working with org code source examples
   (org-confirm-babel-evaluate nil))
 #+END_SRC
 
+*** Org Habit
+Habit tracking in org mode
+
+#+begin_src emacs-lisp
+(use-package org-habit
+  :defer t
+  :ensure nil
+  :custom
+  (org-habit-graph-column 45))
+#+end_src
+
 *** [[https://github.com/marcinkoziej/org-pomodoro/][Org Pomorodo]]
 #+BEGIN_SRC emacs-lisp
 (use-package org-pomodoro
@@ -682,16 +697,25 @@ NOTE: For some reason can't complex triggers to work grrrr
 *** [[https://www.orgroam.com/][Org Roam]]
 A neat knowledge base in org
 
-#+begin_src emacs-lisp
+#+begin_src
 (use-package org-roam
   :defer t
   :ensure t
   :init
-  ;; These have to be defined before package is loaded
-  (setq org-roam-directory (expand-file-name "./org/org-roam"))
+  (setq org-roam-directory (expand-file-name "./org/private/org-roam/"))
+  (setq org-roam-db-location (expand-file-name "./org/private/org-roam/"))
   :custom
+  (org-roam-directory (expand-file-name "./org/private/org-roam/"))
+  (org-roam-db-location (expand-file-name "./org/private/org-roam/"))
   (org-roam-tag-sources '(prop vanilla))
-  ;; (org-roam-capture-templates)
+  (org-roam-db-update-method 'immediate)
+  :bind (:map org-roam-mode-map
+              (("C-c n l" . org-roam)
+               ("C-c n f" . org-roam-find-file)
+               ("C-c n g" . org-roam-graph))
+              :map org-mode-map
+              (("C-c n i" . org-roam-insert))
+              (("C-c n I" . org-roam-insert-immediate)))
   :hook (after-init . org-roam-mode))
 #+end_src
 
@@ -1483,6 +1507,7 @@ Interactively also sends a terminating newline."
 (use-package compile
   :ensure nil
   :defer t
+  ;; :custom (compilation-scroll-output t)
   :hook (compilation-mode . hl-line-mode)
   :bind (:map compilation-mode-map
               ("y" . gopar/send-self)
@@ -1650,6 +1675,126 @@ Minibuffer completion
   (completion-styles '(initials partial-completion flex))
   :hook ((minibuffer-setup . defer-garbage-collection-h)
          (minibuffer-exit . restore-garbage-collection-h)))
+#+end_src
+
+** ERC
+IRC in emacs
+
+#+begin_src emacs-lisp
+(use-package erc
+  :defer t
+  :ensure nil
+  :preface
+  (defun my/erc-browse-last-url ()
+    "Searchs backwards through an ERC buffer, looking for a URL. When a URL is
+     found, it prompts you to open it."
+    (interactive)
+    (save-excursion
+      (let ((ffap-url-regexp "\\(https?://\\)."))
+        (ffap-next-url t t))))
+
+  (defun my/erc-count-users ()
+    "Displays the number of users and ops connected on the current channel."
+    (interactive)
+    (if (get-buffer "irc.freenode.net:6667")
+        (let ((channel (erc-default-target)))
+          (if (and channel (erc-channel-p channel))
+              (let ((hash-table (with-current-buffer (erc-server-buffer)
+                                  erc-server-users))
+                    (users 0)
+                    (ops 0))
+                (maphash (lambda (k v)
+                           (when (member (current-buffer)
+                                         (erc-server-user-buffers v))
+                             (cl-incf users))
+                           (when (erc-channel-user-op-p k)
+                             (cl-incf ops)))
+                         hash-table)
+                (message "%d users (%s ops) are online on %s" users ops channel))
+            (user-error "The current buffer is not a channel")))
+      (user-error "You must first be connected on IRC")))
+
+  (defun my/erc-get-ops ()
+    "Displays the names of ops users on the current channel."
+    (interactive)
+    (if (get-buffer "irc.freenode.net:6667")
+        (let ((channel (erc-default-target)))
+          (if (and channel (erc-channel-p channel))
+              (let (ops)
+                (maphash (lambda (nick cdata)
+                           (if (and (cdr cdata)
+                                    (erc-channel-user-op (cdr cdata)))
+                               (setq ops (cons nick ops))))
+                         erc-channel-users)
+                (if ops
+                    (message "The online ops users are: %s"  (mapconcat 'identity ops " "))
+                  (message "There are no ops users online on %s" channel)))
+            (user-error "The current buffer is not a channel")))
+      (user-error "You must first be connected on IRC")))
+
+  (defun my/erc-notify (nickname message)
+    "Displays a notification message for ERC."
+    (let* ((channel (buffer-name))
+           (nick (erc-hl-nicks-trim-irc-nick nickname))
+           (title (if (string-match-p (concat "^" nickname) channel)
+                      nick
+                    (concat nick " (" channel ")")))
+           (msg (s-trim (s-collapse-whitespace message))))
+      (alert (concat nick ": " msg) :title title)))
+
+  (defun my/erc-preprocess (string)
+    "Avoids channel flooding."
+    (setq str (string-trim (replace-regexp-in-string "\n+" " " str))))
+
+  (defun my/erc-reset-track-mode ()
+    "Resets ERC track mode."
+    (interactive)
+    (setq erc-modified-channels-alist nil)
+    (erc-modified-channels-update)
+    (erc-modified-channels-display)
+    (force-mode-line-update))
+
+  (defun my/erc-start-or-switch ()
+    "Connects to ERC, or switch to last active buffer."
+    (interactive)
+    (if (get-buffer "irc.freenode.net:6667")
+        (erc-track-switch-buffer 1)
+      (erc :server "irc.freenode.net" :port 6667 :nick "gopar")))
+
+  :hook ((ercn-notify . my/erc-notify)
+         (erc-send-pre . my/erc-preprocess))
+  :custom-face
+  (erc-action-face ((t (:foreground "#8fbcbb"))))
+  (erc-error-face ((t (:foreground "#bf616a"))))
+  (erc-input-face ((t (:foreground "#ebcb8b"))))
+  (erc-notice-face ((t (:foreground "#ebcb8b"))))
+  (erc-timestamp-face ((t (:foreground "#a3be8c"))))
+  :custom
+  (erc-autojoin-channels-alist '(("freenode.net" ;; "#emacs" "#emacs-beginners" "#emacsconf-org"
+                                  "#python" ;; "#docker""#stumpwm" "#django" "#fsf" "#org-mode"
+                                  )))
+  (erc-autojoin-timing 'ident)
+  (erc-fill-function 'erc-fill-static)
+  (erc-fill-static-center 22)
+  (erc-header-line-format "%n on %t (%m)")
+  (erc-hide-list '("JOIN" "PART" "QUIT"))
+  (erc-join-buffer 'bury)
+  (erc-kill-buffer-on-part t)
+  (erc-kill-queries-on-quit t)
+  (erc-kill-server-buffer-on-quit t)
+  (erc-lurker-hide-list '("JOIN" "PART" "QUIT"))
+  (erc-lurker-threshold-time 43200)
+  (erc-prompt-for-nickserv-password nil)
+  (erc-prompt-for-password nil)
+  (erc-server-reconnect-attempts 5)
+  (erc-server-reconnect-timeout 3)
+  (erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT"
+                             "324" "329" "332" "333" "353" "477"))
+  :config
+  (add-to-list 'erc-modules 'notifications)
+  (add-to-list 'erc-modules 'spelling)
+  (erc-services-mode 1)
+  (erc-update-modules))
 #+end_src
 
 * Third Party Packages
@@ -2630,4 +2775,15 @@ Disabling for now since it looks like it needs some kinks worked out
 (use-package vterm
   :defer t
   :ensure t)
+#+end_src
+
+** [[https://github.com/wbolster/emacs-python-pytest/][python-pytest]]
+Runs Pytest in a magit like interface.
+
+#+begin_src emacs-lisp
+;; (use-package python-pytest
+;;   :defer t
+;;   :ensure t
+;;   :bind (:map python-mode-map
+;;          ("C-c C-t" . python-pytest-dispatch)))
 #+end_src
