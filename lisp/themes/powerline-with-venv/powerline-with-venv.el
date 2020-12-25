@@ -35,9 +35,9 @@
                         " ")
               'face git-face 'read-only t)))
     (concat
-     (when venv-current-name
+     (when pyvenv-virtual-env-name
        (concat
-        (with-read-only-face venv-current-name
+        (with-read-only-face pyvenv-virtual-env-name
           :background "#5B3758")
         (with-read-only-face segment-separator
           :foreground "#5B3758"

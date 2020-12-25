@@ -846,9 +846,6 @@ All these modules are configured down below after this section.
 (use-package em-prompt
   :defer t
   :ensure nil
-  ;; This is a cool little hack. Eshell doesn't load .dir-locals.el ????
-  ;; *BUT* I can re-load dir-locals in the eshell buffer and it will take affect
-  :hook (eshell-before-prompt . gopar/reload-dir-locals-for-current-buffer)
   :custom
   (eshell-highlight-prompt nil))
 #+end_src
@@ -929,19 +926,6 @@ Well, I wanna do some fun stuff so why not override it :P
   :custom
   (eshell-banner-message  '(funcall (nth (random (length gopar/request-jokes)) gopar/request-jokes))))
 #+end_src
-
-*** [[https://github.com/porterjamesj/virtualenvwrapper.el][Eshell Virtualenvwrapper]]
-Support for virtualenvs in eshell \o/
-
-#+BEGIN_SRC emacs-lisp
-(use-package virtualenvwrapper
-  :defer t
-  :ensure t
-  :init
-  (venv-initialize-eshell)
-  (make-variable-buffer-local 'venv-current-name)
-  (make-variable-buffer-local 'venv-current-dir))
-#+END_SRC
 
 *** Eshell git prompt
 Makes the eshell prompt fancy
@@ -2784,4 +2768,15 @@ Runs Pytest in a magit like interface.
   :ensure t
   :bind (:map python-mode-map
          ("C-c C-t" . python-pytest-dispatch)))
+#+end_src
+
+** [[https://github.com/jorgenschaefer/pyvenv/][Pyvenv]]
+Virtualenv handling
+
+#+begin_src emacs-lisp
+(use-package pyvenv
+  :defer t
+  :ensure t
+  :hook ((after-init . pyvenv-mode)
+         (after-init . pyvenv-tracking-mode)))
 #+end_src
