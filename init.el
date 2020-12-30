@@ -8,6 +8,7 @@
 
   (setq package-enable-at-startup nil
         package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
+                           ("nongnu" . "https://elpa.nongnu.org/nongnu/")
                            ("melpa" . "https://melpa.org/packages/")
                            ("org" . "https://orgmode.org/elpa/")))
   (setq gnutls-algorithm-priority "normal:-vers-tls1.3")

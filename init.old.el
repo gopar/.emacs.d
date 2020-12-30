@@ -1,5 +1,5 @@
 (require 'package)
-(toggle-debug-on-error)
+;; (toggle-debug-on-error)
 (custom-set-variables
  '(gnutls-algorithm-priority "normal:-vers-tls1.3"))
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)

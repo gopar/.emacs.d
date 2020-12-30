@@ -75,6 +75,7 @@ Update a lot of defaults that I have no idea why they aren't defaults
 (setq-default c-basic-offset 4
               c-default-style "linux"
               indent-tabs-mode nil
+              fill-column 80
               ;; For python, might as well apply globally
               ;; https://emacs.stackexchange.com/a/15244/8964
               ;; forward-sexp-function nil
@@ -377,10 +378,9 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
 (defun gopar/save-window-config-and-show-work-agenda ()
   (interactive)
   (window-configuration-to-register ?`)
-  (org-save-all-org-buffers)
-  (org-agenda nil "w")
   (delete-other-windows)
-  (find-file-other-window "~/.emacs.d/org/private/break_checklist.org"))
+  (org-save-all-org-buffers)
+  (org-agenda nil "w"))
 
 (defun gopar/load-window-config-and-close-work-agenda ()
   (interactive)
@@ -456,6 +456,10 @@ All general org mode settings
      ("Points_ALL" . "1 2 3 5 8 13")))
   ;; Needed to allow helm to compute all refile options in buffer
   (org-outline-path-complete-in-steps nil)
+  (org-deadline-warning-days 5)
+  (org-log-redeadline t)
+  (org-log-reschedule t)
+  (org-todo-repeat-to-state "REPEAT")
   ;; Refile options
   (org-refile-use-outline-path 'file)
   (org-refile-allow-creating-parent-nodes 'confirm)
@@ -477,7 +481,8 @@ All general org mode settings
                  ol-eww
                  ;; Stuff I've enabled below
                  org-habit
-                 org-checklist))
+                 ;; org-checklist
+                 ))
   :config
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -559,7 +564,7 @@ Mode for time management. Pretty usefull. I use it a lot.
 
      ("w" "Agenda and Work tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work" 't))))
-       (tags-todo "break"))
+       (tags-todo "inbox|break"))
       ((org-agenda-sorting-strategy '(priority-down))))
 
      ("i" "In-Progress Tasks"
@@ -695,22 +700,44 @@ NOTE: For some reason can't complex triggers to work grrrr
 *** [[https://www.orgroam.com/][Org Roam]]
 A neat knowledge base in org
 
-#+begin_src
+#+begin_src emacs-lisp
 (use-package org-roam
   :defer t
   :ensure t
-  :init
-  (setq org-roam-directory (expand-file-name "./org/private/org-roam/"))
-  (setq org-roam-db-location (expand-file-name "./org/private/org-roam/"))
   :custom
   (org-roam-directory (expand-file-name "./org/private/org-roam/"))
-  (org-roam-db-location (expand-file-name "./org/private/org-roam/"))
+  (org-roam-db-location (expand-file-name "./org/private/org-roam.db"))
   (org-roam-tag-sources '(prop vanilla))
   (org-roam-db-update-method 'immediate)
+  (org-roam-capture-templates
+   '(("d" "default" plain #'org-roam-capture--get-point
+      "%?"
+      :file-name "references/%<%Y%m%d%H%M%S>-${slug}"
+      :head "#+title: ${title}\n"
+      :unnarrowed t)))
+  (org-roam-dailies-directory (expand-file-name "./org/private/journal/"))
+  (org-roam-dailies-capture-templates
+   `(("d" "daily" plain
+      #'org-roam-capture--get-point
+      (file ,(concat user-emacs-directory "org/templates/dailies-daily.template"))
+      :file-name ,(concat org-roam-dailies-directory "daily/%<%Y-%m-%d>")
+      :head "#+title: %<%Y-%m-%d>\n"
+      :unnarrowed t)
+     ("w" "weekly" plain
+      #'org-roam-capture--get-point
+      (file ,(concat user-emacs-directory "org/templates/dailies-weekly.template"))
+      :file-name ,(concat org-roam-dailies-directory "weekly/%<%Y-%m-%d>")
+      :head "#+title: %<%Y-%m-%d>\n")
+     ("m" "monthly" entry
+      #'org-roam-capture--get-point
+      "* %?"
+      :file-name ,(concat org-roam-dailies-directory "monthly/%<%Y-%m>")
+      :head "#+title: %<%Y-%m>\n")))
   :bind (:map org-roam-mode-map
               (("C-c n l" . org-roam)
                ("C-c n f" . org-roam-find-file)
-               ("C-c n g" . org-roam-graph))
+               ("C-c n g" . org-roam-graph)
+               ("C-c n d" . org-roam-dailies-capture-today))
               :map org-mode-map
               (("C-c n i" . org-roam-insert))
               (("C-c n I" . org-roam-insert-immediate)))
@@ -1572,7 +1599,11 @@ Allows one to flash a region of text
 #+end_src
 
 ** Ispell
-Helps out with spelling. Mostly setting this up so `wucuo` can use it
+Helps out with spelling. Mostly setting this up so `wucuo` can use it.
+
+There's a weird issue when using =--run-together= and =--run-together-limit=16=.
+The issue is that it creates these weird suggestions that make no sense. Getting rid of that
+via [[https://github.com/redguardtoo/emacs.d/issues/796][this threads]] suggestion helped :)
 #+begin_src emacs-lisp
 (use-package ispell
   :defer t
@@ -1580,7 +1611,7 @@ Helps out with spelling. Mostly setting this up so `wucuo` can use it
   :custom
   (ispell-program-name "aspell")
   (ispell-extra-args '("--sug-mode=ultra" "--lang=en_US"
-                       "--run-together" "--run-together-limit=16"
+                       ;; "--run-together" "--run-together-limit=16"
                        "--camel-case")))
 #+end_src
 
@@ -1607,6 +1638,7 @@ Package that handles what to do with a URL before passing it to a browser
   (browse-url-handlers '(("https://stackoverflow.com/questions/[0-9]+" . sx-open-link)
                          ("https://stackoverflow.com/a/[0-9]+" . sx-open-link)
                          ("https://.*.atlassian.net/.*" . browse-url-chrome)
+                         ;; ("https://www.youtube.com.*" . browse-url-firefox)
                          ("." . eww-browse-url)))
   :config
   (put 'browse-url-browser-function 'safe-local-variable (lambda (x) t))
@@ -2484,6 +2516,7 @@ Made this since I rebinding semicolon to always put an underscore since I spent 
   (lsp-completion-provider :none)
   (lsp-auto-guess-root nil)
   (lsp-enable-indentation nil)
+  (lsp-headerline-breadcrumb-segments '(symbols))
   :hydra (hydra-lsp (:exit t :hint nil)
 "
  Buffer^^               Server^^                   Symbol
@@ -2764,7 +2797,7 @@ Runs Pytest in a magit like interface.
 
 #+begin_src emacs-lisp
 (use-package python-pytest
-  :defer t
+  ;; :defer t  ;; Don't defer to automatically syn this up w/ py mode
   :ensure t
   :bind (:map python-mode-map
          ("C-c C-t" . python-pytest-dispatch)))
