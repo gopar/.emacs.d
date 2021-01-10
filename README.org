@@ -190,7 +190,9 @@ If given ARG, then it will insert an acutal semicolon."
          (insert (capitalize (char-to-string arg))))
         ;; If it's a new line
         ((= arg 13)
-         (insert 10))
+         (newline-and-indent))
+        ((= arg 59)
+         (insert ";"))
         ;; We probably meant a key command, so lets execute that
         (t (call-interactively
             (lookup-key (current-global-map) (char-to-string arg))))))
@@ -418,8 +420,6 @@ All general org mode settings
   (org-log-done 'time)
   ;; timestamp when we reschedule
   (org-log-reschedule t)
-  ;;
-  (org-deadline-warning-days 10)
   ;; Indent the stars instead of piling them
   (org-startup-indented t)
   (org-image-actual-width nil)
@@ -427,6 +427,7 @@ All general org mode settings
   (org-log-into-drawer t)
   ;;
   (org-fontify-whole-heading-line t)
+  (org-fontify-done-headline t)
   ;;
   (org-fontify-quote-and-verse-blocks t)
   ;; See down arrow instead of "..." when we have subtrees
@@ -543,6 +544,8 @@ Mode for time management. Pretty usefull. I use it a lot.
   :after org
   :bind (("C-c a" . org-agenda))
   :custom
+  (org-agenda-window-setup 'only-window)
+  (org-agenda-restore-windows-after-quit t)
   (org-agenda-files "~/.emacs.d/org/agenda-files.org")
   ;; TODO entries that can't be marked as done b/c of children are shown as dimmed in agenda view
   (org-agenda-dim-blocked-tasks t)
@@ -1341,7 +1344,7 @@ So here I try to mimic those keybindings, but there are a few things to be aware
 ;; Eww uses the =shr-map= and =shr-image-map= from =shr.el=.
 (use-package eww
   :defer t
-  :after (hydra shr)
+  :after (hydra shr)    ;; Maybe do :config (require 'hydra/shr) ??
   :init
   (setq eww-goto-map (let ((map (make-sparse-keymap)))
                        (define-key map "g" 'beginning-of-buffer)
@@ -1582,6 +1585,19 @@ Window management
   :config
   (add-to-list 'python-shell-completion-native-disabled-interpreters "python"))
 #+END_SRC
+
+** JavaScript JS
+
+#+begin_src emacs-lisp
+(use-package js-mode
+  :defer t
+  :ensure nil
+  :bind (:map js-mode-map
+         (";" . easy-camelcase))
+  :custom
+  (js-indent-level 2)
+  (js-jsx-indent-level 2))
+#+end_src
 
 ** Pulse
 Allows one to flash a region of text
@@ -2605,6 +2621,8 @@ Finally, do completion"
          ("M-n" . nil)
          ("M-p" . nil))
   :custom
+  (company-dabbrev-downcase nil)
+  (company-dabbrev-ignore-case t)
   (company-selection-wrap-around t)
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
@@ -2812,4 +2830,49 @@ Virtualenv handling
   :ensure t
   :hook ((after-init . pyvenv-mode)
          (after-init . pyvenv-tracking-mode)))
+#+end_src
+
+** [[https://github.com/prettier/prettier-emacs][Prettier]]
+Auto Formatter for JS
+
+#+begin_src emacs-lisp
+(use-package prettier-js
+  :defer t
+  :ensure t
+  :hook ((js-mode . prettier-js-mode)
+         (typescript-mode . prettier-js-mode)))
+#+end_src
+
+** [[https://github.com/smihica/emmet-mode][Emmet]]
+
+#+begin_src emacs-lisp
+(use-package emmet-mode
+  :defer t
+  :ensure t
+  :hook ((js-mode . emmet-mode)
+         (typescript-mode . emmet-mode))
+  :custom
+  (emmet-expand-jsx-className? t))
+#+end_src
+
+** [[https://github.com/emacs-typescript/typescript.el][TypeScript]]
+
+#+begin_src emacs-lisp
+(use-package typescript-mode
+  :defer t
+  :ensure t
+  :mode "\\.tsx\\'"
+  :bind (:map typescript-mode-map
+         (";" . easy-camelcase))
+  :hook (typescript-mode . lsp)
+  :custom
+  (typescript-indent-level 2))
+#+end_src
+
+** [[https://github.com/hlissner/emacs-pug-mode][Pug-mode]]
+
+#+begin_src emacs-lisp
+(use-package pug-mode
+  :defer t
+  :ensure t)
 #+end_src
