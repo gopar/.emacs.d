@@ -593,7 +593,7 @@ Templating system for creating entries
   (org-capture-bookmark nil)
   (org-capture-templates
    '(
-     ("i" "Inbox" entry (file "~/.emacs.d/org/private/gtd/inbox.org")
+     ("c" "Inbox" entry (file "~/.emacs.d/org/private/gtd/inbox.org")
       "* TODO %? \n %U")
      ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/private/gtd/inbox.org")
       "* TODO %? :freetime:emacs:\n %U")
@@ -755,6 +755,29 @@ My private stuff
   :after org
   :ensure nil
   :load-path "lisp/private")
+#+end_src
+
+*** Org Annotate
+Easily annotate files.
+Each project must setup its annotate file via dir-locals so that they are kept seperate.
+I don't want annotation from diff projs in one file.
+
+#+begin_src emacs-lisp
+;; Belongs from the org-contrib pkg?
+(use-package org-annotate-file
+  :defer t
+  :ensure nil
+  :custom
+  (org-annotate-file-add-search t)
+  :bind ("C-c C-s" . gopar/org-annotate-file)
+  :init
+  (defun gopar/org-annotate-file (&optional arg)
+    "Annotate current line.
+When called with a prefix aurgument, it will open annotations file."
+    (interactive "P")
+    (if arg
+        (find-file org-annotate-file-storage-file)
+      (org-annotate-file))))
 #+end_src
 
 ** Occur
@@ -1990,6 +2013,26 @@ Nicer helpful output
 
 ** [[https://github.com/akicho8/string-inflection/][String Inflection]]
 #+BEGIN_SRC emacs-lisp
+(defun gopar/string-inflection-js-cycle-function (str)
+  (cond
+   ;; foo_bar => fooBar
+   ((string-inflection-underscore-p str)
+    (string-inflection-camelcase-function str))
+   ;; fooBar => FooBar
+   ((string-inflection-camelcase-p str)
+    (string-inflection-pascal-case-function str))
+   ;; FooBar => FOO_BAR
+   ((string-inflection-pascal-case-p str)
+    (string-inflection-upcase-function str))
+   ;; FOO_BAR => fooBar
+   (t ;; (string-inflection-upcase-p str)
+    (string-inflection-camelcase-function str))))
+
+(defun gopar/string-inflection-js-cycle ()
+  (interactive)
+  (string-inflection-insert
+   (gopar/string-inflection-js-cycle-function (string-inflection-get-current-word))))
+
 (defun gopar/string-inflection-cycle-auto ()
   "Switching by major mode."
   (interactive)
@@ -2009,6 +2052,8 @@ Nicer helpful output
    ((eq major-mode 'hy-mode)
     (string-inflection-kebab-case))
    ;; for javascript
+   ((eq major-mode 'js-mode)
+    (gopar/string-inflection-js-cycle))
    (t
     ;; default
     (string-inflection-ruby-style-cycle))))
