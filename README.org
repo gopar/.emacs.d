@@ -450,7 +450,7 @@ All general org mode settings
   ;; The right side of | indicates the DONE states
   (org-todo-keywords
    '((sequence "CS-TODO(q)" "WAITING-ON-CUSTOMER(w" "|" "CS-DELEGATED(e!)" "CS-DONE{y@}")
-     (sequence "NEXT(n)" "IN-PROGRESS(i!)" "TODO(t)" "WAITING(w@/@)" "SOMEDAY(s!)" "PROJ(p)" "REPEAT(r)" "|" "DONE(d@)" "CANCELED(c@)" "DELEGATED(d@)")))
+     (sequence "NEXT(n)" "IN-PROGRESS(i!)" "TODO(t)" "WAITING(w@/@)" "SOMEDAY(s!)" "PROJ(p)" "REPEAT(r)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(d@)")))
   ;; global Effort estimate values
   (org-global-properties
    '(("Effort_ALL" . "0:30 1:00 2:00 3:00 5:00 8:00 10:00")
