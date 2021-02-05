@@ -75,7 +75,7 @@ Update a lot of defaults that I have no idea why they aren't defaults
 (setq-default c-basic-offset 4
               c-default-style "linux"
               indent-tabs-mode nil
-              fill-column 80
+              fill-column 120
               ;; For python, might as well apply globally
               ;; https://emacs.stackexchange.com/a/15244/8964
               ;; forward-sexp-function nil
@@ -394,7 +394,7 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
   (let ((scheduled (org-get-scheduled-time (point)))
         (deadline (org-get-deadline-time (point))))
     (if (not (or scheduled deadline))
-        (format " ")
+        (format " ")
       "   ")))
 
 #+END_SRC
@@ -407,6 +407,8 @@ All general org mode settings
   :custom
   ;; Where the org files live
   (org-directory "~/.emacs.d/org/")
+  ;; Where archives should go
+  (org-archive-location (expand-file-name "~/.emacs.d/org/private/gtd/archives.org"))
   ;; Make sure we see syntax highlighting
   (org-src-fontify-natively t)
   ;; I dont use it for subs/super scripts
@@ -446,20 +448,22 @@ All general org mode settings
   ;; Where should notes go to? Dont even use them tho
   (org-default-notes-file (concat org-directory "notes.org"))
   ;; List of default tags to choose from
-  (org-tag-alist '(("break" . ?b) ("freetime" . ?f) ("emacs" . ?e) ("calls" . ?c) ("read" . ?r) ("driving" . ?d) ("project" . ?p) ("misc" . ?m)))
+  (org-tag-alist '(("break" . ?b) ("freetime" . ?f) ("emacs" . ?e) ("calls" . ?c) ("repeat" . ?r) ("driving" . ?d) ("project" . ?p) ("someday" . ?s) ("misc" . ?m)))
   ;; The right side of | indicates the DONE states
   (org-todo-keywords
-   '((sequence "NEXT(n)" "IN-PROGRESS(i!)" "TODO(t)" "WAITING(w@/@)" "SOMEDAY(s!)" "PROJ(p)" "REPEAT(r)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(d@)")))
+   '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i!)" "WAITING(w@/@)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(d@)")))
   ;; global Effort estimate values
   (org-global-properties
    '(("Effort_ALL" . "0:30 1:00 2:00 3:00 5:00 8:00 10:00")
      ("Points_ALL" . "1 2 3 5 8 13")))
   ;; Needed to allow helm to compute all refile options in buffer
   (org-outline-path-complete-in-steps nil)
-  (org-deadline-warning-days 5)
+  (org-deadline-warning-days 0)
   (org-log-redeadline t)
   (org-log-reschedule t)
-  (org-todo-repeat-to-state "REPEAT")
+  ;; Repeat to previous todo state
+  ;; If there was no todo state, then dont set a state
+  (org-todo-repeat-to-state t)
   ;; Refile options
   (org-refile-use-outline-path 'file)
   (org-refile-allow-creating-parent-nodes 'confirm)
@@ -546,12 +550,21 @@ Mode for time management. Pretty usefull. I use it a lot.
   (org-agenda-window-setup 'only-window)
   (org-agenda-restore-windows-after-quit t)
   (org-agenda-files "~/.emacs.d/org/agenda-files.org")
+  ;; (org-agenda-todo-ignore-scheduled 'future)
   ;; TODO entries that can't be marked as done b/c of children are shown as dimmed in agenda view
   (org-agenda-dim-blocked-tasks t)
-  ;; Start the view on sunday so I can get an overview of upcoming week
-  (org-agenda-start-on-weekday 0)
-  ;; Don't really use diary though
-  ;; (org-agenda-include-diary t)
+  ;; Start the week view on whatever day im on
+  (org-agenda-start-on-weekday nil)
+  ;; How to identify stuck/non-stuck projects
+  ;; Projects are identified by the 'project' tag and its always the first level
+  ;; Next any of these todo keywords means it's not a stuck project
+  ;; 3rd, theres no tags that I use to identify a stuck Project
+  ;; Finally, theres no special text that signify a non-stuck project
+  (org-stuck-projects
+   '("+project+LEVEL=1"
+     ("NEXT" "IN-PROGRESS" "WAITING" "DONE" "CANCELED" "DELEGATED")
+     nil
+     ""))
   (org-agenda-prefix-format
    '((agenda . " %i %-12:c%?-12t% s")
      (todo . " %i %-10:c %-5e %(gopar/get-schedule-or-deadline-if-available)")
@@ -709,7 +722,7 @@ A neat knowledge base in org
   :custom
   (org-roam-directory (expand-file-name "~/.emacs.d/org/private/org-roam/"))
   (org-roam-db-location (expand-file-name "~/.emacs.d/org/private/org-roam.db"))
-  (org-roam-tag-sources '(prop vanilla))
+  (org-roam-tag-sources '(prop))
   (org-roam-db-update-method 'immediate)
   (org-roam-capture-templates
    '(("d" "default" plain #'org-roam-capture--get-point
@@ -717,7 +730,7 @@ A neat knowledge base in org
       :file-name "references/%<%Y%m%d%H%M%S>-${slug}"
       :head "#+title: ${title}\n"
       :unnarrowed t)))
-  (org-roam-dailies-directory (expand-file-name "./org/private/journal/"))
+  (org-roam-dailies-directory (expand-file-name "~/.emacs.d/org/private/journal/"))
   (org-roam-dailies-capture-templates
    `(("d" "daily" plain
       #'org-roam-capture--get-point
@@ -2891,11 +2904,11 @@ Virtualenv handling
 Auto Formatter for JS
 
 #+begin_src emacs-lisp
-(use-package prettier-js
-  :defer t
-  :ensure t
-  :hook ((js-mode . prettier-js-mode)
-         (typescript-mode . prettier-js-mode)))
+;; (use-package prettier-js
+;;   :defer t
+;;   :ensure t
+;;   :hook ((js-mode . prettier-js-mode)
+;;          (typescript-mode . prettier-js-mode)))
 #+end_src
 
 ** [[https://github.com/smihica/emmet-mode][Emmet]]
