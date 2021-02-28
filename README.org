@@ -433,7 +433,7 @@ All general org mode settings
   ;;
   (org-fontify-quote-and-verse-blocks t)
   ;; See down arrow instead of "..." when we have subtrees
-  (org-ellipsis "⤵")
+  ;; (org-ellipsis "⤵")
   ;; catch invisible edit
   (org-catch-invisible-edits 'error)
   ;; Only useful for property searching only but can slow down search
@@ -1889,6 +1889,8 @@ My favorite theme
   :defer t
   :ensure t)
 #+end_src
+*** [[https://github.com/DogLooksGood/joker-theme][Joker Theme]]
+Need to wait for it to be in melpa
 
 ** [[https://github.com/jwiegley/alert][Alert]]
 
@@ -1928,14 +1930,15 @@ Settings up env vars manually :(
   (setenv "PATH" (concat (getenv "PATH") ":/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/bin"))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin"))))
+  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.poetry/bin"))))
 
   ;; Node stuff sigh
   (setenv "NVM_DIR" (expand-file-name "~/.nvm"))
   (setenv "NVM_CD_FLAGS" "-q")
   (setenv "NVM_NODEJS_ORG_MIRROR" "https://nodejs.org/dist")
   (setenv "NVM_IOJS_ORG_MIRROR" "https://iojs.org/dist")
-  (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin/node"))
-  (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin"))
+  (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin/node/"))
+  (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin/"))
 
   (setq-default eshell-path-env (getenv "PATH"))
 
@@ -1945,6 +1948,7 @@ Settings up env vars manually :(
                             "/usr/sbin"
                             "/sbin"
                             "/bin"
+                            (expand-file-name "~/.poetry/bin")
                             (expand-file-name "~/.nvm/versions/node/v12.20.0/bin")))))
 (add-hook 'after-init-hook 'gopar/add-env-vars)
 #+end_src
@@ -2307,7 +2311,16 @@ To help getting around projects
   :defer t
   :commands magit-get-current-branch
   :bind (("C-x g" . magit))
-  :config (setq vc-handled-backends nil))
+  :config
+  (setq vc-handled-backends nil)
+
+  (defun magit/undo-last-commit (number-of-commits)
+    "Undoes the latest commit or commits without loosing changes"
+    (interactive "P")
+    (let ((num (if (numberp number-of-commits)
+                   number-of-commits
+                 1)))
+      (magit-reset (format "HEAD^%s" num)))))
 #+END_SRC
 
 ** Git-Commit
@@ -2935,4 +2948,11 @@ Auto Formatter for JS
   :hook (typescript-mode . lsp)
   :custom
   (typescript-indent-level 2))
+#+end_src
+
+** Yaml
+#+begin_src emacs-lisp
+(use-package yaml-mode
+  :defer t
+  :ensure t)
 #+end_src
