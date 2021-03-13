@@ -1,4 +1,5 @@
 #+TITLE: Emacs Configuration
+#+STARTUP: showeverything
 
 * About
 This is my emacs configuration setup.
@@ -408,13 +409,13 @@ All general org mode settings
   ;; Where the org files live
   (org-directory "~/.emacs.d/org/")
   ;; Where archives should go
-  (org-archive-location (expand-file-name "~/.emacs.d/org/private/gtd/archives.org"))
+  (org-archive-location (concat (expand-file-name "~/.emacs.d/org/private/org-roam/gtd/archives.org") "::"))
   ;; Make sure we see syntax highlighting
   (org-src-fontify-natively t)
   ;; I dont use it for subs/super scripts
   (org-use-sub-superscripts nil)
   ;; Should everything be hidden?
-  (org-startup-folded nil)
+  (org-startup-folded 'content)
   (org-M-RET-may-split-line '((default . nil)))
   ;; Show as utf-8 chars
   (org-pretty-entities t)
@@ -469,9 +470,9 @@ All general org mode settings
   (org-refile-allow-creating-parent-nodes 'confirm)
   ;; This worked ok, but lets try some more detail refiling
   ;; (org-refile-targets '((org-agenda-files :level .  1)))
-  (org-refile-targets '(("~/.emacs.d/org/private/gtd/gtd.org" :maxlevel . 3)
-                        ("~/.emacs.d/org/private/gtd/someday.org" :level . 1)
-                        ("~/.emacs.d/org/private/gtd/tickler.org" :maxlevel . 1)))
+  (org-refile-targets '(("~/.emacs.d/org/private/org-roam/gtd/gtd.org" :maxlevel . 3)
+                        ("~/.emacs.d/org/private/org-roam/gtd/someday.org" :level . 1)
+                        ("~/.emacs.d/org/private/org-roam/gtd/tickler.org" :maxlevel . 1)))
   ;; Lets customize which modules we load up
   (org-modules '(ol-w3m
                  ol-bbdb
@@ -605,15 +606,15 @@ Templating system for creating entries
   (org-capture-bookmark nil)
   (org-capture-templates
    '(
-     ("c" "Inbox" entry (file "~/.emacs.d/org/private/gtd/inbox.org")
+     ("c" "Inbox" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
       "* TODO %? \n %U")
-     ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/private/gtd/inbox.org")
+     ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
       "* TODO %? :freetime:emacs:\n %U")
-     ("p" "Project" entry (file "~/.emacs.d/org/private/gtd/gtd.org")
+     ("p" "Project" entry (file "~/.emacs.d/org/private/org-roam/gtd/gtd.org")
       "* PROJ %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) \n:ORDERED: t \n:END: \n%U \n** TODO Add entry")
      ("w" "Work" entry (file "~/.emacs.d/org/work/work.org")
       "* TODO %? :work:\n %U")
-     ("t" "Tickler" entry (file "~/.emacs.d/org/private/gtd/tickler.org")
+     ("t" "Tickler" entry (file "~/.emacs.d/org/private/org-roam/gtd/tickler.org")
       "* %? \nSCHEDULED: %^{Schedule}t \n%U"))))
 #+END_SRC
 
@@ -873,6 +874,7 @@ Not a eshell module
   (eshell-scroll-to-bottom-on-input t)
   :config
   (remove-hook 'eshell-mode-hook 'tramp-eshell-directory-change)
+  (remove-hook 'eshell-directory-change-hook 'eshell-directory-change-hook)
   ;; Truncate buffer for performance
   ;; (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
 )
@@ -1929,7 +1931,7 @@ Settings up env vars manually :(
   (setenv "PATH" (concat (getenv "PATH") ":/usr/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/bin"))
-  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin"))))
+  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v14.16.0/bin"))))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.poetry/bin"))))
 
   ;; Node stuff sigh
@@ -1937,19 +1939,19 @@ Settings up env vars manually :(
   (setenv "NVM_CD_FLAGS" "-q")
   (setenv "NVM_NODEJS_ORG_MIRROR" "https://nodejs.org/dist")
   (setenv "NVM_IOJS_ORG_MIRROR" "https://iojs.org/dist")
-  (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin/node/"))
-  (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v12.20.0/bin/"))
+  (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v14.16.0/bin/node/"))
+  (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v14.16.0/bin/"))
 
   (setq-default eshell-path-env (getenv "PATH"))
 
   (setq exec-path (append exec-path
-                          '("/usr/local/bin"
+                          `("/usr/local/bin"
                             "/usr/bin"
                             "/usr/sbin"
                             "/sbin"
                             "/bin"
-                            (expand-file-name "~/.poetry/bin")
-                            (expand-file-name "~/.nvm/versions/node/v12.20.0/bin")))))
+                            ,(expand-file-name "~/.poetry/bin")
+                            ,(expand-file-name "~/.nvm/versions/node/v14.16.0/bin")))))
 (add-hook 'after-init-hook 'gopar/add-env-vars)
 #+end_src
 
