@@ -2289,6 +2289,7 @@ Ag search extension
 To help getting around projects
 
 #+BEGIN_SRC emacs-lisp
+;; (put 'projectile-project-run-cmd 'safe-local-variable (lambda (x) t))
 (use-package projectile
   :ensure t
   :defer t
@@ -2301,7 +2302,6 @@ To help getting around projects
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
   :config
   (projectile-global-mode)
-  ;; (put 'projectile-project-run-cmd 'safe-local-variable (lambda (x) t))
   )
 #+END_SRC
 
@@ -2577,55 +2577,55 @@ Made this since I rebinding semicolon to always put an underscore since I spent 
 ** [[https://github.com/emacs-lsp/lsp-mode/][LSP]]
 
 #+BEGIN_SRC emacs-lisp
-(use-package lsp-mode
-  :defer t
-  :ensure t
-  :after (company hydra)
-  :bind (:map lsp-mode-map
-         ("<tab>" . gopar/company-yasnippet-or-completion)
-         ("M-C-L" . hydra-lsp/body))
-  :commands (lsp lsp-deferred)
-  :hook ((hack-local-variables . (lambda ()
-                                  (when (derived-mode-p 'python-mode )
-                                    (require 'lsp-python-ms)
-                                    (lsp))))
-         ;; (lsp-mode . (lambda ()
-         ;;              (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-         ;;              (lsp-headerline-breadcrumb-mode)))
-         )
-  :custom
-  (lsp-diagnostic-package :none)
-  (lsp-auto-guess-root t)
-  (lsp-prefer-flymake nil)
-  (lsp-python-ms-parse-dot-env-enabled nil)
-  (lsp-auto-require-clients nil)
-  (lsp-completion-provider :none)
-  (lsp-auto-guess-root nil)
-  (lsp-enable-indentation nil)
-  (lsp-headerline-breadcrumb-segments '(symbols))
-  :hydra (hydra-lsp (:exit t :hint nil)
-"
- Buffer^^               Server^^                   Symbol
--------------------------------------------------------------------------------------
- [_f_] format           [_M-r_] restart            [_d_] declaration  [_i_] implementation  [_o_] documentation
- [_m_] imenu            [_S_]   shutdown           [_D_] definition   [_t_] type            [_r_] rename
- [_x_] execute action   [_M-s_] describe session   [_R_] references   [_s_] signature"
-  ("d" lsp-find-declaration)
-  ("D" lsp-ui-peek-find-definitions)
-  ("R" lsp-ui-peek-find-references)
-  ("i" lsp-ui-peek-find-implementation)
-  ("t" lsp-find-type-definition)
-  ("s" lsp-signature-help)
-  ("o" lsp-describe-thing-at-point)
-  ("r" lsp-rename)
+;; (use-package lsp-mode
+;;   :defer t
+;;   :ensure t
+;;   :after (company hydra)
+;;   :bind (:map lsp-mode-map
+;;          ("<tab>" . gopar/company-yasnippet-or-completion)
+;;          ("M-C-L" . hydra-lsp/body))
+;;   :commands (lsp lsp-deferred)
+;;   :hook ((hack-local-variables . (lambda ()
+;;                                   (when (derived-mode-p 'python-mode )
+;;                                     (require 'lsp-python-ms)
+;;                                     (lsp))))
+;;          ;; (lsp-mode . (lambda ()
+;;          ;;              (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+;;          ;;              (lsp-headerline-breadcrumb-mode)))
+;;          )
+;;   :custom
+;;   (lsp-diagnostic-package :none)
+;;   (lsp-auto-guess-root t)
+;;   (lsp-prefer-flymake nil)
+;;   (lsp-python-ms-parse-dot-env-enabled nil)
+;;   (lsp-auto-require-clients nil)
+;;   (lsp-completion-provider :none)
+;;   (lsp-auto-guess-root nil)
+;;   (lsp-enable-indentation nil)
+;;   (lsp-headerline-breadcrumb-segments '(symbols))
+;;   :hydra (hydra-lsp (:exit t :hint nil)
+;; "
+;;  Buffer^^               Server^^                   Symbol
+;; -------------------------------------------------------------------------------------
+;;  [_f_] format           [_M-r_] restart            [_d_] declaration  [_i_] implementation  [_o_] documentation
+;;  [_m_] imenu            [_S_]   shutdown           [_D_] definition   [_t_] type            [_r_] rename
+;;  [_x_] execute action   [_M-s_] describe session   [_R_] references   [_s_] signature"
+;;   ("d" lsp-find-declaration)
+;;   ("D" lsp-ui-peek-find-definitions)
+;;   ("R" lsp-ui-peek-find-references)
+;;   ("i" lsp-ui-peek-find-implementation)
+;;   ("t" lsp-find-type-definition)
+;;   ("s" lsp-signature-help)
+;;   ("o" lsp-describe-thing-at-point)
+;;   ("r" lsp-rename)
 
-  ("f" lsp-format-buffer)
-  ("m" lsp-ui-imenu)
-  ("x" lsp-execute-code-action)
+;;   ("f" lsp-format-buffer)
+;;   ("m" lsp-ui-imenu)
+;;   ("x" lsp-execute-code-action)
 
-  ("M-s" lsp-describe-session)
-  ("M-r" lsp-restart-workspace)
-  ("S" lsp-shutdown-workspace)))
+;;   ("M-s" lsp-describe-session)
+;;   ("M-r" lsp-restart-workspace)
+;;   ("S" lsp-shutdown-workspace)))
 #+END_SRC
 
 *** LSP UI
