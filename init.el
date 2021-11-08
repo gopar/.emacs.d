@@ -1,6 +1,6 @@
 (let ((default-directory user-emacs-directory)
       ;; (file-name-handler-alist nil)
-      (gc-cons-percentage .6)
+      (gc-cons-percentage .9)
       (gc-cons-threshold most-positive-fixnum)
       (read-process-output-max (* 1024 1024)))
 
@@ -15,14 +15,11 @@
   (package-initialize)
 
   ;; Bootstrap `use-package'
-
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
 
   (setq use-package-always-ensure nil)
-  (setq gc-cons-threshold most-positive-fixnum
-        gc-cons-percentage .9)
 
   ;; For some reason shr is **SOMETIMES** being loaded when going through `org-babel-load-file'???
   ;; Sigh yet another thing I don't understand. Setting this here to avoid headaches

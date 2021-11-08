@@ -159,7 +159,7 @@ And finally some misc stuff
 (defconst gopar/gc-cons-threshold (* 1024 1024 1024))
 (defun gopar/after-init-stuff ()
   (alert (format "Emacs took %s" (emacs-init-time)) :title "Emacs Init")
-  (find-file "~/.emacs.d/org/work/work.org")
+  (find-file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
   (setq custom-file "~/.emacs.d/ignoreme.el")
   (load custom-file t)
   (setq gc-cons-percentage .6
@@ -168,8 +168,8 @@ And finally some misc stuff
 (add-hook 'after-init-hook 'gopar/after-init-stuff -100)
 
 (progn
-  (add-to-list 'default-frame-alist `(font . "Hack 14"))
-  (set-face-attribute 'default t :font "Hack 14"))
+  (add-to-list 'default-frame-alist `(font . "Hack 15"))
+  (set-face-attribute 'default t :font "Hack 15"))
 #+END_SRC
 
 * Helper Functions
@@ -299,9 +299,12 @@ Function for getting auto inserting the Jira ticket into the branch name if ther
 #+BEGIN_SRC emacs-lisp
 (defun gopar/auto-insert-jira-ticket-in-commit-msg ()
   (let ((has-ticket-title (string-match "^[A-Z]+-[0-9]+" (magit-get-current-branch)))
+        (has-ss-ticket (string-match "^gopar/[A-Z]+-[0-9]+" (magit-get-current-branch)))
         (words (s-split-words (magit-get-current-branch))))
     (if has-ticket-title
-        (insert (format "%s-%s " (car words) (car (cdr words)))))))
+        (insert (format "%s-%s " (car words) (car (cdr words)))))
+    (if has-ss-ticket
+        (insert (format "%s-%s " (nth 1 words) (nth 2 words))))))
 #+END_SRC
 
 Function for automatically downloading git repo and jumpting to it via ranger
@@ -425,6 +428,7 @@ All general org mode settings
   (org-log-reschedule t)
   ;; Indent the stars instead of piling them
   (org-startup-indented t)
+  (org-list-allow-alphabetical t)
   (org-image-actual-width nil)
   ;; Save notes into log drawer
   (org-log-into-drawer t)
@@ -612,7 +616,7 @@ Templating system for creating entries
       "* TODO %? :freetime:emacs:\n %U")
      ("p" "Project" entry (file "~/.emacs.d/org/private/org-roam/gtd/gtd.org")
       "* PROJ %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) \n:ORDERED: t \n:END: \n%U \n** TODO Add entry")
-     ("w" "Work" entry (file "~/.emacs.d/org/work/work.org")
+     ("w" "Work" entry (file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
       "* TODO %? :work:\n %U")
      ("t" "Tickler" entry (file "~/.emacs.d/org/private/org-roam/gtd/tickler.org")
       "* %? \nSCHEDULED: %^{Schedule}t \n%U"))))
@@ -721,43 +725,33 @@ A neat knowledge base in org
   :defer t
   :ensure t
   :custom
-  (org-roam-directory (expand-file-name "~/.emacs.d/org/private/org-roam/"))
+  (org-roam-v2-ack t)
+  (org-roam-directory (expand-file-name "~/.emacs.d/org/private/org-roam"))
   (org-roam-db-location (expand-file-name "~/.emacs.d/org/private/org-roam.db"))
   (org-roam-tag-sources '(prop))
   (org-roam-db-update-method 'immediate)
   (org-roam-capture-templates
-   '(("d" "default" plain #'org-roam-capture--get-point
-      "%?"
-      :file-name "references/%<%Y%m%d%H%M%S>-${slug}"
-      :head "#+title: ${title}\n"
-      :unnarrowed t)))
+   '(("d" "default" plain "%?"
+       :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+       :unnarrowed t)))
   (org-roam-dailies-directory (expand-file-name "~/.emacs.d/org/private/journal/"))
   (org-roam-dailies-capture-templates
-   `(("d" "daily" plain
-      #'org-roam-capture--get-point
-      (file ,(concat user-emacs-directory "org/templates/dailies-daily.template"))
-      :file-name ,(concat org-roam-dailies-directory "daily/%<%Y-%m-%d>")
-      :head "#+title: %<%Y-%m-%d>\n"
-      :unnarrowed t)
-     ("w" "weekly" plain
-      #'org-roam-capture--get-point
-      (file ,(concat user-emacs-directory "org/templates/dailies-weekly.template"))
-      :file-name ,(concat org-roam-dailies-directory "weekly/%<%Y-%m-%d>")
-      :head "#+title: %<%Y-%m-%d>\n")
-     ("m" "monthly" entry
-      #'org-roam-capture--get-point
-      "* %?"
-      :file-name ,(concat org-roam-dailies-directory "monthly/%<%Y-%m>")
-      :head "#+title: %<%Y-%m>\n")))
-  :bind (:map org-roam-mode-map
-              (("C-c n l" . org-roam)
-               ("C-c n f" . org-roam-find-file)
-               ("C-c n g" . org-roam-graph)
-               ("C-c n d" . org-roam-dailies-capture-today))
-              :map org-mode-map
-              (("C-c n i" . org-roam-insert))
-              (("C-c n I" . org-roam-insert-immediate)))
-  :hook (after-init . org-roam-mode))
+   `(("d" "daily" plain (file "/Users/danielgopar/.emacs.d/org/templates/dailies-daily.template")
+      :target (file+head "daily/%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))
+
+     ("w" "weekly" plain (file "/Users/danielgopar/.emacs.d/org/templates/dailies-weekly.template")
+      :target (file+head "weekly/%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))
+
+     ("m" "monthly" plain (file "/Users/danielgopar/.emacs.d/org/templates/dailies-monthly.template")
+      :target (file+head "monthly/%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))))
+
+  :bind (:map global-map
+           (("C-c n i" . org-roam-node-insert)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n g" . org-roam-graph)
+           ("C-c n n" . org-roam-capture)
+           ("C-c n d" . org-roam-dailies-capture-today)))
+  :hook (after-init . org-roam-db-autosync-mode))
 #+end_src
 
 *** Org Private
@@ -828,6 +822,9 @@ When called with a prefix aurgument, it will open annotations file."
 #+END_SRC
 
 ** Eshell
+
+~WIP, but for now, disable all this since everyting broke after switching laptop~
+
 Before eshell starts, it loads up modules that help it become what it is.
 These modules are in =eshell-modules-list= variable. I'm configuring each module
 by itself further down, which leaves this eshell part pretty empty :P
@@ -836,7 +833,13 @@ by itself further down, which leaves this eshell part pretty empty :P
 (use-package eshell
   :defer t
   :ensure nil
+  :hook (eshell-mode . gopar/eshell-setup-aliases)
   :init
+  (defun gopar/eshell-setup-aliases ()
+    (eshell/alias "oc" "find . -name \"*.org\" | xargs wc -l")
+    (eshell/alias "l" "/usr/local/bin/exa --long --classify --all --group --header --blocks --git --color=never $1")
+    (eshell/alias "ff" "find-file $1")
+    (eshell/alias "rmpyc" "find . -name *pyc -delete"))
 
   (defun eshell/clear ()
     "Clear the eshell buffer."
@@ -867,8 +870,6 @@ Not a eshell module
 (use-package esh-mode
   :defer t
   :ensure nil
-  :bind (:map eshell-mode-map
-              ("M-m" . eshell-bol))
   :custom
   (eshell-buffer-maximum-lines 10000)
   (eshell-scroll-to-bottom-on-input t)
@@ -937,7 +938,7 @@ Module that handles history
 (use-package em-hist
   :defer t
   :ensure nil
-  :bind (:map eshell-hist-mode-map
+  :bind (:map eshell-mode-map
               ("C-r" . helm-eshell-history))
   :config
   (defun gopar/eshell-input-filter (input)
@@ -1073,21 +1074,6 @@ Fish like history completion
   :hook (eshell-mode . eshell-syntax-highlighting-mode))
 #+end_src
 
-*** [[https://github.com/tom-tan/esh-help][Eshell Help]]
-El-doc integration in eshell \o/
-
-It doesn't work :(
-Need to figure out why
-#+begin_src
-(use-package esh-help
-  :defer t
-  :ensure t
-  :init
-  (make-local-variable 'eldoc-documentation-function)
-  (setq eldoc-documentation-function 'esh-help-eldoc-command)
-  :hook (eshell-mode . eldoc-mode))
-#+end_src
-
 *** Eshell Compile
 Dumb deferring of commands to compile buffer
 #+begin_src emacs-lisp
@@ -1097,7 +1083,8 @@ Dumb deferring of commands to compile buffer
   :load-path "lisp/eshell/module/")
 #+end_src
 
-** EWW
+** COMMENT EWW
+~Love these snippets but don't use it that often and not sure if its broken~
 Create some usefull functions that help with our keybindings down the line.
 
 #+BEGIN_SRC emacs-lisp
@@ -1600,9 +1587,10 @@ Update: I now set =shr-map= in =init.el= to avoid some weird behaviors (bug??)
 Window management
 
 #+BEGIN_SRC emacs-lisp
-(use-package winner
+(use-package winner-mode
   :defer t
   :ensure nil
+  :hook after-init
   :commands (winner-undo winnner-redo))
 #+END_SRC
 
@@ -1742,126 +1730,6 @@ Minibuffer completion
          (minibuffer-exit . restore-garbage-collection-h)))
 #+end_src
 
-** ERC
-IRC in emacs
-
-#+begin_src emacs-lisp
-(use-package erc
-  :defer t
-  :ensure nil
-  :preface
-  (defun my/erc-browse-last-url ()
-    "Searchs backwards through an ERC buffer, looking for a URL. When a URL is
-     found, it prompts you to open it."
-    (interactive)
-    (save-excursion
-      (let ((ffap-url-regexp "\\(https?://\\)."))
-        (ffap-next-url t t))))
-
-  (defun my/erc-count-users ()
-    "Displays the number of users and ops connected on the current channel."
-    (interactive)
-    (if (get-buffer "irc.freenode.net:6667")
-        (let ((channel (erc-default-target)))
-          (if (and channel (erc-channel-p channel))
-              (let ((hash-table (with-current-buffer (erc-server-buffer)
-                                  erc-server-users))
-                    (users 0)
-                    (ops 0))
-                (maphash (lambda (k v)
-                           (when (member (current-buffer)
-                                         (erc-server-user-buffers v))
-                             (cl-incf users))
-                           (when (erc-channel-user-op-p k)
-                             (cl-incf ops)))
-                         hash-table)
-                (message "%d users (%s ops) are online on %s" users ops channel))
-            (user-error "The current buffer is not a channel")))
-      (user-error "You must first be connected on IRC")))
-
-  (defun my/erc-get-ops ()
-    "Displays the names of ops users on the current channel."
-    (interactive)
-    (if (get-buffer "irc.freenode.net:6667")
-        (let ((channel (erc-default-target)))
-          (if (and channel (erc-channel-p channel))
-              (let (ops)
-                (maphash (lambda (nick cdata)
-                           (if (and (cdr cdata)
-                                    (erc-channel-user-op (cdr cdata)))
-                               (setq ops (cons nick ops))))
-                         erc-channel-users)
-                (if ops
-                    (message "The online ops users are: %s"  (mapconcat 'identity ops " "))
-                  (message "There are no ops users online on %s" channel)))
-            (user-error "The current buffer is not a channel")))
-      (user-error "You must first be connected on IRC")))
-
-  (defun my/erc-notify (nickname message)
-    "Displays a notification message for ERC."
-    (let* ((channel (buffer-name))
-           (nick (erc-hl-nicks-trim-irc-nick nickname))
-           (title (if (string-match-p (concat "^" nickname) channel)
-                      nick
-                    (concat nick " (" channel ")")))
-           (msg (s-trim (s-collapse-whitespace message))))
-      (alert (concat nick ": " msg) :title title)))
-
-  (defun my/erc-preprocess (string)
-    "Avoids channel flooding."
-    (setq str (string-trim (replace-regexp-in-string "\n+" " " str))))
-
-  (defun my/erc-reset-track-mode ()
-    "Resets ERC track mode."
-    (interactive)
-    (setq erc-modified-channels-alist nil)
-    (erc-modified-channels-update)
-    (erc-modified-channels-display)
-    (force-mode-line-update))
-
-  (defun my/erc-start-or-switch ()
-    "Connects to ERC, or switch to last active buffer."
-    (interactive)
-    (if (get-buffer "irc.freenode.net:6667")
-        (erc-track-switch-buffer 1)
-      (erc :server "irc.freenode.net" :port 6667 :nick "gopar")))
-
-  :hook ((ercn-notify . my/erc-notify)
-         (erc-send-pre . my/erc-preprocess))
-  :custom-face
-  (erc-action-face ((t (:foreground "#8fbcbb"))))
-  (erc-error-face ((t (:foreground "#bf616a"))))
-  (erc-input-face ((t (:foreground "#ebcb8b"))))
-  (erc-notice-face ((t (:foreground "#ebcb8b"))))
-  (erc-timestamp-face ((t (:foreground "#a3be8c"))))
-  :custom
-  (erc-autojoin-channels-alist '(("freenode.net" ;; "#emacs" "#emacs-beginners" "#emacsconf-org"
-                                  "#python" ;; "#docker""#stumpwm" "#django" "#fsf" "#org-mode"
-                                  )))
-  (erc-autojoin-timing 'ident)
-  (erc-fill-function 'erc-fill-static)
-  (erc-fill-static-center 22)
-  (erc-header-line-format "%n on %t (%m)")
-  (erc-hide-list '("JOIN" "PART" "QUIT"))
-  (erc-join-buffer 'bury)
-  (erc-kill-buffer-on-part t)
-  (erc-kill-queries-on-quit t)
-  (erc-kill-server-buffer-on-quit t)
-  (erc-lurker-hide-list '("JOIN" "PART" "QUIT"))
-  (erc-lurker-threshold-time 43200)
-  (erc-prompt-for-nickserv-password nil)
-  (erc-prompt-for-password nil)
-  (erc-server-reconnect-attempts 5)
-  (erc-server-reconnect-timeout 3)
-  (erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT"
-                             "324" "329" "332" "333" "353" "477"))
-  :config
-  (add-to-list 'erc-modules 'notifications)
-  (add-to-list 'erc-modules 'spelling)
-  (erc-services-mode 1)
-  (erc-update-modules))
-#+end_src
-
 * Third Party Packages
 This is for 3rd party packages that don't heavily depend on built in modes
 
@@ -1893,6 +1761,28 @@ My favorite theme
 #+end_src
 *** [[https://github.com/DogLooksGood/joker-theme][Joker Theme]]
 Need to wait for it to be in melpa
+*** Gotham
+No url, only git repo
+#+begin_src emacs-lisp
+(use-package gotham-theme
+  :defer t
+  :ensure t)
+#+end_src
+
+*** [[https://github.com/holodata/ancient-one-dark-emacs][Ancient One Dark Emacs Theme]]
+
+#+begin_src emacs-lisp
+(use-package ancient-one-dark-theme
+  :defer t
+  :ensure t)
+#+end_src
+
+*** [[https://github.com/rougier/nano-theme][nano theme]]
+#+begin_src emacs-lisp
+(use-package nano-theme
+  :defer t
+  :ensure t)
+#+end_src
 
 ** [[https://github.com/jwiegley/alert][Alert]]
 
@@ -1931,16 +1821,18 @@ Settings up env vars manually :(
   (setenv "PATH" (concat (getenv "PATH") ":/usr/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/bin"))
-  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v14.16.0/bin"))))
+  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin"))))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.poetry/bin"))))
+  (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/exa"))
+  (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/bat"))
 
   ;; Node stuff sigh
   (setenv "NVM_DIR" (expand-file-name "~/.nvm"))
   (setenv "NVM_CD_FLAGS" "-q")
   (setenv "NVM_NODEJS_ORG_MIRROR" "https://nodejs.org/dist")
   (setenv "NVM_IOJS_ORG_MIRROR" "https://iojs.org/dist")
-  (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v14.16.0/bin/node/"))
-  (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v14.16.0/bin/"))
+  (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/node/"))
+  (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/"))
 
   (setq-default eshell-path-env (getenv "PATH"))
 
@@ -2077,6 +1969,7 @@ Nicer helpful output
 (use-package string-inflection
   :defer t
   :ensure t
+  :commands string-inflection-insert
   :bind (("C-;" . gopar/string-inflection-cycle-auto)))
 #+END_SRC
 
@@ -2190,7 +2083,9 @@ Packages for built in SHR (Simple HTML Renderer)
 (use-package rand-theme
 :defer t
 :ensure t
-:init (setq rand-theme-unwanted '(light-blue tao))
+:init
+(setq rand-theme-wanted '(tao-yin eziam-dusk manoj-dark ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
+
 :bind (("C-z" . rand-theme-iterate)
        ("C-S-z" . rand-theme-iterate-backwards)))
 #+end_src
@@ -2562,91 +2457,6 @@ Made this since I rebinding semicolon to always put an underscore since I spent 
   :hook (emacs-lisp-mode . paredit-mode))
 #+end_src
 
-** [[https://github.com/paradoxxxzero/jinja2-mode/][Jinja]]
-#+BEGIN_SRC emacs-lisp
-(use-package jinja2-mode
-  :defer t
-  :ensure t
-  :bind (:map jinja2-mode-map
-         ("C-c c" . nil)
-         ("C-c t" . nil)
-         ("C-c v" . nil)
-         ("C-c #" . nil)))
-#+end_src
-
-** [[https://github.com/emacs-lsp/lsp-mode/][LSP]]
-
-#+BEGIN_SRC emacs-lisp
-;; (use-package lsp-mode
-;;   :defer t
-;;   :ensure t
-;;   :after (company hydra)
-;;   :bind (:map lsp-mode-map
-;;          ("<tab>" . gopar/company-yasnippet-or-completion)
-;;          ("M-C-L" . hydra-lsp/body))
-;;   :commands (lsp lsp-deferred)
-;;   :hook ((hack-local-variables . (lambda ()
-;;                                   (when (derived-mode-p 'python-mode )
-;;                                     (require 'lsp-python-ms)
-;;                                     (lsp))))
-;;          ;; (lsp-mode . (lambda ()
-;;          ;;              (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-;;          ;;              (lsp-headerline-breadcrumb-mode)))
-;;          )
-;;   :custom
-;;   (lsp-diagnostic-package :none)
-;;   (lsp-auto-guess-root t)
-;;   (lsp-prefer-flymake nil)
-;;   (lsp-python-ms-parse-dot-env-enabled nil)
-;;   (lsp-auto-require-clients nil)
-;;   (lsp-completion-provider :none)
-;;   (lsp-auto-guess-root nil)
-;;   (lsp-enable-indentation nil)
-;;   (lsp-headerline-breadcrumb-segments '(symbols))
-;;   :hydra (hydra-lsp (:exit t :hint nil)
-;; "
-;;  Buffer^^               Server^^                   Symbol
-;; -------------------------------------------------------------------------------------
-;;  [_f_] format           [_M-r_] restart            [_d_] declaration  [_i_] implementation  [_o_] documentation
-;;  [_m_] imenu            [_S_]   shutdown           [_D_] definition   [_t_] type            [_r_] rename
-;;  [_x_] execute action   [_M-s_] describe session   [_R_] references   [_s_] signature"
-;;   ("d" lsp-find-declaration)
-;;   ("D" lsp-ui-peek-find-definitions)
-;;   ("R" lsp-ui-peek-find-references)
-;;   ("i" lsp-ui-peek-find-implementation)
-;;   ("t" lsp-find-type-definition)
-;;   ("s" lsp-signature-help)
-;;   ("o" lsp-describe-thing-at-point)
-;;   ("r" lsp-rename)
-
-;;   ("f" lsp-format-buffer)
-;;   ("m" lsp-ui-imenu)
-;;   ("x" lsp-execute-code-action)
-
-;;   ("M-s" lsp-describe-session)
-;;   ("M-r" lsp-restart-workspace)
-;;   ("S" lsp-shutdown-workspace)))
-#+END_SRC
-
-*** LSP UI
-#+BEGIN_SRC emacs-lisp
-(use-package lsp-ui
-  :ensure t
-  :after lsp
-  :hook (lsp-mode . lsp-ui-mode)
-  :custom (lsp-ui-doc-position 'bottom))
-#+END_SRC
-
-*** Python MS
-
-#+BEGIN_SRC emacs-lisp
-(use-package lsp-python-ms
-  :ensure t
-  :defer t
-  :after lsp
-  :init (setq lsp-python-ms-auto-install-server t))
-#+END_SRC
-
 ** [[https://github.com/company-mode/company-mode/][Company Mode]]
 
 #+BEGIN_SRC emacs-lisp
@@ -2697,10 +2507,6 @@ Finally, do completion"
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
 
-(use-package company-box
-  :defer t
-  :ensure t
-  :hook (company-mode . company-box-mode))
 #+END_SRC
 
 ** Pcomplete Extensions
@@ -2753,70 +2559,6 @@ Supposedly the fastest spell checking configuration out there
          (text-mode . wucuo-start)))
 #+end_src
 
-** [[https://github.com/ralesi/ranger.el][Ranger.el]]
-Perks of ranger but in emacs
-
-#+begin_src emacs-lisp
-(use-package ranger
-  :defer t
-  :ensure t
-  :bind ("C-x d" . ranger))
-#+end_src
-
-** [[https://github.com/jtbm37/all-the-icons-dired][All the icon Dired]]
-To make dired (in this case ranger) use icons.
-
-#+begin_src emacs-lisp
-(use-package all-the-icons-dired
-  :defer t
-  :ensure t
-  :hook (ranger-mode . all-the-icons-dired-mode))
-#+end_src
-
-** [[https://github.com/tkf/emacs-request/][Request]]
-#+begin_src emacs-lisp
-(use-package request
-  :defer t
-  :ensure t
-  :commands (request request-response-data)
-  :custom
-  (request-timeout .5)
-  (request-message-level -1)
-  (request-log-level -1)
-  :config
-  (advice-add 'eshell :after '(lambda ()
-                                (funcall (nth (random (length gopar/request-jokes)) gopar/request-jokes))))
-  :init
-  (defun gopar/request-chuck-norris-joke ()
-    "Sets a chuck norris joke on next eshell launch"
-    (interactive)
-    (request
-     "https://api.chucknorris.io/jokes/random"
-     :parser 'json-read
-     :headers '(("Accept" . "application/json"))
-     :success (cl-function (lambda (&key data &allow-other-keys)
-                             (setq eshell-banner-message (concat (assoc-default 'value data) "\n\n"))))))
-
-  (defun gopar/request-dad-joke ()
-    "Sets a dad joke on next eshell launch"
-    (interactive)
-    (request
-     "https://icanhazdadjoke.com/"
-     :parser 'json-read
-     :headers '(("Accept" . "application/json"))
-     :success (cl-function (lambda (&key data &allow-other-keys)
-                             (setq eshell-banner-message (concat (assoc-default 'joke data) "\n\n"))))))
-
-  (setq gopar/request-jokes '(gopar/request-chuck-norris-joke gopar/request-dad-joke))
-  ;; Lets set a joke since we're already doing all these stuffs
-  (request
-   "https://api.chucknorris.io/jokes/random"
-   :parser 'json-read
-   :headers '(("Accept" . "application/json"))
-   :success (cl-function (lambda (&key data &allow-other-keys)
-                           (setq eshell-banner-message (concat (assoc-default 'value data) "\n\n"))))))
-#+end_src
-
 ** [[https://github.com/alphapapa/bufler.el][Bufler]]
 A upgraded `ibuffer`
 
@@ -2824,8 +2566,9 @@ A upgraded `ibuffer`
 (use-package bufler
   :defer t
   :ensure t
-  :bind (("C-x C-b" . bufler)
-         ("C-x b" . bufler-switch-buffer)))
+  :bind (("C-x C-b" . bufler))
+         ;;("C-x b" . bufler-switch-buffer))
+)
 #+end_src
 ** [[https://github.com/vermiculus/sx.el][SX]]
 Stack Exchange client
@@ -2875,17 +2618,6 @@ highlight TODO's in buffer
   :hook (prog-mode . hl-todo-mode))
 #+end_src
 
-** [[https://github.com/justinbarclay/elegant-agenda-mode][Elegant Agenda Org]]
-Make nice agenda views (aesthetics only)
-
-Disabling for now since it looks like it needs some kinks worked out
-#+begin_src
-(use-package elegant-agenda-mode
-  :defer t
-  :ensure t
-  :hook org-agenda-mode)
-#+end_src
-
 ** [[https://github.com/akermu/emacs-libvterm][vterm]]
 #+begin_src emacs-lisp
 (use-package vterm
@@ -2915,17 +2647,6 @@ Virtualenv handling
          (after-init . pyvenv-tracking-mode)))
 #+end_src
 
-** [[https://github.com/prettier/prettier-emacs][Prettier]]
-Auto Formatter for JS
-
-#+begin_src emacs-lisp
-;; (use-package prettier-js
-;;   :defer t
-;;   :ensure t
-;;   :hook ((js-mode . prettier-js-mode)
-;;          (typescript-mode . prettier-js-mode)))
-#+end_src
-
 ** [[https://github.com/smihica/emmet-mode][Emmet]]
 
 #+begin_src emacs-lisp
@@ -2947,7 +2668,6 @@ Auto Formatter for JS
   :mode "\\.tsx\\'"
   :bind (:map typescript-mode-map
          (";" . easy-camelcase))
-  :hook (typescript-mode . lsp)
   :custom
   (typescript-indent-level 2))
 #+end_src
