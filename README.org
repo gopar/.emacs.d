@@ -824,11 +824,12 @@ When called with a prefix aurgument, it will open annotations file."
 
 ** Eshell
 
-~WIP, but for now, disable all this since everyting broke after switching laptop~
-
 Before eshell starts, it loads up modules that help it become what it is.
 These modules are in =eshell-modules-list= variable. I'm configuring each module
 by itself further down, which leaves this eshell part pretty empty :P
+
+*NOTE:* If you wanna bind keybindings to eshell, you gotta do it via hooks.
+See: https://github.com/noctuid/general.el/issues/80
 
 #+BEGIN_SRC emacs-lisp
 (use-package eshell
@@ -939,8 +940,6 @@ Module that handles history
 (use-package em-hist
   :defer t
   :ensure nil
-  :bind (:map eshell-mode-map
-              ("C-r" . helm-eshell-history))
   :config
   (defun gopar/eshell-input-filter (input)
     "Do not save empty lines, commands that start with a space or 'l'/'ls'"
@@ -2136,8 +2135,12 @@ Pre bundled with helm
 (use-package helm-eshell
   :defer t
   :ensure nil
-  :bind (:map eshell-mode-map
-              ("<tab>" . helm-esh-pcomplete))
+  :init
+  (defun gopar/helm-eshell-setup ()
+    "Due to eshell having a bug with its keymap, I gotta do it this way."
+    (define-key eshell-mode-map (kbd "C-r") 'helm-eshell-history)
+    (define-key eshell-mode-map (kbd "<tab>") 'helm-esh-pcomplete))
+  :hook (eshell-mode . gopar/helm-eshell-setup)
   :custom
   (helm-eshell-fuzzy-match t))
 #+end_src
