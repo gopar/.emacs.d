@@ -955,8 +955,8 @@ Module that handles history
   (eshell-input-filter 'gopar/eshell-input-filter))
 #+end_src
 
-*** Eshell smart
-#+begin_src
+*** COMMENT Eshell smart
+#+begin_src emacs-lisp
 (use-package eshell-smart
   :defer t
   :ensure nil
@@ -2219,6 +2219,13 @@ To help getting around projects
                  1)))
       (magit-reset (format "HEAD^%d" num)))))
 #+END_SRC
+
+** [[https://github.com/magit/forge/][Forge]]
+
+#+begin_src emacs-lisp
+(use-package forge
+  :after magit)
+#+end_src
 
 ** Git-Commit
 This package is also part of magit

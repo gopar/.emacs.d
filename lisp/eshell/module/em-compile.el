@@ -157,7 +157,8 @@ Commands must be the *entire* command. eg.
         (add-hook 'compilation-finish-functions 'eshell-compile--alert-when-finished nil t))
       (if (= 1 num-of-windows)
           (delete-windows-on buffer-name)
-        (switch-to-prev-buffer (get-buffer-window buffer-name))))
+        (switch-to-prev-buffer (get-buffer-window buffer-name)))
+      (eshell-printn (get-buffer buffer-name)))
     t))
 
 
