@@ -142,7 +142,6 @@ Commands must be the *entire* command. eg.
       (setq cmd (format "%s %s" eshell-last-command-name (s-join " " args)))
       (add-to-list 'eshell-compile-deferred-list cmd))))
 
-;; TODO: Need to output the compile buffer in eshell prompt
 (defun eshell-compile--should-defer? (cmd args)
   "Determine whether to start a compilation buffer or not."
   (setq args (eshell-stringify-list (flatten-tree args)))
