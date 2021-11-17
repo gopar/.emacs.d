@@ -455,7 +455,7 @@ All general org mode settings
   (org-tag-alist '(("break" . ?b) ("freetime" . ?f) ("emacs" . ?e) ("calls" . ?c) ("repeat" . ?r) ("driving" . ?d) ("project" . ?p) ("someday" . ?s) ("misc" . ?m)))
   ;; The right side of | indicates the DONE states
   (org-todo-keywords
-   '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i!)" "WAITING(w@/@)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(d@)")))
+   '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i!)" "WAITING(w@/@)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(p@)")))
   ;; global Effort estimate values
   (org-global-properties
    '(("Effort_ALL" . "0:30 1:00 2:00 3:00 5:00 8:00 10:00")
@@ -1788,6 +1788,13 @@ No url, only git repo
   :ensure t)
 #+end_src
 
+*** [[https://github.com/jlpaca/minsk-theme/][Minsk Theme]]
+#+begin_src emacs-lisp
+(use-package minsk-theme
+  :defer t
+  :ensure t)
+#+end_src
+
 ** [[https://github.com/jwiegley/alert][Alert]]
 
 #+begin_src emacs-lisp
@@ -2085,13 +2092,13 @@ Packages for built in SHR (Simple HTML Renderer)
 ** Rand Theme
 #+BEGIN_SRC emacs-lisp
 (use-package rand-theme
-:defer t
-:ensure t
-:init
-(setq rand-theme-wanted '(tao-yin eziam-dusk manoj-dark ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
+  :defer t
+  :ensure t
+  :init
+  (setq rand-theme-wanted '(tao-yin minsk eziam-dusk manoj-dark ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
 
-:bind (("C-z" . rand-theme-iterate)
-       ("C-S-z" . rand-theme-iterate-backwards)))
+  :bind (("C-z" . rand-theme-iterate)
+         ("C-S-z" . rand-theme-iterate-backwards)))
 #+end_src
 
 ** [[https://github.com/abo-abo/ace-window/][Ace Window]]
@@ -2232,6 +2239,7 @@ To help getting around projects
 
 #+begin_src emacs-lisp
 (use-package forge
+  :ensure t
   :after magit)
 #+end_src
 
