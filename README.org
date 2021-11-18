@@ -619,7 +619,7 @@ Templating system for creating entries
      ("w" "Work" entry (file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
       "* TODO %? :work:\n %U")
      ("t" "Tickler" entry (file "~/.emacs.d/org/private/org-roam/gtd/tickler.org")
-      "* %? \nSCHEDULED: %^{Schedule}t \n%U"))))
+      "* TODO %? \nSCHEDULED: %^{Schedule}t \n%U"))))
 #+END_SRC
 
 *** Org Tables
@@ -1795,6 +1795,13 @@ No url, only git repo
   :ensure t)
 #+end_src
 
+*** [[https://github.com/emacsfodder/emacs-clues-theme][Clues]]
+#+begin_src emacs-lisp
+(use-package clues-theme
+  :defer t
+  :ensure t)
+#+end_src
+
 ** [[https://github.com/jwiegley/alert][Alert]]
 
 #+begin_src emacs-lisp
@@ -1833,6 +1840,7 @@ Settings up env vars manually :(
   (setenv "PATH" (concat (getenv "PATH") ":/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/bin"))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin"))))
+  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v16.9.1/bin"))))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.poetry/bin"))))
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/exa"))
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/bat"))
@@ -2095,7 +2103,7 @@ Packages for built in SHR (Simple HTML Renderer)
   :defer t
   :ensure t
   :init
-  (setq rand-theme-wanted '(tao-yin minsk eziam-dusk manoj-dark ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
+  (setq rand-theme-wanted '(tao-yin minsk clues eziam-dusk manoj-dark ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
 
   :bind (("C-z" . rand-theme-iterate)
          ("C-S-z" . rand-theme-iterate-backwards)))

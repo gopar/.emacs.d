@@ -125,6 +125,25 @@ Commands must be the *entire* command. eg.
   "The time a command ended")
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; eshell functions
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun eshell/cc (cmd &rest rest)
+  "Send any command to a compile buffer, bypassing any rules"
+  (setq rest (eshell-stringify-list (flatten-tree rest)))
+  (setq cmd (format "%s %s" cmd (s-join " " rest)))
+
+  (let* ((buffer-name (format "*%s*" cmd))
+         (compilation-buffer-name-function (lambda (arg) buffer-name))
+         (num-of-windows (count-windows)))
+    (compile cmd)
+    (with-current-buffer buffer-name
+      (add-hook 'compilation-finish-functions 'eshell-compile--alert-when-finished nil t))
+    (if (= 1 num-of-windows)
+        (delete-windows-on buffer-name)
+      (switch-to-prev-buffer (get-buffer-window buffer-name)))
+    (eshell-printn (get-buffer buffer-name))))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
