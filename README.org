@@ -756,7 +756,7 @@ A neat knowledge base in org
   :hook (after-init . org-roam-db-autosync-mode))
 #+end_src
 
-*** COMMENT Org Private
+*** Org Private
 My private stuff
 
 #+begin_src emacs-lisp
@@ -768,7 +768,7 @@ My private stuff
 
 *** Org Annotate
 Easily annotate files.
-Each project must setup its annotate file via dir-locals so that they are kept seperate.
+Each project must setup its annotate file via dir-locals so that they are kept separate.
 I don't want annotation from diff projs in one file.
 
 #+begin_src emacs-lisp
@@ -1077,6 +1077,14 @@ Fish like history completion
                             '(:inherit font-lock-type-face))))))
   (advice-add 'load-theme :after 'gopar/dynamic-faces-on-theme)
   :hook (eshell-mode . eshell-syntax-highlighting-mode))
+#+end_src
+
+*** [[https://github.com/Phundrak/eshell-info-banner.el][Eshell Info Banner]]
+#+begin_src emacs-lisp
+(use-package eshell-info-banner
+  :ensure t
+  :defer t
+  :hook (eshell-banner-load . eshell-info-banner-update-banner))
 #+end_src
 
 *** Eshell Compile
