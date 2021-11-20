@@ -27,3 +27,7 @@ ignoreme.el
 lisp/private/
 request/
 transient/
+/org-clock-save.el
+/url/
+/forge-database.sqlite
+/.org-id-locations

@@ -734,7 +734,7 @@ A neat knowledge base in org
   (org-roam-db-update-method 'immediate)
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
-       :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+       :target (file+head "./references/%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
        :unnarrowed t)))
   (org-roam-dailies-directory (expand-file-name "~/.emacs.d/org/private/journal/"))
   (org-roam-dailies-capture-templates
@@ -2582,9 +2582,11 @@ On-the-fly syntax checking
   :ensure t
   :bind (("C-c C-n" . flycheck-next-error)
          ("C-c C-p" . flycheck-previous-error))
-  :hook (lsp-mode . flycheck-mode)
+  :hook (typescript-mode . flycheck-mode)
   :config
-  (flycheck-add-next-checker 'python-flake8 'python-mypy))
+  (flycheck-add-next-checker 'python-flake8 'python-mypy)
+  ;; (put 'flycheck-javascript-eslint-executable 'safe-local-variable (lambda (x) t))
+  (setq flycheck-javascript-eslint-executable "npx eslint"))
 #+END_SRC
 
 ** [[https://github.com/redguardtoo/wucuo][Wucuo]]
