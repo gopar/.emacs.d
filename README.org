@@ -306,45 +306,6 @@ Function for getting auto inserting the Jira ticket into the branch name if ther
         (insert (format "[%s-%s] " (nth 1 words) (nth 2 words))))))
 #+END_SRC
 
-Function for automatically downloading git repo and jumpting to it via ranger
-#+begin_src emacs-lisp
-;; Stolen from http://xenodium.com/emacs-clone-git-repo-from-clipboard/
-(defun ar/git-clone-clipboard-url ()
-  "Clone git URL in clipboard asynchronously and open in ranger when finished."
-  (interactive)
-  (cl-assert (string-match-p (regexp-opt-group '("git@" "https")) (current-kill 0)) nil "No URL in clipboard")
-  (let* ((url (current-kill 0))
-         (download-dir (expand-file-name "~/projs/work/"))
-         (project-dir (concat (file-name-as-directory download-dir)
-                              (file-name-base url)))
-         (default-directory download-dir)
-         (command (format "git clone %s" url))
-         (buffer (generate-new-buffer (format "*%s*" command)))
-         (proc))
-    (when (file-exists-p project-dir)
-      (if (y-or-n-p (format "%s exists. delete?" (file-name-base url)))
-          (delete-directory project-dir t)
-        (user-error "Bailed")))
-    (switch-to-buffer buffer)
-    (setq proc (start-process-shell-command (nth 0 (split-string command)) buffer command))
-    (with-current-buffer buffer
-      (setq default-directory download-dir)
-      (shell-command-save-pos-or-erase)
-      (require 'shell)
-      (shell-mode)
-      (view-mode +1))
-    (set-process-sentinel proc (lambda (process state)
-                                 (let ((output (with-current-buffer (process-buffer process)
-                                                 (buffer-string))))
-                                   (kill-buffer (process-buffer process))
-                                   (if (= (process-exit-status process) 0)
-                                       (progn
-                                         (message "finished: %s" command)
-                                         (dired project-dir))
-                                     (user-error (format "%s\n%s" command output))))))
-    (set-process-filter proc #'comint-output-filter)))
-#+end_src
-
 * Built-in Packages
 ** Hydra use-package
 This isn't built in but I need here for it to load sooner. sigh.
@@ -1410,7 +1371,8 @@ So here I try to mimic those keybindings, but there are a few things to be aware
   :config
   (require 'shrface)
   :hook ((eww-after-render . shrface-mode)
-         (eww-after-render . gopar/eww--rename-eww-buffer))
+         (eww-after-render . gopar/eww--rename-eww-buffer)
+         (eww-after-render . visual-line-mode))
   :bind (:map eww-mode-map
               ;; ("." . hydra-eww/body)
               ;; Lets unbind some stuff
@@ -1690,7 +1652,10 @@ Package that handles what to do with a URL before passing it to a browser
   (browse-url-browser-function '(("https://stackoverflow.com/questions/[0-9]+" . sx-open-link)
                                 ("https://stackoverflow.com/a/[0-9]+" . sx-open-link)
                                 ("https://.*.atlassian.net/.*" . browse-url-chrome)
+                                ("https://courses.joshwcomeau.com/.*" . browse-url-firefox)
+                                ("https://epicreact.dev/learn/.*" . browse-url-firefox)
                                 ("." . eww-browse-url)))
+  (browse-url-firefox-new-window-is-tab t)
   :config
   (put 'browse-url-browser-function 'safe-local-variable (lambda (x) t))
   (advice-add 'browse-url :filter-args 'gopar/eww-advice-filter-args))
@@ -1810,6 +1775,14 @@ No url, only git repo
   :ensure t)
 #+end_src
 
+*** [[https://github.com/Justintime50/github-dark-vscode-emacs-theme][Github Dark Theme]]
+
+#+begin_src emacs-lisp
+(use-package github-dark-vscode-theme
+  :ensure t
+  :defer t)
+#+end_src
+
 ** [[https://github.com/jwiegley/alert][Alert]]
 
 #+begin_src emacs-lisp
@@ -1860,6 +1833,10 @@ Settings up env vars manually :(
   (setenv "NVM_IOJS_ORG_MIRROR" "https://iojs.org/dist")
   (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/node/"))
   (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/"))
+
+  ;; Disable Pagers
+  (setenv "GIT_PAGER" "")
+  (setenv "BAT_PAGER" "")
 
   (setq-default eshell-path-env (getenv "PATH"))
 
@@ -2015,7 +1992,10 @@ Edit multiple regions simultaneously
 (use-package yasnippet
   :ensure t
   :defer t
-  :hook (prog-mode . yas-minor-mode))
+  :hook (prog-mode . yas-minor-mode)
+  ;; :config
+  ;; (setq yas-snippet-dirs (append yas-snippet-dirs '("./snippets/")))
+  )
 #+end_src
 
 Install the actual snippets
@@ -2111,7 +2091,7 @@ Packages for built in SHR (Simple HTML Renderer)
   :defer t
   :ensure t
   :init
-  (setq rand-theme-wanted '(tao-yin minsk clues eziam-dusk manoj-dark ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
+  (setq rand-theme-wanted '(tao-yin minsk clues github-dark-vscode manoj-dark eziam-dusk ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
 
   :bind (("C-z" . rand-theme-iterate)
          ("C-S-z" . rand-theme-iterate-backwards)))
@@ -2164,10 +2144,17 @@ Pre bundled with helm
   :defer t
   :ensure nil
   :init
+
+  (defun gopar/eshell-redirect-to-buffer (buffer)
+    "Auto create command for redirecting to buffer."
+    (interactive (list (read-buffer "Redirect to buffer: ")))
+    (insert (format " >>> #<%s>" buffer)))
+
   (defun gopar/helm-eshell-setup ()
     "Due to eshell having a bug with its keymap, I gotta do it this way."
     (define-key eshell-mode-map (kbd "C-r") 'helm-eshell-history)
-    (define-key eshell-mode-map (kbd "<tab>") 'helm-esh-pcomplete))
+    (define-key eshell-mode-map (kbd "<tab>") 'helm-esh-pcomplete)
+    (define-key eshell-mode-map (kbd "C-c >") 'gopar/eshell-redirect-to-buffer))
   :hook (eshell-mode . gopar/helm-eshell-setup)
   :custom
   (helm-eshell-fuzzy-match t))
@@ -2345,8 +2332,8 @@ _h_ ←           _v_ertical      _b_uffer		_q_ X←
 _j_ ↓           _x_ horizontal	_f_ind files	_w_ X↓
 _k_ ↑           _z_ undo        _a_ce 1		_e_ X↑
 _l_ →           _Z_ reset       _s_wap		_r_ X→
-_F_ollow		_D_lt Other     _S_ave      _B_ Balance windows
-_SPC_ cancel	_o_nly this     _d_elete
+_F_ollow		_D_lt Other     _S_ave      _-_ Fit to Buffer
+_SPC_ cancel	_o_nly this     _d_elete    _B_ Balance windows
 "
      ("h" windmove-left )
      ("j" windmove-down )
@@ -2356,6 +2343,7 @@ _SPC_ cancel	_o_nly this     _d_elete
      ("w" hydra-move-splitter-down)
      ("e" hydra-move-splitter-up)
      ("r" hydra-move-splitter-right)
+     ("-" fit-window-to-buffer)
      ("B" balance-windows)
      ("b" helm-mini)
      ("f" helm-find-files)
@@ -2585,6 +2573,7 @@ On-the-fly syntax checking
   :hook (typescript-mode . flycheck-mode)
   :config
   (flycheck-add-next-checker 'python-flake8 'python-mypy)
+  ;; uncomment to allow eslint. For some reasons, drastically slow
   ;; (put 'flycheck-javascript-eslint-executable 'safe-local-variable (lambda (x) t))
   (setq flycheck-javascript-eslint-executable "npx eslint"))
 #+END_SRC
@@ -2718,4 +2707,32 @@ Virtualenv handling
 (use-package yaml-mode
   :defer t
   :ensure t)
+#+end_src
+
+** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Fuction Arguments]]
+Handy little thing
+#+begin_src emacs-lisp
+(use-package fill-function-arguments
+  :ensure t
+  :defer t
+  :bind (:map prog-mode-map
+              ("M-q" . fill-function-arguments-dwim)))
+#+end_src
+
+** [[https://github.com/hrs/engine-mode][Engine Mode]]
+Search Engine goodies
+
+#+begin_src emacs-lisp
+(use-package engine-mode
+  :ensure t
+  :defer t
+  :hook (after-init . engine-mode)
+  :config
+  (defengine DRF-documentation
+    "https://html.duckduckgo.com/html?q=django+rest+framework+documentation+%s"
+    :keybinding "r")
+
+  (defengine django-documentation
+    "https://html.duckduckgo.com/html?q=django+documentation+%s"
+    :keybinding "d"))
 #+end_src
