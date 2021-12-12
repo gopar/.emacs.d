@@ -306,6 +306,24 @@ Function for getting auto inserting the Jira ticket into the branch name if ther
         (insert (format "[%s-%s] " (nth 1 words) (nth 2 words))))))
 #+END_SRC
 
+Terminating Escape codes in shells.
+Mainly for eshell/compilation
+
+#+begin_src emacs-lisp
+;; Following stolen from https://emacs.stackexchange.com/a/18884
+(defvar gopar-ansi-escape-re
+  (rx (or ?\233 (and ?\e ?\[))
+      (zero-or-more (char (?0 . ?\?)))
+      (zero-or-more (char ?\s ?- ?\/))
+      (char (?@ . ?~))))
+
+(defun gopar/nuke-ansi-escapes (beg end)
+  (save-excursion
+    (goto-char beg)
+    (while (re-search-forward gopar-ansi-escape-re end t)
+      (replace-match ""))))
+#+end_src
+
 * Built-in Packages
 ** Hydra use-package
 This isn't built in but I need here for it to load sooner. sigh.
@@ -502,7 +520,9 @@ Mode for time management. Pretty usefull. I use it a lot.
   (org-clock-clocktable-default-properties
    '(:maxlevel 2 :scope file :formula % :properties ("Effort" "Points") :sort (5 . ?t) :compact t :block today))
   :bind (:map global-map
-         ("C-c j" . (lambda () (interactive) (org-clock-jump-to-current-clock)))))
+         ("C-c j" . (lambda () (interactive) (org-clock-jump-to-current-clock)))
+         :map org-mode-map
+         ("C-c C-x r" . (lambda () (interactive) (org-clock-report)))))
 
 #+END_SRC
 
@@ -807,17 +827,25 @@ See: https://github.com/noctuid/general.el/issues/80
     (eshell/alias "oc" "find . -name \"*.org\" | xargs wc -l")
     (eshell/alias "l" "/usr/local/bin/exa --long --classify --all --group --header --blocks --git --color=never $1")
     (eshell/alias "ff" "find-file $1")
-    (eshell/alias "rmpyc" "find . -name *pyc -delete"))
+    (eshell/alias "rmpyc" "find . -name *pyc -delete")
 
-  (defun eshell/clear ()
-    "Clear the eshell buffer."
-    (let ((inhibit-read-only t))
-      (erase-buffer)
-      (eshell-send-input)))
+    (defun eshell/clear ()
+      "Clear the eshell buffer.
+This overrides the built in eshell/clear cmd in esh-mode."
+      (eshell/clear-scrollback)))
+
+  (defun eshell/z (&optional regexp)
+    "Navigate to a previously visited directory in eshell."
+    (let ((eshell-dirs (delete-dups
+                        (mapcar 'abbreviate-file-name
+                                (ring-elements eshell-last-dir-ring)))))
+      (eshell/cd (if regexp (eshell-find-previous-directory regexp)
+                            (completing-read "cd: " eshell-dirs)))))
 
   (defun eshell/jj ()
     "Jumpt to Root."
     (eshell/cd (projectile-project-root))))
+
 #+END_SRC
 
 *** Eshell cmd
@@ -829,7 +857,7 @@ Not a eshell module
   :ensure nil
   :hook (eshell-pre-command . eshell-save-some-history)
   :custom
-  (eshell-prefer-lisp-functions nil))
+  (eshell-prefer-lisp-functions t))
 #+end_src
 
 *** Esh Mode
@@ -844,9 +872,12 @@ Not a eshell module
   :config
   (remove-hook 'eshell-mode-hook 'tramp-eshell-directory-change)
   (remove-hook 'eshell-directory-change-hook 'eshell-directory-change-hook)
-  ;; Truncate buffer for performance
-  ;; (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
-)
+
+  (defun gopar/eshell-nuke-ansi-escapes ()
+    (gopar/nuke-ansi-escapes eshell-last-output-start eshell-last-output-end))
+
+  (remove-hook 'eshell-output-filter-functions 'eshell-handle-ansi-color)
+  (add-hook 'eshell-output-filter-functions 'gopar/eshell-nuke-ansi-escapes t))
 #+end_src
 
 *** Eshell modules
@@ -915,7 +946,7 @@ Module that handles history
         (eshell-input-filter-default input)
         (eshell-input-filter-initial-space input)))
   :custom
-  (eshell-history-size 256)
+  (eshell-history-size 1024)
   (eshell-hist-ignoredups t)
   (eshell-input-filter 'gopar/eshell-input-filter))
 #+end_src
@@ -1045,7 +1076,10 @@ Fish like history completion
 (use-package eshell-info-banner
   :ensure t
   :defer t
-  :hook (eshell-banner-load . eshell-info-banner-update-banner))
+  :hook (eshell-banner-load . eshell-info-banner-update-banner)
+  :init
+  (defun eshell/banner (&rest args)
+    (eshell-banner-initialize)))
 #+end_src
 
 *** Eshell Compile
@@ -1323,12 +1357,22 @@ zebra.com
   (message "Not Implemented :("))
 
 (defun gopar/eww-advice-filter-args (args)
-  "When using duckduckgo, sometimes the redirects don't work.
+  "When using a search engine, sometimes the redirects don't work.
 To work around this, we'll grab the url that we're targetting so that it doesn't
-go through duckduckgo"
-  (let (url)
-    (setq url (string-remove-prefix "https://duckduckgo.com/l/?uddg=" (car args)))
-    (setq url (url-unhex-string url))
+go through the search engine"
+  (let (url path-and-query query is-ddg is-google param)
+    (setq url (car args))
+    (setq is-ddg (string-prefix-p "https://duckduckgo.com/l/?uddg=" url))
+    (setq is-google (string-prefix-p "https://www.google.com/url?" url))
+    (print url)
+
+    (when (or is-ddg is-google)
+      (setq url (url-generic-parse-url url))
+      (setq path-and-query (url-path-and-query url))
+      (setq query (cdr path-and-query))
+      (setq param (if is-ddg "uddg" "q"))
+      (setq url (car (cdr (assoc-string param (url-parse-query-string query))))))
+
     `(,url ,@(cdr args))))
 #+end_src
 
@@ -1525,15 +1569,20 @@ Interactively also sends a terminating newline."
 #+BEGIN_SRC emacs-lisp
 ;; https://stackoverflow.com/questions/3072648/cucumbers-ansi-colors-messing-up-emacs-compilation-buffer
 (defun colorize-compilation-buffer ()
-"Colorize the output from compile buffer"
+  "Colorize the output from compile buffer"
   (toggle-read-only)
   (ansi-color-apply-on-region (point-min) (point-max))
   (toggle-read-only))
 
 (use-package ansi-color
-:ensure nil
-:defer t
-:hook (compilation-filter . colorize-compilation-buffer))
+  :ensure nil
+  :defer t
+  :hook (compilation-filter . gopar/compilation-nuke-ansi-escapes)
+  :init
+  (defun gopar/compilation-nuke-ansi-escapes ()
+    (toggle-read-only)
+    (gopar/nuke-ansi-escapes (point-min) (point-max))
+    (toggle-read-only)))
 #+end_src
 
 ** SHR
@@ -1815,13 +1864,13 @@ Settings up env vars manually :(
 (defun gopar/add-env-vars ()
   "Setup environment variables that I will need."
   (setenv "PIPENV_VERBOSITY" "-1")
-  (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
-  (setenv "PATH" (concat (getenv "PATH") ":/usr/bin"))
-  (setenv "PATH" (concat (getenv "PATH") ":/usr/sbin"))
-  (setenv "PATH" (concat (getenv "PATH") ":/sbin"))
-  (setenv "PATH" (concat (getenv "PATH") ":/bin"))
-  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin"))))
-  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v16.9.1/bin"))))
+  (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/"))
+  (setenv "PATH" (concat (getenv "PATH") ":/usr/bin/"))
+  (setenv "PATH" (concat (getenv "PATH") ":/usr/sbin/"))
+  (setenv "PATH" (concat (getenv "PATH") ":/sbin/"))
+  (setenv "PATH" (concat (getenv "PATH") ":/bin/"))
+  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/"))))
+  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v16.9.1/bin/"))))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.poetry/bin"))))
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/exa"))
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/bat"))
@@ -2154,6 +2203,7 @@ Pre bundled with helm
     "Due to eshell having a bug with its keymap, I gotta do it this way."
     (define-key eshell-mode-map (kbd "C-r") 'helm-eshell-history)
     (define-key eshell-mode-map (kbd "<tab>") 'helm-esh-pcomplete)
+    (define-key eshell-mode-map (kbd "M-s") 'helm-eshell-prompts-all)
     (define-key eshell-mode-map (kbd "C-c >") 'gopar/eshell-redirect-to-buffer))
   :hook (eshell-mode . gopar/helm-eshell-setup)
   :custom
@@ -2444,7 +2494,7 @@ When ARG is non-nil, open in new EWW buffer."
 ** Formatters/Linters
 
 *** Python
-**** Isort
+**** COMMENT Isort
 Automatically sort imports
 
 #+BEGIN_SRC emacs-lisp
@@ -2454,7 +2504,7 @@ Automatically sort imports
   :hook (before-save . py-isort-before-save))
 #+end_src
 
-**** Black
+**** COMMENT Black
 Formatter
 
 #+BEGIN_SRC emacs-lisp
@@ -2514,7 +2564,6 @@ Finally, do completion"
   :diminish
   :ensure t
   :hook ((prog-mode . gopar/prog-mode-backends)
-         (lsp-mode . gopar/prog-mode-backends)
          (org-mode . company-mode))
   :init
   (global-company-mode)
@@ -2648,13 +2697,6 @@ highlight TODO's in buffer
   :hook (prog-mode . hl-todo-mode))
 #+end_src
 
-** [[https://github.com/akermu/emacs-libvterm][vterm]]
-#+begin_src emacs-lisp
-(use-package vterm
-  :defer t
-  :ensure t)
-#+end_src
-
 ** [[https://github.com/wbolster/emacs-python-pytest/][python-pytest]]
 Runs Pytest in a magit like interface.
 
@@ -2709,6 +2751,13 @@ Virtualenv handling
   :ensure t)
 #+end_src
 
+** [[https://github.com/paradoxxxzero/jinja2-mode][Jinja2]]
+#+begin_src emacs-lisp
+(use-package jinja2-mode
+  :ensure t
+  :defer t)
+#+end_src
+
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Fuction Arguments]]
 Handy little thing
 #+begin_src emacs-lisp
@@ -2734,5 +2783,17 @@ Search Engine goodies
 
   (defengine django-documentation
     "https://html.duckduckgo.com/html?q=django+documentation+%s"
-    :keybinding "d"))
+    :keybinding "d")
+
+  (defengine actual-url
+    "%s"
+    :keybinding "u")
+
+  (defengine duckduckgo-query
+    "https://html.duckduckgo.com/html/?q=%s"
+    :keybinding "f")
+
+  (defengine google-query
+    "https://www.google.com/search?q=%s"
+    :keybinding "g"))
 #+end_src
