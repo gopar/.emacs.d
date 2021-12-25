@@ -105,6 +105,8 @@ Setup/disable some good global keys
 #+BEGIN_SRC emacs-lisp
 ;; Don't suspend emacs, so ANNOYING
 (global-unset-key (kbd "C-z"))
+;; Don't suspend frame either
+(global-unset-key (kbd "C-x C-z"))
 ;; this saves typing
 (global-set-key (kbd "RET") 'newline-and-indent)
 ;; sometimes need this
@@ -572,6 +574,11 @@ Mode for time management. Pretty usefull. I use it a lot.
        (todo "IN-PROGRESS|WAITING"))
       ((org-agenda-sorting-strategy '(priority-down))))
 
+     ("g" "Goals: 12 Week Year"
+      ((agenda "")
+       (todo "IN-PROGRESS|WAITING"))
+      ((org-agenda-sorting-strategy '(priority-down)) (org-agenda-tag-filter-preset '("+12WY"))))
+
      ("r" "Weekly Review"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
        (tags-todo "+tickler-DEADLINE={.+}-SCHEDULED={.+}")
@@ -589,6 +596,8 @@ Templating system for creating entries
   :custom
   ;; dont create a bookmark when calling org-capture
   (org-capture-bookmark nil)
+  ;; also don't create bookmark in other things
+  (org-bookmark-names-plist nil)
   (org-capture-templates
    '(
      ("c" "Inbox" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
@@ -824,18 +833,25 @@ See: https://github.com/noctuid/general.el/issues/80
   :hook (eshell-mode . gopar/eshell-setup-aliases)
   :init
   (defun gopar/eshell-setup-aliases ()
-    (eshell/alias "oc" "find . -name \"*.org\" | xargs wc -l")
+    (eshell/alias "oc" "/usr/bin/find . -name \"*.org\" | xargs wc -l")
     (eshell/alias "l" "/usr/local/bin/exa --long --classify --all --group --header --blocks --git --color=never $1")
     (eshell/alias "ff" "find-file $1")
-    (eshell/alias "rmpyc" "find . -name *pyc -delete")
+    (eshell/alias "rmpyc" "/usr/bin/find . -name *pyc -delete")
+    (eshell/alias "docker-auth" "aws-vault exec styleseat-dev -- aws ecr get-login-password --region us-west-2 | docker login -u AWS --password-stdin https://788799692764.dkr.ecr.us-west-2.amazonaws.com")
+    (eshell/alias "ledger" "/usr/local/bin/ledger --no-color --no-pager --strict $*")
+    (eshell/alias "tithe" "ledger bal Liabilities:Tithe -V $*")
+    (eshell/alias "netw" "ledger balance ^assets ^liabilities -V -R $*")
+    (eshell/alias "netc" "ledger balance ^expenses ^income -V -R $*"))
 
-    (defun eshell/clear ()
+  (defun eshell/clear ()
       "Clear the eshell buffer.
 This overrides the built in eshell/clear cmd in esh-mode."
-      (eshell/clear-scrollback)))
+      (interactive)
+      (eshell/clear-scrollback))
 
   (defun eshell/z (&optional regexp)
-    "Navigate to a previously visited directory in eshell."
+    "Navigate to a previously visited directory in eshell.
+Similar to `cd =`"
     (let ((eshell-dirs (delete-dups
                         (mapcar 'abbreviate-file-name
                                 (ring-elements eshell-last-dir-ring)))))
@@ -857,6 +873,7 @@ Not a eshell module
   :ensure nil
   :hook (eshell-pre-command . eshell-save-some-history)
   :custom
+  ;; cant remember why i put t
   (eshell-prefer-lisp-functions t))
 #+end_src
 
@@ -1871,9 +1888,6 @@ Settings up env vars manually :(
   (setenv "PATH" (concat (getenv "PATH") ":/bin/"))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/"))))
   (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v16.9.1/bin/"))))
-  (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.poetry/bin"))))
-  (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/exa"))
-  (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin/bat"))
 
   ;; Node stuff sigh
   (setenv "NVM_DIR" (expand-file-name "~/.nvm"))
@@ -1886,6 +1900,11 @@ Settings up env vars manually :(
   ;; Disable Pagers
   (setenv "GIT_PAGER" "")
   (setenv "BAT_PAGER" "")
+  (setenv "LEDGER_PAGER" "")
+
+  (setenv "LEDGER_FILE" "/Users/danielgopar/personal/finances/main.dat")
+  (setenv "LEDGER_PRICE_DB" "/Users/danielgopar/personal/finances/data/price_db.dat")
+
 
   (setq-default eshell-path-env (getenv "PATH"))
 
@@ -1895,8 +1914,9 @@ Settings up env vars manually :(
                             "/usr/sbin"
                             "/sbin"
                             "/bin"
-                            ,(expand-file-name "~/.poetry/bin")
-                            ,(expand-file-name "~/.nvm/versions/node/v14.16.0/bin")))))
+                            ,(expand-file-name "~/.nvm/versions/node/v12.16.2/bin/")
+                            ,(expand-file-name "~/.nvm/versions/node/v16.9.1/bin/")))))
+
 (add-hook 'after-init-hook 'gopar/add-env-vars)
 #+end_src
 
@@ -2059,10 +2079,10 @@ Install the actual snippets
 (use-package expand-region
   :defer t
   :ensure t
-  :bind (("C-=" . er/expand-region)))
+  :bind (("C-\\" . er/expand-region)))
 #+END_SRC
 
-** Annotate
+** COMMENT Annotate
 Allow annotating code in buffer.
 
 I use it for displaying all annotations after pushing to remote since that usually
@@ -2204,6 +2224,7 @@ Pre bundled with helm
     (define-key eshell-mode-map (kbd "C-r") 'helm-eshell-history)
     (define-key eshell-mode-map (kbd "<tab>") 'helm-esh-pcomplete)
     (define-key eshell-mode-map (kbd "M-s") 'helm-eshell-prompts-all)
+    (define-key eshell-mode-map (kbd "M-k") 'eshell/clear)
     (define-key eshell-mode-map (kbd "C-c >") 'gopar/eshell-redirect-to-buffer))
   :hook (eshell-mode . gopar/helm-eshell-setup)
   :custom
@@ -2610,7 +2631,7 @@ Easy completions for homebrew
   :ensure t)
 #+end_src
 
-** [[https://github.com/flycheck/flycheck/][Flycheck]]
+** COMMENT [[https://github.com/flycheck/flycheck/][Flycheck]]
 On-the-fly syntax checking
 
 #+BEGIN_SRC emacs-lisp
@@ -2695,17 +2716,6 @@ highlight TODO's in buffer
   :defer t
   :ensure t
   :hook (prog-mode . hl-todo-mode))
-#+end_src
-
-** [[https://github.com/wbolster/emacs-python-pytest/][python-pytest]]
-Runs Pytest in a magit like interface.
-
-#+begin_src emacs-lisp
-(use-package python-pytest
-  ;; :defer t  ;; Don't defer to automatically syn this up w/ py mode
-  :ensure t
-  :bind (:map python-mode-map
-         ("C-c C-t" . python-pytest-dispatch)))
 #+end_src
 
 ** [[https://github.com/jorgenschaefer/pyvenv/][Pyvenv]]
@@ -2796,4 +2806,27 @@ Search Engine goodies
   (defengine google-query
     "https://www.google.com/search?q=%s"
     :keybinding "g"))
+#+end_src
+
+** [[https://github.com/ledger/ledger-mode][Ledger]]
+
+#+begin_src emacs-lisp
+(use-package ledger-mode
+  :defer t
+  :ensure t
+
+  :mode ("\\.dat\\'"
+         "\\.ledger\\'")
+
+  :custom
+  (ledger-clear-whole-transactions t)
+  (ledger-report-use-native-highlighting nil))
+#+end_src
+
+** REI
+
+#+begin_src emacs-lisp
+(use-package rei
+  :load-path "lisp/rei"
+  :demand t)
 #+end_src
