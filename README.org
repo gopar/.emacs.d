@@ -256,6 +256,14 @@ This command does not push text to `kill-ring'."
    (progn (end-of-line 1) (point)))
   (delete-char 1))
 
+(defadvice gopar/delete-line (before kill-line-autoreindent activate)
+  "Kill excess whitespace when joining lines.
+If the next line is joined to the current line, kill the extra indent whitespace in front of the next line."
+  (when (and (eolp) (not (bolp)))
+    (save-excursion
+      (forward-char 1)
+      (just-one-space 1))))
+
 (defun gopar/delete-line-backward ()
   "Delete text between the beginning of the line to the cursor position.
 This command does not push text to `kill-ring'."
@@ -1778,12 +1786,23 @@ This is for 3rd party packages that don't heavily depend on built in modes
 
 ** Self made modes
 My poor attempt at making minor modes.
+
+*** Boolcase
+Automatically capitilize true/false in certain languages
 #+BEGIN_SRC emacs-lisp
 (use-package boolcase
   :defer t
   :load-path "modes/boolcase"
   :hook (python-mode . boolcase-mode))
 #+END_SRC
+
+*** REI
+Bunch of functions I use for REI calculations in org mode
+#+begin_src emacs-lisp
+(use-package rei
+  :load-path "lisp/rei"
+  :demand t)
+#+end_src
 
 ** Themes
 All themes which I love
@@ -2579,7 +2598,7 @@ Finally, do completion"
 
 (defun gopar/prog-mode-backends ()
   (company-mode)
-  (setq-local company-backends '((company-yasnippet :separate company-capf company-files company-dabbrev))))
+  (setq-local company-backends '((company-yasnippet :separate company-capf company-files company-dabbrev-code))))
 
 (use-package company
   :diminish
@@ -2670,14 +2689,6 @@ A upgraded `ibuffer`
          ;;("C-x b" . bufler-switch-buffer))
 )
 #+end_src
-** [[https://github.com/vermiculus/sx.el][SX]]
-Stack Exchange client
-
-#+begin_src emacs-lisp
-(use-package sx
-  :defer t
-  :ensure t)
-#+end_src
 ** [[https://elpa.gnu.org/packages/rainbow-mode.html][Rainbow mode]]
 Sets background color to strings that match color names
 #+begin_src emacs-lisp
@@ -2716,17 +2727,6 @@ highlight TODO's in buffer
   :defer t
   :ensure t
   :hook (prog-mode . hl-todo-mode))
-#+end_src
-
-** [[https://github.com/jorgenschaefer/pyvenv/][Pyvenv]]
-Virtualenv handling
-
-#+begin_src emacs-lisp
-(use-package pyvenv
-  :defer t
-  :ensure t
-  :hook ((after-init . pyvenv-mode)
-         (after-init . pyvenv-tracking-mode)))
 #+end_src
 
 ** [[https://github.com/smihica/emmet-mode][Emmet]]
@@ -2814,19 +2814,48 @@ Search Engine goodies
 (use-package ledger-mode
   :defer t
   :ensure t
-
   :mode ("\\.dat\\'"
          "\\.ledger\\'")
-
+  :bind (:map ledger-mode-map
+              ("C-c C-n" . ledger-navigate-next-uncleared)
+              ("C-c C-b" . ledger-navigate-previous-uncleared))
   :custom
   (ledger-clear-whole-transactions t)
   (ledger-report-use-native-highlighting nil))
 #+end_src
 
-** REI
+** [[https://github.com/bkaestner/redacted.el][Redacted]]
+Obfuscate current text.
+Perfect for screensharing/screenshot
 
 #+begin_src emacs-lisp
-(use-package rei
-  :load-path "lisp/rei"
-  :demand t)
+(use-package redacted
+  :defer t
+  :ensure t
+  :hook (redacted-mode . (lambda () (read-only-mode (if redacted-mode 1 -1))))
+  :init
+
+  (defun screenshare-hide ()
+    "Simple wrapper for calling `redacted'
+Just for convinience for if I forget whats it's called."
+    (redacted-mode))
+  (defun screenshare-unhide ()
+    "Simple wrapper for calling `redacted'
+Just for convinience for if I forget whats it's called."
+    (redacted-mode -1)))
+#+end_src
+
+** [[https://github.com/jacktasia/dumb-jump/tree/dbb915441a2b66f2fbb954ff5de2723c5a4771d4][Dumb Jump]]
+Dumb go to definition that is brilliant
+
+#+begin_src emacs-lisp
+(use-package dumb-jump
+  :defer t
+  :ensure t
+  :custom
+  (dumb-jump-prefer-searcher 'ag)
+  (dumb-jump-force-searcher 'ag)
+  (dumb-jump-selector 'helm)
+  :init
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
 #+end_src
