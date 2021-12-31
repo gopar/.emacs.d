@@ -6,6 +6,7 @@
   `(propertize ,str 'face (list ,@properties) 'read-only t 'rear-nonsticky '(read-only)))
 
 (defun eshell-git-prompt-powerline-venv ()
+  "Display pyvenv info if available"
   (let ((segment-separator "\xe0b0")
         (branch            "\xe0a0")
         (detached          "\x27a6")
@@ -35,7 +36,7 @@
                         " ")
               'face git-face 'read-only t)))
     (concat
-     (when pyvenv-virtual-env-name
+     (when (and (boundp 'pyvenv-virtual-env-name) pyvenv-virtual-env-name)
        (concat
         (with-read-only-face pyvenv-virtual-env-name
           :background "#5B3758")
