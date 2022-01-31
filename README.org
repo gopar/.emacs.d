@@ -164,7 +164,10 @@ And finally some misc stuff
   (setq custom-file "~/.emacs.d/ignoreme.el")
   (load custom-file t)
   (setq gc-cons-percentage .6
-        gc-cons-threshold gopar/gc-cons-threshold))
+        gc-cons-threshold gopar/gc-cons-threshold)
+  ;; Why is debug on error enabled here????
+  ;; lets disable it
+  (toggle-debug-on-error -1))
 
 (add-hook 'after-init-hook 'gopar/after-init-stuff -100)
 
@@ -414,8 +417,8 @@ All general org mode settings
   (org-log-done 'time)
   ;; timestamp when we reschedule
   (org-log-reschedule t)
-  ;; Indent the stars instead of piling them
-  (org-startup-indented t)
+  ;; Don't indent the stars
+  (org-startup-indented nil)
   (org-list-allow-alphabetical t)
   (org-image-actual-width nil)
   ;; Save notes into log drawer
@@ -451,7 +454,7 @@ All general org mode settings
      ("Points_ALL" . "1 2 3 5 8 13")))
   ;; Needed to allow helm to compute all refile options in buffer
   (org-outline-path-complete-in-steps nil)
-  (org-deadline-warning-days 0)
+  (org-deadline-warning-days 7)
   (org-log-redeadline t)
   (org-log-reschedule t)
   ;; Repeat to previous todo state
@@ -570,28 +573,28 @@ Mode for time management. Pretty usefull. I use it a lot.
    '(("h" "Agenda and Home tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
        (todo "NEXT|WAITING|IN-PROGRESS"))
-      ((org-agenda-sorting-strategy '(priority-down))))
+      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
 
      ("w" "Agenda and Work tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work" 't))))
        (tags-todo "inbox|break"))
-      ((org-agenda-sorting-strategy '(priority-down))))
+      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
 
      ("i" "In-Progress Tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
        (todo "IN-PROGRESS|WAITING"))
-      ((org-agenda-sorting-strategy '(priority-down))))
+      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
 
      ("g" "Goals: 12 Week Year"
       ((agenda "")
        (todo "IN-PROGRESS|WAITING"))
-      ((org-agenda-sorting-strategy '(priority-down)) (org-agenda-tag-filter-preset '("+12WY"))))
+      ((org-agenda-sorting-strategy '(habit-up category-up priority-down)) (org-agenda-tag-filter-preset '("+12WY"))))
 
      ("r" "Weekly Review"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
        (tags-todo "+tickler-DEADLINE={.+}-SCHEDULED={.+}")
        (todo))
-      ((org-agenda-sorting-strategy '(priority-down))
+      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))
        (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org"))))))
 #+END_SRC
 
@@ -613,7 +616,7 @@ Templating system for creating entries
      ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
       "* TODO %? :freetime:emacs:\n %U")
      ("p" "Project" entry (file "~/.emacs.d/org/private/org-roam/gtd/gtd.org")
-      "* PROJ %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) \n:ORDERED: t \n:END: \n%U \n** TODO Add entry")
+      "* %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) scheduled!(copy)\n:ORDERED: t \n:END: \n%U \n** TODO Add entry")
      ("w" "Work" entry (file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
       "* TODO %? :work:\n %U")
      ("t" "Tickler" entry (file "~/.emacs.d/org/private/org-roam/gtd/tickler.org")
@@ -838,18 +841,32 @@ See: https://github.com/noctuid/general.el/issues/80
 (use-package eshell
   :defer t
   :ensure nil
-  :hook (eshell-mode . gopar/eshell-setup-aliases)
+  ;; :hook (eshell-mode . gopar/eshell-setup-aliases)
+  :hook (eshell-directory-change . gopar/sync-dir-in-buffer-name)
   :init
   (defun gopar/eshell-setup-aliases ()
     (eshell/alias "oc" "/usr/bin/find . -name \"*.org\" | xargs wc -l")
     (eshell/alias "l" "/usr/local/bin/exa --long --classify --all --group --header --blocks --git --color=never $1")
-    (eshell/alias "ff" "find-file $1")
     (eshell/alias "rmpyc" "/usr/bin/find . -name *pyc -delete")
     (eshell/alias "docker-auth" "aws-vault exec styleseat-dev -- aws ecr get-login-password --region us-west-2 | docker login -u AWS --password-stdin https://788799692764.dkr.ecr.us-west-2.amazonaws.com")
     (eshell/alias "ledger" "/usr/local/bin/ledger --no-color --no-pager --strict $*")
     (eshell/alias "tithe" "ledger bal Liabilities:Tithe -V $*")
     (eshell/alias "netw" "ledger balance ^assets ^liabilities -V -R $*")
     (eshell/alias "netc" "ledger balance ^expenses ^income -V -R $*"))
+
+  (defun eshell/ff (&rest args)
+    "Open files in emacs.
+Stolen form aweshell"
+    (if (null args)
+        ;; If I just ran "emacs", I probably expect to be launching
+        ;; Emacs, which is rather silly since I'm already in Emacs.
+        ;; So just pretend to do what I ask.
+        (bury-buffer)
+      ;; We have to expand the file names or else naming a directory in an
+      ;; argument causes later arguments to be looked for in that directory,
+      ;; not the starting directory
+      (mapc #'find-file (mapcar #'expand-file-name (eshell-flatten-list (reverse args)))))
+    )
 
   (defun eshell/clear ()
       "Clear the eshell buffer.
@@ -868,8 +885,56 @@ Similar to `cd =`"
 
   (defun eshell/jj ()
     "Jumpt to Root."
-    (eshell/cd (projectile-project-root))))
+    (eshell/cd (projectile-project-root)))
 
+  (defun eshell/unpack (file &rest args)
+    "Unpack FILE with ARGS.
+Stolen from aweshell."
+    (let ((command (-some (lambda (x)
+                           (if (string-match-p (car x) file)
+                               (cadr x)))
+                         '((".*\.tar.bz2" "tar xjf")
+                           (".*\.tar.gz" "tar xzf")
+                           (".*\.bz2" "bunzip2")
+                           (".*\.rar" "unrar x")
+                           (".*\.gz" "gunzip")
+                           (".*\.tar" "tar xf")
+                           (".*\.tbz2" "tar xjf")
+                           (".*\.tgz" "tar xzf")
+                           (".*\.zip" "unzip")
+                           (".*\.Z" "uncompress")
+                           (".*" "echo 'Could not unpack the file:'")))))
+      (let ((unpack-command (concat command " " file " " (mapconcat 'identity args " "))))
+        (eshell/printnl "Unpack command: " unpack-command)
+        (eshell-command-result unpack-command))
+      ))
+
+  (defun eshell/cat (filename)
+    "Like cat(1) but with syntax highlighting.
+Stole from aweshell"
+    (let ((existing-buffer (get-file-buffer filename))
+          (buffer (find-file-noselect filename)))
+      (eshell-print
+       (with-current-buffer buffer
+         (if (fboundp 'font-lock-ensure)
+             (font-lock-ensure)
+           (with-no-warnings
+             (font-lock-fontify-buffer)))
+         (let ((contents (buffer-string)))
+           (remove-text-properties 0 (length contents) '(read-only nil) contents)
+           contents)))
+      (unless existing-buffer
+        (kill-buffer buffer))
+      nil))
+
+  (defun gopar/sync-dir-in-buffer-name ()
+    "Update eshell buffer to show directory path.
+Stolen from aweshell."
+    (let* ((root (projectile-project-root))
+           (root-name (projectile-project-name root)))
+    (if root-name
+        (rename-buffer (format "*eshell %s* %s" root-name (s-chop-prefix root default-directory)))
+      (rename-buffer (format "*eshell %s*" default-directory))))))
 #+END_SRC
 
 *** Eshell cmd
@@ -1102,6 +1167,8 @@ Fish like history completion
   :ensure t
   :defer t
   :hook (eshell-banner-load . eshell-info-banner-update-banner)
+  :custom
+  (eshell-info-banner-tramp-aware nil)
   :init
   (defun eshell/banner (&rest args)
     (eshell-banner-initialize)))
@@ -1579,10 +1646,17 @@ Interactively also sends a terminating newline."
    (apply #'string
           (append (this-command-keys-vector) nil))))
 
+(defun gopar/compilation-buffer-name-function (arg)
+  "Rename buffer to whatever command was used.
+eg. *python main.py*"
+  (format "*%s*" compile-command))
+
 (use-package compile
   :ensure nil
   :defer t
-  ;; :custom (compilation-scroll-output t)
+  :custom
+  ;; (compilation-scroll-output t)
+  (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
   :bind (:map compilation-mode-map
               ("y" . gopar/send-self)
@@ -1697,18 +1771,22 @@ via [[https://github.com/redguardtoo/emacs.d/issues/796][this threads]] suggesti
   :ensure nil
   :custom
   (ispell-program-name "aspell")
+  (ispell-personal-dictionary "~/.aspell.lang.pws")
+  (ispell-dictionary nil)
+  (ispell-local-dictionary nil)
   (ispell-extra-args '("--sug-mode=ultra" "--lang=en_US"
-                       ;; "--run-together" "--run-together-limit=16"
+                       "--run-together" "--run-together-limit=16"
                        "--camel-case")))
 #+end_src
 
 ** Flyspell
 #+begin_src emacs-lisp
 (use-package flyspell
-  :defer t
+  :after fundamental-mode
   :ensure nil
   :bind (:map flyspell-mode-map
-              ("C-;" . nil)))
+              ("C-;" . nil)
+              ("C-," . nil)))
 #+end_src
 
 ** Browse URL
@@ -1821,41 +1899,13 @@ My favorite theme
   :defer t
   :ensure t)
 #+end_src
+
 *** [[https://github.com/DogLooksGood/joker-theme][Joker Theme]]
 Need to wait for it to be in melpa
-*** Gotham
-No url, only git repo
-#+begin_src emacs-lisp
-(use-package gotham-theme
-  :defer t
-  :ensure t)
-#+end_src
-
-*** [[https://github.com/holodata/ancient-one-dark-emacs][Ancient One Dark Emacs Theme]]
-
-#+begin_src emacs-lisp
-(use-package ancient-one-dark-theme
-  :defer t
-  :ensure t)
-#+end_src
-
-*** [[https://github.com/rougier/nano-theme][nano theme]]
-#+begin_src emacs-lisp
-(use-package nano-theme
-  :defer t
-  :ensure t)
-#+end_src
 
 *** [[https://github.com/jlpaca/minsk-theme/][Minsk Theme]]
 #+begin_src emacs-lisp
 (use-package minsk-theme
-  :defer t
-  :ensure t)
-#+end_src
-
-*** [[https://github.com/emacsfodder/emacs-clues-theme][Clues]]
-#+begin_src emacs-lisp
-(use-package clues-theme
   :defer t
   :ensure t)
 #+end_src
@@ -2179,7 +2229,7 @@ Packages for built in SHR (Simple HTML Renderer)
   :defer t
   :ensure t
   :init
-  (setq rand-theme-wanted '(tao-yin minsk clues github-dark-vscode manoj-dark eziam-dusk ancient-one-dark nano-dark gotham tsdh-dark deeper-blue wombat))
+  (setq rand-theme-wanted '(tao-yin minsk github-dark-vscode manoj-dark eziam-dusk tsdh-dark deeper-blue))
 
   :bind (("C-z" . rand-theme-iterate)
          ("C-S-z" . rand-theme-iterate-backwards)))
@@ -2288,6 +2338,20 @@ Ag search extension
   (helm-projectile-toggle 1))
 #+END_SRC
 
+*** COMMENT [[https://github.com/pronobis/helm-flyspell][Helm Flyspell]]
+#+begin_src emacs-lisp
+(use-package helm-flyspell
+  :ensure t
+  :defer t
+  :init
+  (defun gopar/goto-misspelled-word-suggest-fix ()
+    (interactive)
+    (flyspell-goto-next-error)
+    (helm-flyspell-correct))
+  :bind (:map flyspell-mode-map
+              ("C-," . gopar/goto-misspelled-word-suggest-fix)))
+#+end_src
+
 ** [[https://github.com/bbatsov/projectile/][Projectile]]
 To help getting around projects
 
@@ -2305,6 +2369,11 @@ To help getting around projects
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
   :config
   (projectile-global-mode)
+  (defun projectile-compilation-buffer-name (compilation-mode)
+  "Meant to be used for `compilation-buffer-name-function`.
+Argument COMPILATION-MODE is the name of the major mode used for the compilation buffer."
+  (concat "*" (downcase compilation-mode) "*"
+          (if (projectile-project-p) (concat "<" (projectile-project-name) ">") "")))
   )
 #+END_SRC
 
@@ -2325,7 +2394,7 @@ To help getting around projects
     (let ((num (if (numberp number-of-commits)
                    number-of-commits
                  1)))
-      (magit-reset (format "HEAD^%d" num)))))
+      (magit-reset-soft (format "HEAD^%d" num)))))
 #+END_SRC
 
 ** [[https://github.com/magit/forge/][Forge]]
@@ -2619,6 +2688,7 @@ Finally, do completion"
   :custom
   (company-dabbrev-downcase nil)
   (company-dabbrev-ignore-case t)
+  (company-dabbrev-code-ignore-case t)
   (company-selection-wrap-around t)
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
@@ -2667,13 +2737,15 @@ On-the-fly syntax checking
   (setq flycheck-javascript-eslint-executable "npx eslint"))
 #+END_SRC
 
-** [[https://github.com/redguardtoo/wucuo][Wucuo]]
+** COMMENT [[https://github.com/redguardtoo/wucuo][Wucuo]]
 Supposedly the fastest spell checking configuration out there
 
 #+begin_src emacs-lisp
 (use-package wucuo
   :defer t
   :ensure t
+  :init
+  (setq wucuo-flyspell-start-mode "normal")
   :hook ((prog-mode . wucuo-start)
          (text-mode . wucuo-start)))
 #+end_src
@@ -2838,10 +2910,13 @@ Perfect for screensharing/screenshot
   (defun screenshare-hide ()
     "Simple wrapper for calling `redacted'
 Just for convinience for if I forget whats it's called."
+    (interactive)
     (redacted-mode))
+
   (defun screenshare-unhide ()
     "Simple wrapper for calling `redacted'
 Just for convinience for if I forget whats it's called."
+    (interactive)
     (redacted-mode -1)))
 #+end_src
 
@@ -2858,4 +2933,12 @@ Dumb go to definition that is brilliant
   (dumb-jump-selector 'helm)
   :init
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
+#+end_src
+
+** [[https://github.com/Emacs-Kotlin-Mode-Maintainers/kotlin-mode][Kotlin]]
+
+#+begin_src emacs-lisp
+(use-package kotlin-mode
+  :defer t
+  :ensure t)
 #+end_src
