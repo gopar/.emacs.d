@@ -25,156 +25,156 @@
   #+END_SRC
 
 * General Settings
-All built in settings from emacs are here. Overriding them to provide a nicer experience for me
+  All built in settings from emacs are here. Overriding them to provide a nicer experience for me
 
-When I'm on mac, a lot of the keybindings are messed up, so this little snippets helps out
-#+BEGIN_SRC emacs-lisp
-(when (eq system-type 'darwin)
-  (setq mac-option-key-is-meta nil
-        mac-command-key-is-meta t
-        mac-command-modifier 'meta
-        mac-option-modifier 'none))
-#+END_SRC
+  When I'm on mac, a lot of the keybindings are messed up, so this little snippets helps out
+  #+BEGIN_SRC emacs-lisp
+  (when (eq system-type 'darwin)
+    (setq mac-option-key-is-meta nil
+          mac-command-key-is-meta t
+          mac-command-modifier 'meta
+          mac-option-modifier 'none))
+  #+END_SRC
 
 
-Update a lot of defaults that I have no idea why they aren't defaults
-#+BEGIN_SRC emacs-lisp
-;; Don't have backups
-(setq backup-inhibited t
-      ;; Don't save anything.
-      auto-save-default nil
-      ;; Sentences end with 1 space not 2
-      sentence-end-double-space nil
-      ;; make cursor the width of the character it is under
-      ;; i.e. full width of a TAB
-      x-stretch-cursor t
-      ;; If file doesn't end with a newline on save, automatically add one.
-      require-final-newline t
-      ;; Load newer bytecode over older
-      load-prefer-newer t
-      ;; Scroll one line at a time
-      mouse-wheel-scroll-amount '(1 ((shift) . 1))
-      ;; don't accelerate scrolling
-      mouse-wheel-progressive-speed nil
-      ;; keyboard scroll one line at a time
-      scroll-step 1
-      ;; echo to screen faster
-      echo-keystrokes 0.1
-      ;; Stop cursor from going into minibuffer prompt text
-      minibuffer-prompt-properties '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)
-      redisplay-dont-pause t)
+  Update a lot of defaults that I have no idea why they aren't defaults
+  #+BEGIN_SRC emacs-lisp
+  ;; Don't have backups
+  (setq backup-inhibited t
+        ;; Don't save anything.
+        auto-save-default nil
+        ;; Sentences end with 1 space not 2
+        sentence-end-double-space nil
+        ;; make cursor the width of the character it is under
+        ;; i.e. full width of a TAB
+        x-stretch-cursor t
+        ;; If file doesn't end with a newline on save, automatically add one.
+        require-final-newline t
+        ;; Load newer bytecode over older
+        load-prefer-newer t
+        ;; Scroll one line at a time
+        mouse-wheel-scroll-amount '(1 ((shift) . 1))
+        ;; don't accelerate scrolling
+        mouse-wheel-progressive-speed nil
+        ;; keyboard scroll one line at a time
+        scroll-step 1
+        ;; echo to screen faster
+        echo-keystrokes 0.1
+        ;; Stop cursor from going into minibuffer prompt text
+        minibuffer-prompt-properties '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)
+        redisplay-dont-pause t)
 
-;; Smoother scrolling. Stolen from
-;; https://www.reddit.com/r/emacs/comments/fwmqc8/how_to_stop_emacs_from_half_scrolling_from_bottom/fmpc2k1
-(setq scroll-margin 1
-      scroll-conservatively 101
-      scroll-up-aggressively 0.01
-      scroll-down-aggressively 0.01
-      scroll-preserve-screen-position t
-      auto-window-vscroll nil)
+  ;; Smoother scrolling. Stolen from
+  ;; https://www.reddit.com/r/emacs/comments/fwmqc8/how_to_stop_emacs_from_half_scrolling_from_bottom/fmpc2k1
+  (setq scroll-margin 1
+        scroll-conservatively 101
+        scroll-up-aggressively 0.01
+        scroll-down-aggressively 0.01
+        scroll-preserve-screen-position t
+        auto-window-vscroll nil)
 
-(setq-default c-basic-offset 4
-              c-default-style "linux"
-              indent-tabs-mode nil
-              fill-column 120
-              ;; For python, might as well apply globally
-              ;; https://emacs.stackexchange.com/a/15244/8964
-              ;; forward-sexp-function nil
-              ;; Default tab display is 4 spaces
-              tab-width 4)
+  (setq-default c-basic-offset 4
+                c-default-style "linux"
+                indent-tabs-mode nil
+                fill-column 120
+                ;; For python, might as well apply globally
+                ;; https://emacs.stackexchange.com/a/15244/8964
+                ;; forward-sexp-function nil
+                ;; Default tab display is 4 spaces
+                tab-width 4)
 
-;; UTF-8 All Things!
-(prefer-coding-system 'utf-8)
-;; Uppercase is same as lowercase
-(define-coding-system-alias 'UTF-8 'utf-8)
-;; Change yes or no to y or n, cause im lazy
-(fset 'yes-or-no-p 'y-or-n-p)
-;; auto refresh files when changed from disk
-(global-auto-revert-mode t)
-;; Show column number
-(column-number-mode t)
-;; Enable some commands
-(put 'upcase-region 'disabled nil)
-(put 'downcase-region 'disabled nil)
-(put 'erase-buffer 'disabled nil)
-;; C-x n <key> useful stuff
-(put 'narrow-to-region 'disabled nil)
-#+END_SRC
+  ;; UTF-8 All Things!
+  (prefer-coding-system 'utf-8)
+  ;; Uppercase is same as lowercase
+  (define-coding-system-alias 'UTF-8 'utf-8)
+  ;; Change yes or no to y or n, cause im lazy
+  (fset 'yes-or-no-p 'y-or-n-p)
+  ;; auto refresh files when changed from disk
+  (global-auto-revert-mode t)
+  ;; Show column number
+  (column-number-mode t)
+  ;; Enable some commands
+  (put 'upcase-region 'disabled nil)
+  (put 'downcase-region 'disabled nil)
+  (put 'erase-buffer 'disabled nil)
+  ;; C-x n <key> useful stuff
+  (put 'narrow-to-region 'disabled nil)
+  #+END_SRC
 
-Setup/disable some good global keys
-#+BEGIN_SRC emacs-lisp
-;; Don't suspend emacs, so ANNOYING
-(global-unset-key (kbd "C-z"))
-;; Don't suspend frame either
-(global-unset-key (kbd "C-x C-z"))
-;; this saves typing
-(global-set-key (kbd "RET") 'newline-and-indent)
-;; sometimes need this
-(global-set-key (kbd "C-j") 'newline)
-;; For spacing problems
-(global-set-key (kbd "M-\\") 'cycle-spacing)
-;; Align lines to a symbol
-(global-set-key (kbd "C-x \\") 'align-regexp)
-;; Use ibuffer instead of default
-(global-set-key (kbd "C-x C-b") 'ibuffer)
-;; Strongly dislike this keybinding
-(global-unset-key (kbd "C-x C-k RET"))
-(global-set-key (kbd "M-u") 'upcase-dwim)
-(global-set-key (kbd "M-l") 'downcase-dwim)
-(global-set-key (kbd "M-c") 'capitalize-dwim)
-;; Always end up killing a buffer that I don't really wanna kill but just get out of the way
-(global-set-key (kbd "C-x k") '(lambda () (interactive) (kill-buffer)))
-(global-set-key (kbd "C-x C-k") '(lambda () (interactive) (bury-buffer)))
-#+END_SRC
+  Setup/disable some good global keys
+  #+BEGIN_SRC emacs-lisp
+  ;; Don't suspend emacs, so ANNOYING
+  (global-unset-key (kbd "C-z"))
+  ;; Don't suspend frame either
+  (global-unset-key (kbd "C-x C-z"))
+  ;; this saves typing
+  (global-set-key (kbd "RET") 'newline-and-indent)
+  ;; sometimes need this
+  (global-set-key (kbd "C-j") 'newline)
+  ;; For spacing problems
+  (global-set-key (kbd "M-\\") 'cycle-spacing)
+  ;; Align lines to a symbol
+  (global-set-key (kbd "C-x \\") 'align-regexp)
+  ;; Use ibuffer instead of default
+  (global-set-key (kbd "C-x C-b") 'ibuffer)
+  ;; Strongly dislike this keybinding
+  (global-unset-key (kbd "C-x C-k RET"))
+  (global-set-key (kbd "M-u") 'upcase-dwim)
+  (global-set-key (kbd "M-l") 'downcase-dwim)
+  (global-set-key (kbd "M-c") 'capitalize-dwim)
+  ;; Always end up killing a buffer that I don't really wanna kill but just get out of the way
+  (global-set-key (kbd "C-x k") '(lambda () (interactive) (kill-buffer)))
+  (global-set-key (kbd "C-x C-k") '(lambda () (interactive) (bury-buffer)))
+  #+END_SRC
 
-Enable some global modes and hooks
-#+BEGIN_SRC emacs-lisp
-;; Exactly what it sounds for
-(show-paren-mode t)
-(setq show-paren-style 'mixed) ;; highlight whole expression
-;; For super long lines
-(global-so-long-mode 1)
-;; Global electric mode, for matching closing parens, ect.
-(electric-pair-mode)
-;; Works pretty good w/ some themes. When it doesn't, the line is barley
-;; visible but I can live with that.
-;; (global-hl-line-mode)
-;; Able to delete selected words
-(pending-delete-mode t)
+  Enable some global modes and hooks
+  #+BEGIN_SRC emacs-lisp
+  ;; Exactly what it sounds for
+  (show-paren-mode t)
+  (setq show-paren-style 'mixed) ;; highlight whole expression
+  ;; For super long lines
+  (global-so-long-mode 1)
+  ;; Global electric mode, for matching closing parens, ect.
+  (electric-pair-mode)
+  ;; Works pretty good w/ some themes. When it doesn't, the line is barley
+  ;; visible but I can live with that.
+  ;; (global-hl-line-mode)
+  ;; Able to delete selected words
+  (pending-delete-mode t)
 
-;; Clean whitespace on save, pretty freken awesome
-(add-hook 'before-save-hook 'whitespace-cleanup)
-;; Aparently makefiles needs tabs, Booooooo
-(add-hook 'makefile-mode 'indent-tabs-mode)
+  ;; Clean whitespace on save, pretty freken awesome
+  (add-hook 'before-save-hook 'whitespace-cleanup)
+  ;; Aparently makefiles needs tabs, Booooooo
+  (add-hook 'makefile-mode 'indent-tabs-mode)
 
-;; Delete selected text
-(add-hook 'fundamental-mode 'delete-selection-mode)
-(add-hook 'text-mode-hook 'subword-mode)
-(add-hook 'prog-mode-hook
-          (lambda ()
-            (subword-mode +1)))
-#+END_SRC
+  ;; Delete selected text
+  (add-hook 'fundamental-mode 'delete-selection-mode)
+  (add-hook 'text-mode-hook 'subword-mode)
+  (add-hook 'prog-mode-hook
+            (lambda ()
+              (subword-mode +1)))
+  #+END_SRC
 
-And finally some misc stuff
-#+BEGIN_SRC emacs-lisp
-(defconst gopar/gc-cons-threshold (* 1024 1024 1024))
-(defun gopar/after-init-stuff ()
-  (alert (format "Emacs took %s" (emacs-init-time)) :title "Emacs Init")
-  (find-file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
-  (setq custom-file "~/.emacs.d/ignoreme.el")
-  (load custom-file t)
-  (setq gc-cons-percentage .6
-        gc-cons-threshold gopar/gc-cons-threshold)
-  ;; Why is debug on error enabled here????
-  ;; lets disable it
-  (toggle-debug-on-error -1))
+  And finally some misc stuff
+  #+BEGIN_SRC emacs-lisp
+  (defconst gopar/gc-cons-threshold (* 1024 1024 1024))
+  (defun gopar/after-init-stuff ()
+    (alert (format "Emacs took %s" (emacs-init-time)) :title "Emacs Init")
+    (find-file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
+    (setq custom-file "~/.emacs.d/ignoreme.el")
+    (load custom-file t)
+    (setq gc-cons-percentage .6
+          gc-cons-threshold gopar/gc-cons-threshold)
+    ;; Why is debug on error enabled here????
+    ;; lets disable it
+    (toggle-debug-on-error -1))
 
-(add-hook 'after-init-hook 'gopar/after-init-stuff -100)
+  (add-hook 'after-init-hook 'gopar/after-init-stuff -100)
 
-(progn
-  (add-to-list 'default-frame-alist `(font . "Hack 15"))
-  (set-face-attribute 'default t :font "Hack 15"))
-#+END_SRC
+  (progn
+    (add-to-list 'default-frame-alist `(font . "Hack 15"))
+    (set-face-attribute 'default t :font "Hack 15"))
+  #+END_SRC
 
 * Helper Functions
   All General purpose functions that are spread through out
@@ -311,7 +311,7 @@ And finally some misc stuff
   #+BEGIN_SRC emacs-lisp
   (defun gopar/auto-insert-jira-ticket-in-commit-msg ()
     (let ((has-ticket-title (string-match "^[A-Z]+-[0-9]+" (magit-get-current-branch)))
-          (has-ss-ticket (string-match "^gopar/[A-Z]+-[0-9]+" (magit-get-current-branch)))
+          (has-ss-ticket (string-match "^[A-Za-Z]+/[A-Z]+-[0-9]+" (magit-get-current-branch)))
           (words (s-split-words (magit-get-current-branch))))
       (if has-ticket-title
           (insert (format "%s-%s " (car words) (car (cdr words)))))
