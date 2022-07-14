@@ -62,6 +62,7 @@
         echo-keystrokes 0.1
         ;; Stop cursor from going into minibuffer prompt text
         minibuffer-prompt-properties '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)
+        history-delete-duplicates t
         redisplay-dont-pause t)
 
   ;; Smoother scrolling. Stolen from
@@ -159,15 +160,12 @@
   #+BEGIN_SRC emacs-lisp
   (defconst gopar/gc-cons-threshold (* 1024 1024 1024))
   (defun gopar/after-init-stuff ()
-    (alert (format "Emacs took %s" (emacs-init-time)) :title "Emacs Init")
+    ;; (alert (format "Emacs took %s" (emacs-init-time)) :title "Emacs Init")
     (find-file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
     (setq custom-file "~/.emacs.d/ignoreme.el")
     (load custom-file t)
     (setq gc-cons-percentage .6
-          gc-cons-threshold gopar/gc-cons-threshold)
-    ;; Why is debug on error enabled here????
-    ;; lets disable it
-    (toggle-debug-on-error -1))
+          gc-cons-threshold gopar/gc-cons-threshold))
 
   (add-hook 'after-init-hook 'gopar/after-init-stuff -100)
 
@@ -398,6 +396,7 @@
     All general org mode settings
     #+BEGIN_SRC emacs-lisp
     (use-package org
+      :pin gnu
       :defer t
       :custom
       (fill-column 80)
@@ -615,15 +614,26 @@
       (org-capture-templates
        '(
          ("c" "Inbox" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
-          "* TODO %? \n %U")
+          "* TODO %? \n  %U")
          ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
-          "* TODO %? :freetime:emacs:\n %U")
+          "* TODO %? :freetime:emacs:\n  %U")
          ("p" "Project" entry (file "~/.emacs.d/org/private/org-roam/gtd/gtd.org")
-          "* %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) scheduled!(copy)\n:ORDERED: t \n:END: \n%U \n** TODO Add entry")
+          "* %? [%] :project: \n  :PROPERTIES: \n  :TRIGGER: next-sibling todo!(NEXT) scheduled!(copy)\n  :ORDERED: t \n  :END: \n  %U \n  ** TODO Add entry")
          ("w" "Work" entry (file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
-          "* TODO %? :work:\n %U")
+          "* TODO %? :work:\n  %U")
          ("t" "Tickler" entry (file "~/.emacs.d/org/private/org-roam/gtd/tickler.org")
-          "* TODO %? \nSCHEDULED: %^{Schedule}t \n%U"))))
+          "* TODO %? \n  SCHEDULED: %^{Schedule}t \n  %U")
+         ("k" "Contact" entry (file "~/.emacs.d/org/private/org-roam/references/contacts.org")
+              "* %? \n  %U
+  :PROPERTIES:
+  :EMAIL:
+  :PHONE:
+  :NICKNAME:
+  :NOTE:
+  :ADDRESS:
+  :BIRTHDAY:
+  :Blog:
+  :END:"))))
     #+END_SRC
 
 *** Org Tables
@@ -1920,9 +1930,15 @@
     #+end_src
 
 *** [[https://github.com/Justintime50/github-dark-vscode-emacs-theme][Github Dark Theme]]
-
     #+begin_src emacs-lisp
     (use-package github-dark-vscode-theme
+      :ensure t
+      :defer t)
+    #+end_src
+
+*** [[https://github.com/qhga/shanty-themes/][Shanty Themes]]
+    #+begin_src emacs-lisp
+    (use-package shanty-themes
       :ensure t
       :defer t)
     #+end_src
@@ -1964,7 +1980,7 @@
      (setenv "PATH" (concat (getenv "PATH") ":/usr/sbin/"))
      (setenv "PATH" (concat (getenv "PATH") ":/sbin/"))
      (setenv "PATH" (concat (getenv "PATH") ":/bin/"))
-     (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/"))))
+     ;; (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/"))))
      (setenv "PATH" (concat (getenv "PATH") (concat ":" (expand-file-name "~/.nvm/versions/node/v16.9.1/bin/"))))
 
      ;; Node stuff sigh
@@ -1972,8 +1988,8 @@
      (setenv "NVM_CD_FLAGS" "-q")
      (setenv "NVM_NODEJS_ORG_MIRROR" "https://nodejs.org/dist")
      (setenv "NVM_IOJS_ORG_MIRROR" "https://iojs.org/dist")
-     (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/node/"))
-     (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v12.16.2/bin/"))
+     (setenv "NVM_PATH" (expand-file-name "~/.nvm/versions/node/v16.9.1/bin/node/"))
+     (setenv "NVM_BIN" (expand-file-name "~/.nvm/versions/node/v16.9.1/bin/"))
 
      ;; Disable Pagers
      (setenv "GIT_PAGER" "")
@@ -1992,7 +2008,7 @@
                                "/usr/sbin"
                                "/sbin"
                                "/bin"
-                               ,(expand-file-name "~/.nvm/versions/node/v12.16.2/bin/")
+                               ;; ,(expand-file-name "~/.nvm/versions/node/v12.16.2/bin/")
                                ,(expand-file-name "~/.nvm/versions/node/v16.9.1/bin/")))))
 
    (add-hook 'after-init-hook 'gopar/add-env-vars)
@@ -2238,7 +2254,7 @@ eg, switching branches."
      :defer t
      :ensure t
      :init
-     (setq rand-theme-wanted '(tao-yin minsk github-dark-vscode manoj-dark eziam-dusk tsdh-dark deeper-blue))
+     (setq rand-theme-wanted '(tao-yin minsk manoj-dark shanty-themes-dark github-dark-vscode eziam-dusk tsdh-dark deeper-blue))
 
      :bind (("C-z" . rand-theme-iterate)
             ("C-S-z" . rand-theme-iterate-backwards)))
@@ -2953,4 +2969,29 @@ eg, switching branches."
    (use-package kotlin-mode
      :defer t
      :ensure t)
+   #+end_src
+
+** nginx
+   #+begin_src emacs-lisp
+   (use-package nginx-mode
+     :defer t
+     :ensure t)
+   #+end_src
+
+** eslint-fix
+   Package to run eslint as a one off thing, and not on save cause it takes forever.
+   Also, this is mainly configured for work so won't work with other js project.
+
+   #+begin_src emacs-lisp
+   (use-package eslint-fix
+     :defer t
+     :ensure t
+     :custom
+     (eslint-fix-executable "/Users/danielgopar/work/mobileweb/node_modules/eslint/bin/eslint.js")
+     (eslint-fix-options '("-c" "/Users/danielgopar/work/mobileweb/.eslintrc.js"))
+     :init
+     (defun gopar/eslint-fix ()
+       (interactive)
+       (let ((default-directory (projectile-project-root)))
+         (eslint-fix))))
    #+end_src
