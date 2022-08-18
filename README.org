@@ -2268,7 +2268,7 @@ eg, switching branches."
      :commands (ace-window))
    #+end_src
 
-** [[HTTPS://github.com/emacs-helm/helm][Helm]]
+**  [[https://github.com/emacs-helmC/helm][Helm]]
    This provides some nice UI things that I've grown to love.
    There's a lot of packages that build on top of help so they'll all be broken down in this section.
 
@@ -2412,7 +2412,7 @@ eg, switching branches."
      :bind (("C-x g" . magit))
      :config
      (setq vc-handled-backends nil)
-
+     (setq magit-diff-refine-hunk 'all)
      (defun magit/undo-last-commit (number-of-commits)
        "Undoes the latest commit or commits without loosing changes"
        (interactive "P")
