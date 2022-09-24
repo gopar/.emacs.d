@@ -1,4 +1,5 @@
 ;;; An extension of 'powerline' theme from `eshell-git-prompt`
+;;; NOTE: Requires package `virtualenvwrapper' from melpa if you want virtualenv info
 
 (defmacro with-read-only-face (str &rest properties)
   "Add face PROPERTIES to STR."
@@ -6,7 +7,7 @@
   `(propertize ,str 'face (list ,@properties) 'read-only t 'rear-nonsticky '(read-only)))
 
 (defun eshell-git-prompt-powerline-venv ()
-  "Display pyvenv info if available"
+  "Display virualenv info if available"
   (let ((segment-separator "\xe0b0")
         (branch            "\xe0a0")
         (detached          "\x27a6")
@@ -36,9 +37,9 @@
                         " ")
               'face git-face 'read-only t)))
     (concat
-     (when (and (boundp 'pyvenv-virtual-env-name) pyvenv-virtual-env-name)
+     (when (and (boundp 'venv-current-name) venv-current-name)
        (concat
-        (with-read-only-face pyvenv-virtual-env-name
+        (with-read-only-face venv-current-name
           :background "#5B3758")
         (with-read-only-face segment-separator
           :foreground "#5B3758"

@@ -1,0 +1,4 @@
+# profile is always loaded when something invokes eshell (even in background/non-interactive)
+# Can use both elisp and sh style notation but elisp ends up being echo'd to terminal
+
+# export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/lib"

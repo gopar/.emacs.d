@@ -1,0 +1,2 @@
+# Login is *only* loaded when starting an interactive eshell session.
+# Can use both elisp and sh style notation but elisp ends up being echo'd to terminal
