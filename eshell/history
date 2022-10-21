@@ -43,14 +43,12 @@ workon virtualenv3
 zxb
 echo $eshell-path-env
 deactivate 
-python --version
 ledger bal hair 
 ledger bal hair -R 
 ledger reg hair -R 
 ledger reg Hair 
 ledger bal payee "Hair"
 ledger reg payee "Hair"
-which python
 clr src:test help
 clr src:test --help
 tithe
@@ -72,13 +70,11 @@ pylint src/django_apps/preventive_care/consults/steady_md/tests/util.py
 pylint -v src/django_apps/preventive_care/consults/steady_md/tests/util.py
 man pylint
 cc pylint --help
-pwd
 /Users/daniel.gopar/work/color/local/virtualenv3/bin/python3 -c import\ sys\;sys.path.pop\(0\)\;import\ runpy\;runpy.run_module\(\"pylint\"\,\ run_name\=\'__main__\'\) --reports\=n --output-format\=json --rcfile\=/Users/daniel.gopar/work/color/.pylintrc /Users/daniel.gopar/work/color/src/django_apps/preventive_care/consults/steady_md/tests/test_steady_md_client.py
 pylint --reports\=n --output-format\=json --rcfile\=/Users/daniel.gopar/work/color/.pylintrc /Users/daniel.gopar/work/color/src/django_apps/preventive_care/consults/steady_md/tests/test_steady_md_client.py
 which pylint
 jj ; /Users/daniel.gopar/work/color/local/virtualenv3/bin/python3 -c import\ sys\;sys.path.pop\(0\)\;import\ runpy\;runpy.run_module\(\"pylint\"\,\ run_name\=\'__main__\'\) --reports\=n --output-format\=json --rcfile\=/Users/daniel.gopar/work/color/.pylintrc /Users/daniel.gopar/work/color/src/django_apps/preventive_care/consults/steady_md/tests/test_steady_md_client.py
 jj 
-pwd
 /Users/daniel.gopar/work/color/local/virtualenv3/bin/python3 -c import\ sys\;sys.path.pop\(0\)\;import\ runpy\;runpy.run_module\(\"pylint\"\,\ run_name\=\'__main__\'\) --reports\=n --output-format\=json --rcfile\=/Users/daniel.gopar/work/color/.pylintrc /Users/daniel.gopar/work/color/src/django_apps/preventive_care/consults/steady_md/tests/test_steady_md_client.py
 python3 -c import\ sys\;sys.path.pop\(0\)\;import\ runpy\;runpy.run_module\(\"pylint\"\,\ run_name\=\'__main__\'\) --reports\=n --output-format\=json --rcfile\=/Users/daniel.gopar/work/color/.pylintrc /Users/daniel.gopar/work/color/src/django_apps/preventive_care/consults/steady_md/tests/test_steady_md_client.py
 python3 -m pylint --reports\=n --output-format\=json --rcfile\=/Users/daniel.gopar/work/color/.pylintrc /Users/daniel.gopar/work/color/src/django_apps/preventive_care/consults/steady_md/tests/test_steady_md_client.py
@@ -119,7 +115,6 @@ ledger bal payee "City of Tulsa"
 ledger reg payee "City of Tulsa"
 ledger reg utilities 
 ledger bal utilities 
-which python
 clr pg
 clr pg:start
 git log -p src/django_apps/onsite_collections/interfaces/collection_availability.py
@@ -141,7 +136,167 @@ setenv EXA_ICON_SPACING 2
 (setenv "EXA_ICON_SPACING" 2)
 (setenv "EXA_ICON_SPACING" "2")
 emacs --help
-exit
 rm -rf elpa/
 git config --global user.email "gopardaniel@gmail.com"
 git config --global user.name "Gopar"
+ipython --version
+python --version
+jj
+cd src/django_apps/backfills/
+cd jobs/
+clr django:migrate preventative_care
+clr django:migrate preventive_care
+clr django:migrate --verbose preventive_care
+clr django:migrate --help
+cd src/django_apps/backfills/
+grep "created_by_id" .
+grep -rl "created_by_id" 
+grep  "created_by_id" 
+clr django:migrate
+jj && cc ./src/manage.py admin backfilllocally
+cc ./src/manage.py admin backfill_locally
+cc ./src/manage.py admin backfilllocally
+dropdb
+dropdb --help
+psql -U postgres
+psql -U django_user
+psql -U postgres
+psql -U django_user
+man psql
+psql -U django_user -d django
+man createdb
+dropdb django 
+createdb django -U django_user
+psql -U django_user -d django
+cc clr django:migrate
+evn
+env
+git st
+git diff
+git commit
+git add encrypted/keys/77de2589f0783adadb696b31a6ccce05-uhc-gsheet-service-account.json.yaml.smime:66:
+git add encrypted/keys/77de2589f0783adadb696b31a6ccce05-uhc-gsheet-service-account.json.yaml.smime:66
+git add encrypted/keys/77de2589f0783adadb696b31a6ccce05-uhc-gsheet-service-account.json.yaml.smime
+git add encrypted/keys/a616d3bd3fdb5682c568e5e3ca846e7b-uhc-gsheet-service-account.json.yaml.smime
+git st
+git commit
+git merge --abort
+cc ./pants lint
+cc ./pants fmt
+ledger bal pnc
+ledger reg chase -b "september" 
+ledger reg chase -b "september" --witdh  80
+man ledget
+man ledger
+ledger bal chase
+man ledger
+ledger reg chase -b "september" --columns  80
+ledger bal chase
+ledger bal chase --colums 80
+ledger bal fnbo
+ledger bal fnbo --columns 80
+ledger bal barclay --columns 80
+ledger bal chase -b "september" --columns  80
+ledger bal chase -b "august" --columns  80
+ledger bal chase -b "august" -e "september"
+ledger bal chase -b "august" -e "August"
+ledger reg chase -b "august" 
+ledger bal chase -b "august" -e "september"
+ledger reg chase -b "august" -e "september"
+ledger bal lia -R -C
+$0
+echo -n "Senior Software Engineer, Web" | base64 
+echo "Senior Software Engineer, Web" | base64 
+echo -n "Senior Software Engineer, Web" | base64 
+http -v POST https://flightaware.com/about/careers/position/A3.B17/apply name="Test" email="test@test.com"
+http -v POST https://flightaware.com/about/careers/position/A3.B17/apply name="Test" email="test@test.com" AUTHORIZATION:"Bearer U2VuaW9yIFNvZnR3YXJlIEVuZ2luZWVyLCBXZWIK"
+http -v POST https://flightaware.com/about/careers/position/A3.B17/apply name="Test" email="test@test.com" Authorization:"Basic U2VuaW9yIFNvZnR3YXJlIEVuZ2luZWVyLCBXZWIK"
+echo -n "Senior Software Engineer, Web" | base64 
+echo "Senior Software Engineer, Web" | base64 
+http -v POST https://flightaware.com/about/careers/position/A3.B17/apply name="Test" email="test@test.com" Authorization:"Basic U2VuaW9yIFNvZnR3YXJlIEVuZ2luZWVyLCBXZWI="
+http -v POST https://flightaware.com/about/careers/position/A3.B17/apply name="Test" email="test@test.com" Authorization:"Bearer U2VuaW9yIFNvZnR3YXJlIEVuZ2luZWVyLCBXZWI="
+http -v POST https://flightaware.com/about/careers/position/A3.B17/apply name="Test" email="test@test.com" Authorization:"Bearer U2VuaW9yIFNvZnR3YXJlIEVuZ2luZWVyLCBXZWIK"
+http -v POST https://flightaware.com/about/careers/position/A3.B17/apply name="Daniel Gopar" email="gopardaniel@gmail.com" Authorization:"Bearer U2VuaW9yIFNvZnR3YXJlIEVuZ2luZWVyLCBXZWI="
+emacs --help
+/Applications/Emacs.app/Contents/MacOS/Emacs 
+/Applications/Emacs.app/Contents/MacOS/Emacs -Q
+/Applications/Emacs.app/Contents/MacOS/Emacs &
+ledger bal lia -R -C
+ledger bal pnc -R -C
+ledger bal pnc
+ledger reg pnc:checking -b "september"
+ledger reg pnc:checking -b "september" --columns 40
+ledger reg pnc:checking -b "september" --columns 50
+ledger reg pnc:checking -b "september" --columns 60
+ledger reg pnc:checking -b "september" --columns 80
+ledger reg pnc:checking --columns 80
+ledger bal lia -R -C  --columns 80
+ledger reg lia -R -C  --columns 80
+ledger reg chase -R -C  --columns 80
+ledger bal chase --colums 80
+ledger reg chase --columns 80
+ledger bal chase --columns 80
+cd ../../work/
+git clone git@github.com:color/ops.git
+cd ops/
+ledger bal rest -b "october"
+ledger bal restau -b "october"
+ledger bal restau -b "september"
+ledger reg restau -b "september"
+ledger reg restau -b "september" -e "october"
+ledger bal restau -b "september" -e "october"
+ledger bal restau -b "august" -e "september"
+tithe
+ledger bal income:salary -b "January"
+git pull
+python --version
+docker --help
+ag --list-file-types
+man ag
+black --help
+exit
+black ./src/django_apps/preventive_care/consults/wheel/consult.py
+cd src/django_apps/preventive_care/consults/
+ag "waffle.switch_is_active" -r .
+clear 1 && jj && ag "waffle.switch_is_active" -r .
+clear 1 && jj && ag "waffle.switch_is_active" -r src/django_apps/preventive_care/consults/
+cd ~/personal/
+mkdir books
+cd books/
+python -m venv --help
+mkvirtualenv --help
+python -m venv . 
+l bin/
+bat bin/activate 
+workon  books
+workon books
+python --help
+which python
+ag "waffle.switch_is_active" -r .
+ag "waffle.switch_is_active" -r . -A 2
+cc ag "waffle.switch_is_active" -r . -A 2
+wpd
+pwd
+git config pull.rebase true
+ff src/django_apps/preventive_care/consults/wheel/consult.py
+pudb clr django:test src/django_apps/preventive_care/consults/wheel/tests/test_consult.py
+cd ../personal/
+git clone git@github.com:gopar/ewnium.git
+cd ewnium/
+ff ewnium.el
+ledger bal lia -R
+ledger bal groce -R
+ledger bal groce -R -b "October"
+ledger bal groce -R -b "september"
+ledger bal groce -R -b "september" -e "october"
+ledger bal groce -R -b "august" -e "september"
+ledger bal resta -R -b "august" -e "september"
+ledger bal resta -R -b "september" -e "october"
+ledger bal resta -R -b "october"
+cc ledger reg resta -R -b "september" -e "october"
+ledger reg resta -R -b "september" -e "october"
+ag "Error" -r . -A 2
+cc ag "Error" -r . 
+ag "reschedule" -i -f .
+kdj
+exit

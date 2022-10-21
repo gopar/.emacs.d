@@ -46,6 +46,9 @@ Update a lot of defaults that I have no idea why they aren't defaults
       ;; Stop cursor from going into minibuffer prompt text
       minibuffer-prompt-properties '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)
       history-delete-duplicates t
+      ;; Lets see if this works
+      completion-ignore-case t
+      read-buffer-completion-ignore-case t
       redisplay-dont-pause t)
 
 ;; Smoother scrolling. Stolen from
@@ -269,6 +272,44 @@ Mainly for eshell/compilation
       (replace-match ""))))
 #+end_src
 
+#+begin_src emacs-lisp
+(defun gopar/mu-back-to-last-edit ()
+  "Jump back to the last change in the current buffer."
+  (interactive)
+  (ignore-errors
+    (let ((inhibit-message t))
+      (undo-only)
+      (undo-redo 1))))
+
+(global-set-key (kbd "M-/") 'gopar/mu-back-to-last-edit)
+#+end_src
+
+Pair programming settings
+
+#+begin_src emacs-lisp
+(defvar gopar-pair-programming nil)
+
+(defun gopar/pair-programming ()
+  "Poor mans minor mode for setting up things that i like to make pair programmikng easier."
+  (interactive)
+  (if gopar-pair-programming
+      (progn
+        ;; dont display line numbers
+        (global-display-line-numbers-mode -1)
+        ;; disable all themes change to a friendlier theme
+        (mapcar 'disable-theme custom-enabled-themes)
+        (load-theme 'tao-yin)
+        (setq gopar-pair-programming nil))
+
+    (progn
+      ;; display line numbers
+      (global-display-line-numbers-mode)
+      ;; disable all themes change to a friendlier theme
+      (mapcar 'disable-theme custom-enabled-themes)
+      (load-theme 'manoj-dark)
+      (setq gopar-pair-programming t))))
+#+end_src
+
 * Built-in Packages
 ** COMMENT Hydra use-package
 This isn't built in but I need here for it to load sooner. sigh.
@@ -338,7 +379,7 @@ All general org mode settings
   ;; :pin gnu
   :defer t
   :custom
-  (fill-column 120)
+  (fill-column 110)
   ;; Where the org files live
   (org-directory "~/.emacs.d/org/")
   ;; Where archives should go
@@ -352,6 +393,7 @@ All general org mode settings
   (org-M-RET-may-split-line '((default . nil)))
   ;; hide stars except for leader star
   (org-hide-leading-stars t)
+  (org-hide-emphasis-markers nil)
   ;; Show as utf-8 chars
   (org-pretty-entities t)
   ;; put timestamp when finished a todo
@@ -486,6 +528,7 @@ Mode for time management. Pretty usefull. I use it a lot.
 (use-package org-agenda
   :after org
   :bind (("C-c a" . org-agenda))
+  :hook (org-agenda-finalize . org-agenda-entry-text-mode)
   :custom
   (org-agenda-window-setup 'only-window)
   (org-agenda-restore-windows-after-quit t)
@@ -554,15 +597,11 @@ Templating system for creating entries
   (org-capture-templates
    '(
      ("c" "Inbox" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
-      "* TODO %? \n%U")
-     ("e" "Inbox [Emacs]" entry (file "~/.emacs.d/org/private/org-roam/gtd/inbox.org")
-      "* TODO %? :freetime:emacs:\n%U")
+      "* TODO %?\n:PROPERTIES:\n:DATE_ADDED: %u\n:END:")
      ("p" "Project" entry (file "~/.emacs.d/org/private/org-roam/gtd/gtd.org")
-      "* %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) scheduled!(copy)\n:ORDERED: t \n:END: \n%U \n** TODO Add entry")
-     ("w" "Work" entry (file "~/.emacs.d/org/private/org-roam/references/20210923100616-styleseat.org")
-      "* TODO %? :work:\n%U")
+      "* %? [%] :project: \n:PROPERTIES: \n:TRIGGER: next-sibling todo!(NEXT) scheduled!(copy)\n:ORDERED: t \n:DATE_ADDED: %u\n:END:\n** TODO Add entry")
      ("t" "Tickler" entry (file "~/.emacs.d/org/private/org-roam/gtd/tickler.org")
-      "* TODO %? \n  SCHEDULED: %^{Schedule}t \n%U")
+      "* TODO %? \nSCHEDULED: %^{Schedule}t\n:PROPERTIES:\n:DATE_ADDED: %u\n:END:\n")
      ("k" "Contact" entry (file "~/.emacs.d/org/private/org-roam/references/contacts.org")
       "* %? \n%U
 :PROPERTIES:
@@ -986,7 +1025,7 @@ All these modules are configured down below after this section.
       :ensure nil
       :custom
       (eshell-destroy-buffer-when-process-dies t)
-      (eshell-visual-commands '("pudb" "pudb3" "vi" "screen" "tmux" "top" "htop"
+      (eshell-visual-commands '("psql" "pudb" "pudb3" "vi" "screen" "tmux" "top" "htop"
                                 "less" "more" "lynx" "links" "ncftp"
                                 "mutt" "pine" "tin" "trn" "elm")))
     #+end_src
@@ -1127,7 +1166,7 @@ All these modules are configured down below after this section.
                        `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
                                   '(:foreground "SteelBlue1")
                                 '(:inherit font-lock-type-face))))))
-      (advice-add 'load-theme :after 'gopar/dynamic-faces-on-theme)
+      ;; (advice-add 'load-theme :after 'gopar/dynamic-faces-on-theme)
       :hook (eshell-mode . eshell-syntax-highlighting-mode))
     #+end_src
 
@@ -1446,7 +1485,7 @@ So here I try to mimic those keybindings, but there are a few things to be aware
 ;; Eww uses the =shr-map= and =shr-image-map= from =shr.el=.
 (use-package eww
   :defer t
-  :after (hydra shr)    ;; Maybe do :config (require 'hydra/shr) ??
+  :after (shr)    ;; Maybe do :config (require 'hydra/shr) ??
   :init
   (setq eww-goto-map (let ((map (make-sparse-keymap)))
                        (define-key map "g" 'beginning-of-buffer)
@@ -1486,8 +1525,8 @@ So here I try to mimic those keybindings, but there are a few things to be aware
               ;;;;;;;;;;;;;;
               ;; Extras
               ;;;;;;;;;;;;;;
-              ("<tab>" . org-cycle)
-              ("S-<tab>" . org-shifttab)
+              ("<tab>" . shrface-outline-cycle)
+              ("S-<tab>" . shrface-outline-cycle-buffer)
               ("C-t" . shrface-toggle-bullets)
               ("C-i" . shrface-links-helm)
               ("C-o" . shrface-headline-helm)
@@ -1692,20 +1731,26 @@ Window management
               ("C-c C-p" . nil)
               ("C-c C-z" . run-python))
   :hook (python-mode . (lambda () (setq forward-sexp-function nil) (make-local-variable 'python-shell-virtualenv-root)))
-  :init
-  (defun gopar/pdb (command-line)
-    "PDB usage to be used in work repos cause idk why normal pdb won't work as before???
-Just a small wrapper around  `pdb`"
-    (interactive (list (read-from-minibuffer "Run PDB like this:" "clr src:test ")))
-    (let ((default-directory (projectile-project-root)))
-      (pdb command-line)))
-  (add-hook 'gud-mode-hook '(lambda () (company-mode -1)))
   :custom
   (python-shell-interpreter "ipython")
   (python-shell-interpreter-args "-i --simple-prompt")
   :config
   (add-to-list 'python-shell-completion-native-disabled-interpreters "python"))
 #+END_SRC
+
+** GUD (Grand Unified Debugger)
+#+begin_src emacs-lisp
+(use-package gud
+  :ensure nil
+  :hook (gud-mode . (lambda () (company-mode -1)))
+  :init
+  (defun gopar/pdb (command-line)
+    "PDB usage to be used in work repos cause idk why normal pdb won't work as before???
+Just a small wrapper around  `pdb`"
+    (interactive (list (read-from-minibuffer "Run PDB like this:" "clr src:test ")))
+    (let ((default-directory (projectile-project-root)))
+      (pdb command-line))))
+#+end_src
 
 ** COMMENT JavaScript JS
 
@@ -1780,14 +1825,17 @@ Package that handles what to do with a URL before passing it to a browser
   :defer t
   :ensure nil
   :custom
-  ;; Emacs can't find chrome binary
+  ;; Emacs can't find browser binaries
   (browse-url-chrome-program "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
   (browse-url-firefox-program "/Applications/Firefox.app/Contents/MacOS/firefox")
   ;; Neat trick to open that route to different places
   (browse-url-handlers '(("https://.*.atlassian.net/.*" . browse-url-chrome)
-                                 ("https://courses.joshwcomeau.com/.*" . browse-url-firefox)
-                                 ("https://epicreact.dev/learn/.*" . browse-url-firefox)
-                                 ("." . eww-browse-url)))
+                         ("https://courses.joshwcomeau.com/.*" . browse-url-firefox)
+                         ("https://epicreact.dev/learn/.*" . browse-url-firefox)
+                         ("https://www.youtube.com/.*" . browse-url-firefox)
+                         ("https://youtube.com/.*" . browse-url-firefox)
+                         ("https://www.google.com/maps/.*" . browse-url-firefox)
+                         ("." . eww-browse-url)))
   (browse-url-firefox-new-window-is-tab t)
   :config
   (put 'browse-url-handlers 'safe-local-variable (lambda (x) t))
@@ -1902,7 +1950,9 @@ Package that handles what to do with a URL before passing it to a browser
   :ensure nil
   :hook ((after-init . column-number-mode)
          (makefile-mode . indent-tabs-mode)
-         (fundamental-mode . delete-selection-mode)))
+         (fundamental-mode . delete-selection-mode)
+         (fundamental-mode . auto-fill-mode)
+         (org-mode . auto-fill-mode)))
 #+end_src
 
 ** Paren
@@ -1936,7 +1986,7 @@ Automatically input a closing parens when putting an open parens
   :diminish
   ;; Works pretty good w/ some themes. When it doesn't, the line is barley visible but I can live with that.
   ;; highlight line
-  :hook (after-init . global-hl-line-mode))
+  :hook (prog-mode . hl-line-mode))
 #+end_src
 
 ** Delsel
@@ -1977,20 +2027,6 @@ Automatically input a closing parens when putting an open parens
   :diminish)
 #+end_src
 
-** vc-hooks
-#+begin_src emacs-lisp
-(use-package vc-hooks
-  :ensure nil
-  :diminish
-  :custom
-  (vc-handled-backends nil))
-#+end_src
-
-** Prettify Symbols
-#+begin_src emacs-lisp
-
-#+end_src
-
 * Third Party Packages
 This is for 3rd party packages that don't heavily depend on built in modes
 
@@ -2017,7 +2053,8 @@ Bunch of functions I use for REI calculations in org mode
 
 ** Themes
 All themes which I love
-*** [[https://github.com/11111000000/tao-theme-emacs][Tao Theme]]
+*** Dark Themes
+**** [[https://github.com/11111000000/tao-theme-emacs][Tao Theme]]
 My favorite theme
 
 #+BEGIN_SRC emacs-lisp
@@ -2026,7 +2063,8 @@ My favorite theme
   :hook (after-init .  (lambda () (load-theme 'tao-yin))))
 #+END_SRC
 
-*** [[https://github.com/thblt/eziam-theme-emacs][Eziam]]
+**** [[https://github.com/thblt/eziam-theme-emacs][Eziam]]
+Light theme also available
 
 #+BEGIN_SRC emacs-lisp
 (use-package eziam-theme
@@ -2034,26 +2072,59 @@ My favorite theme
   :ensure t)
 #+end_src
 
-*** [[https://github.com/DogLooksGood/joker-theme][Joker Theme]]
+**** [[https://github.com/DogLooksGood/joker-theme][Joker Theme]]
 Need to wait for it to be in melpa
 
-*** [[https://github.com/jlpaca/minsk-theme/][Minsk Theme]]
+**** [[https://github.com/jlpaca/minsk-theme/][Minsk Theme]]
 #+begin_src emacs-lisp
 (use-package minsk-theme
   :defer t
   :ensure t)
 #+end_src
 
-*** [[https://github.com/Justintime50/github-dark-vscode-emacs-theme][Github Dark Theme]]
+**** [[https://github.com/Justintime50/github-dark-vscode-emacs-theme][Github Dark Theme]]
 #+begin_src emacs-lisp
 (use-package github-dark-vscode-theme
   :ensure t
   :defer t)
 #+end_src
 
-*** [[https://github.com/qhga/shanty-themes/][Shanty Themes]]
+**** [[https://github.com/qhga/shanty-themes/][Shanty Themes]]
 #+begin_src emacs-lisp
 (use-package shanty-themes
+  :ensure t
+  :defer t)
+#+end_src
+
+**** [[https://github.com/osener/emacs-afternoon-theme][Afternoon Theme]]
+#+begin_src emacs-lisp
+(use-package afternoon-theme
+  :ensure t
+  :defer t)
+#+end_src
+*** Light Themes
+**** [[https://github.com/anler/minimal-theme][Minimal Theme]]
+Also dark theme available
+#+begin_src emacs-lisp
+(use-package minimal-theme
+  :ensure t
+  :defer t)
+#+end_src
+**** [[https://github.com/mswift42/soft-stone-theme/][Soft Stone Theme]]
+#+begin_src emacs-lisp
+(use-package soft-stone-theme
+  :ensure t
+  :defer t)
+#+end_src
+**** [[https://github.com/WJCFerguson/emacs-faff-theme/][Faff Theme]]
+#+begin_src emacs-lisp
+(use-package faff-theme
+  :ensure t
+  :defer t)
+#+end_src
+**** [[https://github.com/aalpern/emacs-color-theme-autumn-light][Autumn Light]]
+#+begin_src emacs-lisp
+(use-package autumn-light-theme
   :ensure t
   :defer t)
 #+end_src
@@ -2092,7 +2163,6 @@ Settings up env vars manually :(
   (load-file "~/.emacs.d/eshell/set_work_env.el")
   (setq-default eshell-path-env (getenv "PATH"))
 
-  ;; Should probably copy all the paths from PATH onto here
   (setq exec-path (append exec-path
                           `("/usr/local/bin"
                             "/usr/bin"
@@ -2101,8 +2171,7 @@ Settings up env vars manually :(
                             "/bin"
                             "/Users/daniel.gopar/.asdf/shims"
                             )
-                          (split-string (getenv "PATH") ":")
-                          )))
+                          (split-string (getenv "PATH") ":"))))
 
 (add-hook 'after-init-hook 'gopar/add-env-vars)
 #+end_src
@@ -2282,7 +2351,7 @@ I use it for displaying all annotations after pushing to remote since that usual
 means I'll be creating a PR request, and having an overview of annotations I made
 within the branch would be awesome.
 
-#+begin_src
+#+begin_src emacs-lisp
 (defun gopar/annotate-setup ()
   "Setup annotate to read from branch specific db.
 Useful for keeping annotations seperate from git branch to branch.
@@ -2353,7 +2422,17 @@ Packages for built in SHR (Simple HTML Renderer)
   :defer t
   :ensure t
   :init
-  (setq rand-theme-wanted '(tao-yin minsk manoj-dark shanty-themes-dark github-dark-vscode eziam-dusk tsdh-dark deeper-blue))
+  (setq rand-theme-light '(minimal-light tao-yang soft-stone eziam-light faff autumn-light))
+  (setq rand-theme-dark '(tao-yin minsk manoj-dark shanty-themes-dark github-dark-vscode eziam-dusk tsdh-dark deeper-blue afternoon))
+  (setq rand-theme-wanted rand-theme-light)
+
+  (defun gopar/switch-to-light-themes ()
+    (interactive)
+    (setq rand-theme-wanted rand-theme-light))
+
+  (defun gopar/switch-to-dark-themes ()
+    (interactive)
+    (setq rand-theme-wanted rand-theme-dark))
 
   :bind (("C-z" . rand-theme-iterate)
          ("C-S-z" . rand-theme-iterate-backwards)))
@@ -2392,7 +2471,7 @@ Docs: https://github.com/emacs-helm/helm
   (helm-locate-fuzzy-match t)
   ;; Maybe useful? I'll leave it in for now
   (helm-split-window-inside-p t)
-  (helm-move-to-line-cycle-in-source t)
+  (helm-move-to-line-cycle-in-source nil)
   ;; Probably not useful?
   (helm-echo-input-in-header-line t)
   :config
@@ -2561,7 +2640,7 @@ Mainly for doom moodline
   :if (display-graphic-p))
 #+end_src
 
-** COMMENT [[https://github.com/seagle0128/doom-modeline/][Doom Modeline]]
+** [[https://github.com/seagle0128/doom-modeline/][Doom Modeline]]
 Better UI for Modeline.
 Need to install fonts first by doing this
 
@@ -2574,10 +2653,20 @@ M-x all-the-icons-install-fonts
 (use-package doom-modeline
   :ensure t
   :init (doom-modeline-mode 1)
-  :config (column-number-mode 1)
+  ;; :config (column-number-mode 1)
   :custom
   (doom-modeline-height 10)
-  (doom-modeline-buffer-modification-icon nil))
+  (doom-modeline-window-width-limit nil)
+  (doom-modeline-buffer-file-name-style 'truncate-with-project)
+  (doom-modeline-minor-modes nil)
+  (doom-modeline-enable-word-count nil)
+  (doom-modeline-buffer-encoding nil)
+  (doom-modeline-buffer-modification-icon t)
+  (doom-modeline-env-python-executable "python")
+  ;; needs display-time-mode to be one
+  (doom-modeline-time t)
+  (doom-modeline-vcs-max-length 12)
+  )
 #+END_SRC
 
 ** [[https://github.com/abo-abo/hydra][Hydra]]
@@ -2892,7 +2981,14 @@ Search Engine goodies
   :defer t
   :hook (after-init . engine-mode)
   :bind (("C-x / e" . browse-url-firefox)
-         ("C-x / w" . browse-url-chrome))
+         ("C-x / w" . browse-url-chrome)
+         ("C-x / u" . gopar/browse-actual-url))
+  :init
+  (defun gopar/browse-actual-url ()
+    (interactive)
+    (let ((url (thing-at-point-url-at-point)))
+      (when url
+        (eww url))))
   :config
   (defengine DRF-documentation
     "https://html.duckduckgo.com/html?q=django+rest+framework+documentation+%s"
@@ -2902,9 +2998,9 @@ Search Engine goodies
     "https://html.duckduckgo.com/html?q=django+documentation+%s"
     :keybinding "d")
 
-  (defengine actual-url
-    "%s"
-    :keybinding "u")
+  ;; (defengine actual-url
+  ;;   "%s"
+  ;;   :keybinding "u")
 
   (defengine duckduckgo-query
     "https://html.duckduckgo.com/html/?q=%s"
@@ -2912,8 +3008,7 @@ Search Engine goodies
 
   (defengine google-query
     "https://www.google.com/search?q=%s"
-    :keybinding "g")
-  )
+    :keybinding "g"))
 #+end_src
 
 ** [[https://github.com/ledger/ledger-mode][Ledger]]
@@ -2985,27 +3080,7 @@ instead of whats originally there which is (setq eshell-path)
  :ensure t
  :init
  (venv-initialize-eshell)
- (setq venv-location '("~/work/color/local/virtualenv3/")))
-#+end_src
-
-** COMMENT [[https://github.com/skeeto/impatient-mode][Impatient mode]]
-
-- Start an emacs web server with M-x httpd-start.
-- Start impatient mode in the buffers you're interested to live preview: M-x impatient-mode
-- Open your browser to localhost:8080/imp.
-
-if you want markdown preview then do these extra steps:
-- M-x imp-set-user-filter RET markdown-html RET
-
-#+begin_src emacs-lisp
-(use-package impatient-mode
-  :defer t
-  :ensure t
-  :init
-  (defun markdown-html (buffer)
-    (princ (with-current-buffer buffer
-      (format "<!DOCTYPE html><html><title>Impatient Markdown</title><xmp theme=\"united\" style=\"display:none;\"> %s  </xmp><script src=\"http://ndossougbe.github.io/strapdown/dist/strapdown.js\"></script></html>" (buffer-substring-no-properties (point-min) (point-max))))
-    (current-buffer))))
+ (setq venv-location '("~/work/color/local/virtualenv3/" "~/personal/books")))
 #+end_src
 
 ** [[https://github.com/flycheck/flycheck][Flycheck]]
@@ -3036,22 +3111,6 @@ Otherwise flycheck chokes and starts to slow down emacs"
       (message "File to large. Not turning on Flycheck-mode..."))))
 #+end_src
 
-** Importmagic
-
-#+begin_src emacs-lisp
-(use-package importmagic
-    :ensure t
-    :diminish
-    :bind (("C-c C-l" . gopar/importmagic-fix))
-    :hook (python-mode . importmagic-mode)
-    :config
-    (defun gopar/importmagic-fix (&optional arg)
-      "Fix import at point, with prefix fix all imports"
-      (if arg
-          (importmagic-fix-imports)
-        (importmagic-fix-symbol-at-point))))
-#+end_src
-
 ** [[https://github.com/davidmiller/dizzee][dizzee]]
 #+begin_src emacs-lisp
 (use-package dizzee
@@ -3073,4 +3132,41 @@ Otherwise flycheck chokes and starts to slow down emacs"
                          :cd "/Users/daniel.gopar/work/color/src/projects/home/frontend")
   (dz-defservice-group color-servers (color-gulp color-webserver color-webserver-clinical
                                                  color-fe-portal color-fe-clinical)))
+#+end_src
+
+** [[https://elpa.gnu.org/packages/vundo.html][vundo]]
+Visual undo graph. Only for every now and then
+#+begin_src emacs-lisp
+(use-package vundo
+  :ensure t
+  :defer t)
+#+end_src
+
+** COMMENT [[https://github.com/aviaviavi/link-preview.el][Link Preview]]
+Its not in melpa yet
+#+begin_src emacs-lisp
+(use-package link-preview
+  :ensure t
+  :defer t)
+#+end_src
+
+** [[https://github.com/spotify/dockerfile-mode][Dockerfile]]
+#+begin_src emacs-lisp
+(use-package dockerfile-mode
+  :ensure t
+  :defer t)
+#+end_src
+
+** Terraform
+#+begin_src emacs-lisp
+(use-package terraform-mode
+  :ensure t
+  :defer t)
+#+end_src
+
+** Markdown
+#+begin_src emacs-lisp
+(use-package markdown-mode
+  :ensure t
+  :defer t)
 #+end_src

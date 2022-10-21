@@ -29,9 +29,9 @@ Calculate the base monthly payment WITHOUT PMI and Proprty Taxes"
      (rei-calculate-monthly-property-tax house-value property-tax)
      (rei-calculate-monthly-homeowners-insurnace house-value insurance)))
 
-(defun rei-monthly-mortgage (house-value interest-rate loan-years pmi property-tax insurance)
+(defun rei-monthly-mortgage (house-value interest-rate loan-years pmi property-tax insurance &optional down-payment-percent)
   (setq house-value (rei-normalize-price house-value))
-  (setq principal (- house-value (rei-calculate-down-payment house-value interest-rate)))
+  (setq principal (- house-value (rei-calculate-down-payment house-value down-payment-percent)))
 
   (setq pmi (if (< interest-rate 20)
          (rei-calculate-monthly-PMI principal pmi)
