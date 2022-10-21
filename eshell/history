@@ -254,7 +254,6 @@ docker --help
 ag --list-file-types
 man ag
 black --help
-exit
 black ./src/django_apps/preventive_care/consults/wheel/consult.py
 cd src/django_apps/preventive_care/consults/
 ag "waffle.switch_is_active" -r .
@@ -300,3 +299,4 @@ cc ag "Error" -r .
 ag "reschedule" -i -f .
 kdj
 exit
+git checkout master
