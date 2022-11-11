@@ -272,18 +272,6 @@ Mainly for eshell/compilation
       (replace-match ""))))
 #+end_src
 
-#+begin_src emacs-lisp
-(defun gopar/mu-back-to-last-edit ()
-  "Jump back to the last change in the current buffer."
-  (interactive)
-  (ignore-errors
-    (let ((inhibit-message t))
-      (undo-only)
-      (undo-redo 1))))
-
-(global-set-key (kbd "M-/") 'gopar/mu-back-to-last-edit)
-#+end_src
-
 Pair programming settings
 
 #+begin_src emacs-lisp
@@ -1824,6 +1812,25 @@ Package that handles what to do with a URL before passing it to a browser
 (use-package browse-url
   :defer t
   :ensure nil
+  :init
+  (defun gopar/eww-advice-filter-args (args)
+    "When using a search engine, sometimes the redirects don't work.
+To work around this, we'll grab the url that we're targetting so that it doesn't
+go through the search engine"
+    (let (url path-and-query query is-ddg is-google param)
+      (setq url (car args))
+      (setq is-ddg (string-prefix-p "https://duckduckgo.com/l/?uddg=" url))
+      (setq is-google (string-prefix-p "https://www.google.com/url?" url))
+      (print url)
+
+      (when (or is-ddg is-google)
+        (setq url (url-generic-parse-url url))
+        (setq path-and-query (url-path-and-query url))
+        (setq query (cdr path-and-query))
+        (setq param (if is-ddg "uddg" "q"))
+        (setq url (car (cdr (assoc-string param (url-parse-query-string query))))))
+
+      `(,url ,@(cdr args))))
   :custom
   ;; Emacs can't find browser binaries
   (browse-url-chrome-program "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
@@ -2116,12 +2123,7 @@ Also dark theme available
   :ensure t
   :defer t)
 #+end_src
-**** [[https://github.com/WJCFerguson/emacs-faff-theme/][Faff Theme]]
-#+begin_src emacs-lisp
-(use-package faff-theme
-  :ensure t
-  :defer t)
-#+end_src
+
 **** [[https://github.com/aalpern/emacs-color-theme-autumn-light][Autumn Light]]
 #+begin_src emacs-lisp
 (use-package autumn-light-theme
@@ -2422,9 +2424,9 @@ Packages for built in SHR (Simple HTML Renderer)
   :defer t
   :ensure t
   :init
-  (setq rand-theme-light '(minimal-light tao-yang soft-stone eziam-light faff autumn-light))
+  (setq rand-theme-light '(minimal-light tao-yang soft-stone eziam-light autumn-light))
   (setq rand-theme-dark '(tao-yin minsk manoj-dark shanty-themes-dark github-dark-vscode eziam-dusk tsdh-dark deeper-blue afternoon))
-  (setq rand-theme-wanted rand-theme-light)
+  (setq rand-theme-wanted rand-theme-dark)
 
   (defun gopar/switch-to-light-themes ()
     (interactive)
@@ -2504,6 +2506,15 @@ Pre bundled with helm
   (helm-eshell-fuzzy-match t))
 #+end_src
 
+*** Helm Adaptive
+pre-bundled with helm
+
+#+begin_src emacs-lisp
+(use-package helm-adaptive
+  :ensure nil
+  :hook (after-init . helm-adaptive-mode))
+#+end_src
+
 *** [[https://github.com/emacsorphanage/helm-swoop/][Helm-Swoop]]
 Search extension that builds on top of helm. Pretty handy
 
@@ -2554,6 +2565,16 @@ Ag search extension
     (helm-flyspell-correct))
   :bind (:map flyspell-mode-map
               ("C-," . gopar/goto-misspelled-word-suggest-fix)))
+#+end_src
+
+*** [[https://github.com/yyoncho/helm-icons][Helm Icons]]
+Uses =all-the-icons=
+
+#+begin_src emacs-lisp
+(use-package helm-icons
+  :ensure t
+  :defer t
+  :hook (helm-mode . helm-icons-enable))
 #+end_src
 
 ** [[https://github.com/bbatsov/projectile/][Projectile]]
@@ -2904,16 +2925,49 @@ Made this since I rebinding semicolon to always put an underscore since I spent 
 
 #+END_SRC
 
-** [[https://github.com/alphapapa/bufler.el][Bufler]]
-A upgraded `ibuffer`
+** [[vc-relative-file][ibuffer Icons]]
+Ibuffer Icons sets it's own local buffer format and overrides the =ibuffer-formats= variable.
+So in order for ibuffer-vc to work, i have to include it in the icons-buffer format -_-
+#+begin_src emacs-lisp
+(use-package all-the-icons-ibuffer
+  :ensure t
+  :defer t
+  :custom
+  (all-the-icons-ibuffer-formats
+        `((mark modified read-only locked vc-status-mini
+          ;; Here you may adjust by replacing :right with :center or :left
+          ;; According to taste, if you want the icon further from the name
+          " " ,(if all-the-icons-ibuffer-icon
+                   '(icon 2 2 :left :elide)
+                 "")
+          ,(if all-the-icons-ibuffer-icon
+               (propertize " " 'display `(space :align-to 8))
+             "")
+          (name 18 18 :left :elide)
+          " " (size-h 9 -1 :right)
+          " " (mode+ 16 16 :left :elide)
+          " " (vc-status 16 16 :left)
+          " " vc-relative-file)
+    (mark " " (name 16 -1) " " filename)))
+
+  :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
+#+end_src
+
+** [[https://github.com/purcell/ibuffer-vc][ibuffer-vc]]
+Quick recap of what =vc-status-mini=
+https://github.com/purcell/ibuffer-vc/blob/master/ibuffer-vc.el#L204
 
 #+begin_src emacs-lisp
-(use-package bufler
-  :defer t
+(use-package ibuffer-vc
   :ensure t
-  :bind (("C-x C-b" . bufler))
-  ;;("C-x b" . bufler-switch-buffer))
-  )
+  :defer t
+  :hook (ibuffer . (lambda ()
+      (ibuffer-vc-set-filter-groups-by-vc-root)
+      (unless (eq ibuffer-sorting-mode 'alphabetic)
+        (ibuffer-do-sort-by-vc-status)
+        ;; (ibuffer-do-sort-by-alphabetic)
+        )
+      )))
 #+end_src
 
 ** [[https://elpa.gnu.org/packages/rainbow-mode.html][Rainbow mode]]
@@ -3142,14 +3196,6 @@ Visual undo graph. Only for every now and then
   :defer t)
 #+end_src
 
-** COMMENT [[https://github.com/aviaviavi/link-preview.el][Link Preview]]
-Its not in melpa yet
-#+begin_src emacs-lisp
-(use-package link-preview
-  :ensure t
-  :defer t)
-#+end_src
-
 ** [[https://github.com/spotify/dockerfile-mode][Dockerfile]]
 #+begin_src emacs-lisp
 (use-package dockerfile-mode
@@ -3169,4 +3215,20 @@ Its not in melpa yet
 (use-package markdown-mode
   :ensure t
   :defer t)
+#+end_src
+
+** [[https://github.com/alphapapa/topsy.el][Topsy]]
+#+begin_src emacs-lisp
+(use-package topsy
+  :ensure t
+  :defer t
+  :hook (prog-mode . topsy-mode))
+#+end_src
+
+** [[https://github.com/camdez/goto-last-change.el][Go to last change]]
+#+begin_src emacs-lisp
+(use-package goto-last-change
+  :ensure t
+  :defer t
+  :bind (("M-/" . goto-last-change)))
 #+end_src

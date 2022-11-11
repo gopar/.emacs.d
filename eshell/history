@@ -51,7 +51,6 @@ ledger bal payee "Hair"
 ledger reg payee "Hair"
 clr src:test help
 clr src:test --help
-tithe
 netw
 ledger lia -R
 ledger bal lia -R
@@ -136,7 +135,6 @@ setenv EXA_ICON_SPACING 2
 (setenv "EXA_ICON_SPACING" 2)
 (setenv "EXA_ICON_SPACING" "2")
 emacs --help
-rm -rf elpa/
 git config --global user.email "gopardaniel@gmail.com"
 git config --global user.name "Gopar"
 ipython --version
@@ -246,7 +244,6 @@ ledger reg restau -b "september"
 ledger reg restau -b "september" -e "october"
 ledger bal restau -b "september" -e "october"
 ledger bal restau -b "august" -e "september"
-tithe
 ledger bal income:salary -b "January"
 git pull
 python --version
@@ -298,5 +295,49 @@ ag "Error" -r . -A 2
 cc ag "Error" -r . 
 ag "reschedule" -i -f .
 kdj
-exit
 git checkout master
+ledger bal lia -R
+ledger reg lia -R -C  --columns 80
+ledger reg lia -R -C  --columns 80 -b "october"
+ledger bal lia -R
+exti
+convert --help
+man convert
+tithe
+pwd
+jj
+./pants check ./src/django_apps/preventive_care/consults/sms.py 
+./pants check ./src/django_apps/preventive_care/consults/
+cc ./pants check ./src/django_apps/preventive_care/consults/
+mypy --help
+mypy ./src/django_apps/preventive_care/consults/
+cc mypy ./src/django_apps/preventive_care/consults/
+ff mypy.ini 
+man mypy
+mypy --help
+cc mypy --no-warn-incomplete-stub ./src/django_apps/preventive_care/consults/apps/preventive_care/consults/
+cc mypy --no-warn-incomplete-stub ./src/django_apps/preventive_care/consults/
+cc mypy --no-warn-incomplete-stub --config-file ./mypy.ini ./src/django_apps/preventive_care/consults/apps/preventive_care/consults/
+cc mypy --no-warn-incomplete-stub --config-file ./mypy.ini ./src/django_apps/preventive_care/consults/
+cc mypy --no-warn-incomplete-stub --ignore-missing-import --config-file ./mypy.ini ./src/django_apps/preventive_care/consults/
+clr django:makemigrations preventive_care ordering_physicians
+ledger reg chase --columns 80 -b "october"
+ledger bal restau -R
+ledger bal restau -R -b "october"
+ledger bal groce -R -b "october"
+exir
+exit
+clr django:logmigrations
+clr django:makemigrations preventive_care 
+clr django:makemigrations ordering_physicians
+clr django:makemigrations ordering_physicians -n add_indices_to_request_id_network
+clr django:makemigrations --help
+clr django:makemigrations ordering_physicians 
+ledger bal chase -R
+rm -rf elpa/
+cd ..
+rm -rf go
+clr django:makemigrations preven
+clr django:makemigrations preventive_care
+cd ..
+rm -rf elpa/
