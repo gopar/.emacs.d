@@ -334,10 +334,12 @@ clr django:makemigrations ordering_physicians -n add_indices_to_request_id_netwo
 clr django:makemigrations --help
 clr django:makemigrations ordering_physicians 
 ledger bal chase -R
-rm -rf elpa/
 cd ..
 rm -rf go
 clr django:makemigrations preven
 clr django:makemigrations preventive_care
 cd ..
 rm -rf elpa/
+cd ../personal/
+git clone --depth=1 git@github.com:emacs-mirror/emacs.git 
+cd emacs/

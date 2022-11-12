@@ -343,7 +343,7 @@ If OTHERS is true, skip all entries that do not correspond to TAG."
   (window-configuration-to-register ?`)
   (delete-other-windows)
   (org-save-all-org-buffers)
-  (org-agenda nil "h"))
+  (org-agenda nil "w"))
 
 (defun gopar/load-window-config-and-close-work-agenda ()
   (interactive)
@@ -402,7 +402,7 @@ All general org mode settings
   ;; See down arrow instead of "..." when we have subtrees
   ;; (org-ellipsis "⤵")
   ;; catch invisible edit
-  (org-catch-invisible-edits 'error)
+  ( org-catch-invisible-edits 'error)
   ;; Only useful for property searching only but can slow down search
   (org-use-property-inheritance t)
   ;; Count all children TODO's not just direct ones
@@ -415,7 +415,19 @@ All general org mode settings
   ;; Where should notes go to? Dont even use them tho
   (org-default-notes-file (concat org-directory "notes.org"))
   ;; List of default tags to choose from
-  (org-tag-alist '(("break" . ?b) ("freetime" . ?f) ("emacs" . ?e) ("calls" . ?c) ("repeat" . ?r) ("driving" . ?d) ("project" . ?p) ("someday" . ?s) ("misc" . ?m)))
+  (org-tag-alist
+   '(("break" . ?b) ;; Something i can do during my pomodoro break
+     ("freetime" . ?f) ;; To do whenever i have time to kill
+     ("emacs" . ?e) ;; emacs related project/task
+     ("calls" . ?c) ;; involves calling humans
+     ("moneyMaker" . ?m) ;; Things that potentially bring in money
+     ("driving" . ?d) ;; Have to drive to X
+     ("project" . ?p) ;; To let me know this is part of a project
+     ("someday" . ?s) ;; Eventually i'll do this. I'll revisit this weekly thanks to GTD
+     ("misc" . ?x) ;; Anything that doesn't fit these tags
+     ("health" . ?h) ;; Health related things. Mucho important
+     ("watch" . ?w) ;; Things to watch. Might never get to these sigh
+     ))
   ;; The right side of | indicates the DONE states
   (org-todo-keywords
    '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i!)" "WAITING(w@/@)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(p@)")))
@@ -454,6 +466,8 @@ All general org mode settings
                  org-habit
                  ;; org-checklist
                  ))
+  (org-special-ctrl-a/e t)
+  (org-insert-heading-respect-content t)
   :hook (org-mode . org-indent-mode)
   :config
   (org-babel-do-load-languages
@@ -544,14 +558,14 @@ Mode for time management. Pretty usefull. I use it a lot.
   ;; Lets define some custom cmds in agenda menu
   (org-agenda-custom-commands
    '(("h" "Agenda and Home tasks"
-      ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
+      ((agenda "" ((org-agenda-span 2)))
        (todo "NEXT|WAITING|IN-PROGRESS"))
       ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
 
-     ;; ("w" "Agenda and Work tasks"
-     ;;  ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work" 't))))
-     ;;   (tags-todo "inbox|break"))
-     ;;  ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
+     ("w" "Agenda and break|inbox tasks"
+      ((agenda "" ((org-agenda-span 1)))
+       (tags-todo "inbox|break"))
+      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
 
      ("i" "In-Progress Tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
@@ -564,7 +578,7 @@ Mode for time management. Pretty usefull. I use it a lot.
       ((org-agenda-sorting-strategy '(habit-up category-up priority-down)) (org-agenda-tag-filter-preset '("+12WY"))))
 
      ("r" "Weekly Review"
-      ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
+      ((agenda "")
        (tags-todo "+tickler-DEADLINE={.+}-SCHEDULED={.+}")
        (todo))
       ((org-agenda-sorting-strategy '(habit-up category-up priority-down))
@@ -657,6 +671,13 @@ Habit tracking in org mode
   (org-habit-graph-column 45))
 #+end_src
 
+*** Org Indent Mode
+#+begin_src emacs-lisp
+(use-package org-indent
+  :ensure nil
+  :diminish)
+#+end_src
+
 *** [[https://github.com/marcinkoziej/org-pomodoro/][Org Pomorodo]]
 #+BEGIN_SRC emacs-lisp
 (use-package org-pomodoro
@@ -744,6 +765,16 @@ A neat knowledge base in org
   :hook (org-mode . org-superstar-mode))
 #+end_src
 
+*** [[https://github.com/KaratasFurkan/org-rainbow-tags][Org Rainbow Tags]]
+#+begin_src emacs-lisp
+(defun gopar/test ()
+  (run-with-timer 1 nil 'org-rainbow-tags-mode))
+
+(use-package org-rainbow-tags
+  :straight (:host github :repo "KaratasFurkan/org-rainbow-tags")
+  :hook ((org-mode . org-rainbow-tags-mode)
+         (org-agenda-mode . gopar/test)))
+#+end_src
 *** Org Private
 My private stuff
 
@@ -779,13 +810,6 @@ When called with a prefix aurgument, it will open annotations file."
       (if arg
           (find-file org-annotate-file-storage-file)
         (org-annotate-file)))))
-#+end_src
-
-*** Org Indent Mode
-#+begin_src emacs-lisp
-(use-package org-indent
-  :ensure nil
-  :diminish)
 #+end_src
 
 ** Occur
