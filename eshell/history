@@ -220,7 +220,6 @@ emacs --help
 /Applications/Emacs.app/Contents/MacOS/Emacs -Q
 /Applications/Emacs.app/Contents/MacOS/Emacs &
 ledger bal lia -R -C
-ledger bal pnc -R -C
 ledger bal pnc
 ledger reg pnc:checking -b "september"
 ledger reg pnc:checking -b "september" --columns 40
@@ -233,7 +232,6 @@ ledger reg lia -R -C  --columns 80
 ledger reg chase -R -C  --columns 80
 ledger bal chase --colums 80
 ledger reg chase --columns 80
-ledger bal chase --columns 80
 cd ../../work/
 git clone git@github.com:color/ops.git
 cd ops/
@@ -272,7 +270,6 @@ ag "waffle.switch_is_active" -r .
 ag "waffle.switch_is_active" -r . -A 2
 cc ag "waffle.switch_is_active" -r . -A 2
 wpd
-pwd
 git config pull.rebase true
 ff src/django_apps/preventive_care/consults/wheel/consult.py
 pudb clr django:test src/django_apps/preventive_care/consults/wheel/tests/test_consult.py
@@ -303,12 +300,9 @@ ledger bal lia -R
 exti
 convert --help
 man convert
-tithe
-pwd
 jj
 ./pants check ./src/django_apps/preventive_care/consults/sms.py 
 ./pants check ./src/django_apps/preventive_care/consults/
-cc ./pants check ./src/django_apps/preventive_care/consults/
 mypy --help
 mypy ./src/django_apps/preventive_care/consults/
 cc mypy ./src/django_apps/preventive_care/consults/
@@ -343,3 +337,27 @@ rm -rf elpa/
 cd ../personal/
 git clone --depth=1 git@github.com:emacs-mirror/emacs.git 
 cd emacs/
+ledger bal chase -R
+ledger reg -b "october" chase --columns 80
+ledger bal chase --columns 80
+pwd
+jj
+cc ./pants check ./src/django_apps/preventive_care/consults/
+ledger bal lia -R -C
+ledger bal pnc -R -C
+ledger bal lia -R -C
+ledger reg ally
+ledger bal ally
+ledger reg fnbo -R
+ledger reg fnbo -R
+ledger reg fnbo -R --columns 80
+ledger bal fnbo -R
+alias tithe
+alias
+alias tithe ledger bal Liabilities:Tithe -V $*
+alias
+ledger reg Liabilities:Tithe -V
+ledger bal pnc
+tithe
+which python
+man ls

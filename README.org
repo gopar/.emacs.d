@@ -367,7 +367,7 @@ All general org mode settings
   ;; :pin gnu
   :defer t
   :custom
-  (fill-column 110)
+  (fill-column 120)
   ;; Where the org files live
   (org-directory "~/.emacs.d/org/")
   ;; Where archives should go
@@ -450,7 +450,9 @@ All general org mode settings
   ;; (org-refile-targets '((org-agenda-files :level .  1)))
   (org-refile-targets '(("~/.emacs.d/org/private/org-roam/gtd/gtd.org" :maxlevel . 3)
                         ("~/.emacs.d/org/private/org-roam/gtd/someday.org" :level . 1)
-                        ("~/.emacs.d/org/private/org-roam/gtd/tickler.org" :maxlevel . 1)))
+                        ("~/.emacs.d/org/private/org-roam/gtd/tickler.org" :maxlevel . 1)
+                        ("~/.emacs.d/org/private/org-roam/gtd/repeat.org" :maxlevel . 1)
+                        ))
   ;; Lets customize which modules we load up
   (org-modules '(ol-w3m
                  ol-bbdb
@@ -532,6 +534,7 @@ Mode for time management. Pretty usefull. I use it a lot.
   :bind (("C-c a" . org-agenda))
   :hook (org-agenda-finalize . org-agenda-entry-text-mode)
   :custom
+  (org-agenda-tags-column 'auto)
   (org-agenda-window-setup 'only-window)
   (org-agenda-restore-windows-after-quit t)
   (org-agenda-files "~/.emacs.d/org/agenda-files.org")
@@ -767,13 +770,16 @@ A neat knowledge base in org
 
 *** [[https://github.com/KaratasFurkan/org-rainbow-tags][Org Rainbow Tags]]
 #+begin_src emacs-lisp
-(defun gopar/test ()
-  (run-with-timer 1 nil 'org-rainbow-tags-mode))
-
 (use-package org-rainbow-tags
   :straight (:host github :repo "KaratasFurkan/org-rainbow-tags")
   :hook ((org-mode . org-rainbow-tags-mode)
-         (org-agenda-mode . gopar/test)))
+         (org-agenda-mode . gopar/ort-workaround))
+  ;; Enable once I catch all indented properties
+  ;; :custom
+  ;; (org-rainbow-tags--org-tag-regexp ":\\([[:alnum:]_@#%]+\\):")
+  :init
+  (defun gopar/ort-workaround ()
+    (run-with-timer 1 nil 'org-rainbow-tags-mode)))
 #+end_src
 *** Org Private
 My private stuff
@@ -1687,13 +1693,6 @@ eg. *python main.py*"
 #+end_src
 
 #+BEGIN_SRC emacs-lisp
-;; https://stackoverflow.com/questions/3072648/cucumbers-ansi-colors-messing-up-emacs-compilation-buffer
-(defun gopar/colorize-compilation-buffer ()
-  "Colorize the output from compile buffer"
-  (toggle-read-only)
-  (ansi-color-apply-on-region (point-min) (point-max))
-  (toggle-read-only))
-
 (use-package ansi-color
   :ensure nil
   :defer t
@@ -1702,6 +1701,13 @@ eg. *python main.py*"
   (defun gopar/compilation-nuke-ansi-escapes ()
     (toggle-read-only)
     (gopar/nuke-ansi-escapes (point-min) (point-max))
+    (toggle-read-only))
+
+  ;; https://stackoverflow.com/questions/3072648/cucumbers-ansi-colors-messing-up-emacs-compilation-buffer
+  (defun gopar/colorize-compilation-buffer ()
+    "Colorize the output from compile buffer"
+    (toggle-read-only)
+    (ansi-color-apply-on-region (point-min) (point-max))
     (toggle-read-only)))
 #+end_src
 
@@ -1865,6 +1871,7 @@ go through the search engine"
                          ("https://epicreact.dev/learn/.*" . browse-url-firefox)
                          ("https://www.youtube.com/.*" . browse-url-firefox)
                          ("https://youtube.com/.*" . browse-url-firefox)
+                         ("https://www.bible.com/.*" . browse-url-firefox)
                          ("https://www.google.com/maps/.*" . browse-url-firefox)
                          ("." . eww-browse-url)))
   (browse-url-firefox-new-window-is-tab t)
@@ -2056,6 +2063,46 @@ Automatically input a closing parens when putting an open parens
 (use-package subword
   :ensure nil
   :diminish)
+#+end_src
+
+** Display Fill Column Indicator Mode
+Essentially a vertical line showing where =fill-column=
+
+#+begin_src emacs-lisp
+(use-package display-fill-column-indicator
+  :ensure nil
+  :defer t
+  :hook (python-mode org-mode))
+#+end_src
+
+** Dired
+
+#+begin_src emacs-lisp
+(use-package dired
+  :ensure nil
+  :defer t
+  :custom
+  (dired-listing-switches "-alhoF --group-directories-first"))
+#+end_src
+
+*** All the icons dired
+#+begin_src emacs-lisp
+(use-package all-the-icons-dired
+  :ensure t
+  :defer t
+  :hook (dired-mode . all-the-icons-dired-mode)
+  :custom
+  (all-the-icons-dired-monochrome nil))
+#+end_src
+
+** Files
+#+begin_src emacs-lisp
+(use-package files
+  :ensure nil
+  :defer t
+  :custom
+  (insert-directory-program "gls") ; Will not work if system does not have GNU gls installed
+  )
 #+end_src
 
 * Third Party Packages

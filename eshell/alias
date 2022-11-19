@@ -1,9 +1,9 @@
-alias netc ledger balance ^expenses ^income -V -R $*
-alias netw ledger balance ^assets ^liabilities -V -R $*
-alias tithe ledger bal Liabilities:Tithe -V $*
-alias docker-auth aws-vault exec styleseat-dev -- aws ecr get-login-password --region us-west-2 | docker login -u AWS --password-stdin https://788799692764.dkr.ecr.us-west-2.amazonaws.com
-alias rmpyc /usr/bin/find . -name *pyc -delete
-alias ff find-file $1
-alias l /usr/local/bin/exa --long --classify --all --group --header --blocks --git --color=never  --icons --group-directories-first $1
-alias oc /usr/bin/find . -name "*.org" | xargs wc -l
+alias tithe ledger bal Liabilities:Tithe -V
 alias ledger /opt/homebrew/bin/ledger --no-color --no-pager --strict $*
+alias oc /usr/bin/find . -name "*.org" | xargs wc -l
+alias l /usr/local/bin/exa --long --classify --all --group --header --blocks --git --color=never  --icons --group-directories-first $1
+alias ff find-file $1
+alias rmpyc /usr/bin/find . -name *pyc -delete
+alias docker-auth aws-vault exec styleseat-dev -- aws ecr get-login-password --region us-west-2 | docker login -u AWS --password-stdin https://788799692764.dkr.ecr.us-west-2.amazonaws.com
+alias netw ledger balance ^assets ^liabilities -V -R $*
+alias netc ledger balance ^expenses ^income -V -R $*
