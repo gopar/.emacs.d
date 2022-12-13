@@ -51,7 +51,6 @@ ledger bal payee "Hair"
 ledger reg payee "Hair"
 clr src:test help
 clr src:test --help
-netw
 ledger lia -R
 ledger bal lia -R
 ledger reg chase -R -b "september"
@@ -115,7 +114,6 @@ ledger reg payee "City of Tulsa"
 ledger reg utilities 
 ledger bal utilities 
 clr pg
-clr pg:start
 git log -p src/django_apps/onsite_collections/interfaces/collection_availability.py
 git log -n 1 -p src/django_apps/onsite_collections/interfaces/collection_availability.py
 git log -n 1 -p src/django_apps/onsite_collections/interfaces/tests/test_collection_availability_interface.py
@@ -320,7 +318,6 @@ ledger bal restau -R
 ledger bal restau -R -b "october"
 ledger bal groce -R -b "october"
 exir
-exit
 clr django:logmigrations
 clr django:makemigrations preventive_care 
 clr django:makemigrations ordering_physicians
@@ -331,7 +328,6 @@ ledger bal chase -R
 cd ..
 rm -rf go
 clr django:makemigrations preven
-clr django:makemigrations preventive_care
 cd ..
 rm -rf elpa/
 cd ../personal/
@@ -361,3 +357,147 @@ ledger bal pnc
 tithe
 which python
 man ls
+ledger bal chase --columns 80
+ledger reg chase --columns 80
+22-Nov-17 Haircut               Liabil:CreditCar:Chase      $-25.00   $-3,950.17
+exi
+eshell-buffer-name
+,eshell-buffer-name
+nil
+1
+eshell-buffer-name
+cd ../
+cd ../personal/
+git clone --depth=1 https://github.com/cpitclaudel/compact-docstrings.git
+ledger lia -R
+ledger bal lia -R
+ledger bal chase -R
+ledger bal pnc -R
+tithe
+ledger bal pnc -R
+ledger reg pnc -R
+ledger bal pnc -R
+ledger reg pnc -R
+ledger reg pnc -R
+ledger bal pnc -R
+ledger reg pnc:check -R
+ledger reg pnc:check -R
+ledger bal pnc:check -R
+ledger bal barclay -R
+ledger bal barclay -R -C
+ledger bal barclay 
+ledger bal barclay -R -C
+ledger bal fnbo -R -C
+ledger bal barclay -R -C
+tithe
+alias
+ledger bal Liabilities:Tithe -V -R -C
+ledger reg Liabilities:Tithe -V -R -C
+ledger reg Liabilities:Tithe -R -C
+ledger reg Liabilities:Tithe -V
+ledger bal Income:Salary
+netw
+cd ../../personal/
+wget \     --recursive \     --no-clobber \     --page-requisites \     --html-extension \     --convert-links \     --restrict-file-names=windows \     --domains https://python-patterns.guide/         
+brew install wget
+mkdir site         
+cd site/
+wget \     --recursive \     --no-clobber \     --page-requisites \     --html-extension \     --convert-links \     --restrict-file-names=windows \     --domains https://python-patterns.guide/ 
+wget \     --recursive \     --no-clobber \     --page-requisites \     --html-extension \     --convert-links \     --restrict-file-names=windows \     --domains python-patterns.guide/ 
+wget \     --recursive \     --no-clobber \     --page-requisites \     --html-extension \     --convert-links \     --restrict-file-names=windows \     --domains python-patterns.guide
+wget \     --recursive \     --no-clobber \     --page-requisites \     --html-extension \     --convert-links \     --restrict-file-names=windows \     --domains https://python-patterns.guide
+wget \     --recursive \     --page-requisites \     --html-extension \     --convert-links \     --domains https://python-patterns.guide
+wget -mpEk "https://python-patterns.guide"
+tree
+python --help
+clr pg:start
+brew install exa bat tree the_silver_searcher tldr httpie
+brew install aspell
+python --help
+(venv-workon "virtualenv3")
+python --help
+./pants --help
+which exa
+alias
+ledger
+terminal-name 
+terminal-list 
+clear 1
+clr django:makemigrations preventive_care
+ledger lia -R
+ledger bal lia -R
+ledger bal chase -R
+ledger reg chase -R --columns 80
+ledger reg chase -R --columns 80 | tail
+man tac
+ledger reg chase -R --columns 80 | tac
+ledger reg chase -R --columns 80 | tac | tail -n 100  >>> #<new>
+ledger reg chase -R --columns 80 | tac  >>> #<new>
+ledger bal chase -R
+ledger bal fnbo -R
+ledger reg fnbo -R
+ledger reg fnbo -R --columns 80
+ledger bal fnbo -R --columns 80
+clear 1 & ledger reg fnbo -R --columns 80
+clear 1 & ledger reg fnbo -R --columns 80 | tac
+ledger reg fnbo -R --columns 80 | tac
+ledger bal fnbo -R --columns 80
+clear 1
+ledger bal fnbo -R --columns 80
+ledger bal chase -R --columns 80
+ledger bal bar -R --columns 80
+ledger bal lia -R --columns 80
+ledger reg ally -R --columns 80
+ledger reg ally:check -R --columns 80
+ledger bal ally:check -R --columns 80
+ledger bal pnc:check -R --columns 80
+clear 1 ledger reg pnc:check -R --columns 80
+clear 1 ;ledger reg pnc:check -R --columns 80
+clear 1 ;ledger bal pnc:check -R --columns 80
+clear 1 ;ledger bal Expenses:House:Owasso:Escrow -R --columns 80
+git status
+git rebase --continue
+cloc
+tldr cloc
+man graph
+gource --help
+man gource
+java --help
+(executable-find "java")
+cc brew install gource
+man gource
+brew install cloc
+cloc --hel
+cd ~/Downloads/
+exa --help
+wihch exa
+which eca
+which exa
+alias
+exa --long --classify --all --group --header --blocks --git --color=never  --icons --group-directories-first $1
+exa --long --classify --all --group --header --blocks --git  --icons --group-directories-first $1
+exa --long --classify --all --group --header --blocks --git --color=never  --icons --group-directories-first $1
+unzip  btshw(1).zip
+rm -rf .ccls-cache/
+rm -rf .cache/
+ff Makefile 
+graph --xtick-angle 90 /tmp/data-file-graph-cli.csv
+echo $MPLBACKEND
+exit
+ledger bal chase -R --columns 80
+clear 1 && ledger reg chase -R --columns 80
+tldr tc
+tldr tac
+clear 1 && ledger reg chase -R --columns 80 | tac
+ledger bal chase -R --columns 80
+ledger bal fnbo -R --columns 80
+ledger bal bar -R --columns 80
+ledger bal ally -R --columns 80
+ledger bal pnc -R --columns 80
+netw
+alias
+titihe
+tithe
+netc
+tree -d
+exit

@@ -532,7 +532,7 @@ Mode for time management. Pretty usefull. I use it a lot.
 (use-package org-agenda
   :after org
   :bind (("C-c a" . org-agenda))
-  :hook (org-agenda-finalize . org-agenda-entry-text-mode)
+  ;; :hook (org-agenda-finalize . org-agenda-entry-text-mode)
   :custom
   (org-agenda-tags-column 'auto)
   (org-agenda-window-setup 'only-window)
@@ -563,28 +563,28 @@ Mode for time management. Pretty usefull. I use it a lot.
    '(("h" "Agenda and Home tasks"
       ((agenda "" ((org-agenda-span 2)))
        (todo "NEXT|WAITING|IN-PROGRESS"))
-      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
+      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
 
      ("w" "Agenda and break|inbox tasks"
       ((agenda "" ((org-agenda-span 1)))
        (tags-todo "inbox|break"))
-      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
+      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
 
      ("i" "In-Progress Tasks"
       ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
        (todo "IN-PROGRESS|WAITING"))
-      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))))
+      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
 
      ("g" "Goals: 12 Week Year"
       ((agenda "")
        (todo "IN-PROGRESS|WAITING"))
-      ((org-agenda-sorting-strategy '(habit-up category-up priority-down)) (org-agenda-tag-filter-preset '("+12WY"))))
+      ((org-agenda-sorting-strategy '(habit-up priority-down category-up)) (org-agenda-tag-filter-preset '("+12WY"))))
 
      ("r" "Weekly Review"
       ((agenda "")
        (tags-todo "+tickler-DEADLINE={.+}-SCHEDULED={.+}")
        (todo))
-      ((org-agenda-sorting-strategy '(habit-up category-up priority-down))
+      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))
        (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org"))))))
 #+END_SRC
 
@@ -818,6 +818,42 @@ When called with a prefix aurgument, it will open annotations file."
         (org-annotate-file)))))
 #+end_src
 
+*** COMMENT Org Table Auto Align
+Mode that I got off reddit.
+#+begin_src emacs-lisp
+(require 'subr-x)
+
+(setq org-table-auto-align-in-progress nil)
+
+(defun org-table-auto-align (begin end length)
+  (save-match-data
+    (unless (or org-table-auto-align-in-progress
+                (not (org-at-table-p))
+                (and (eq this-command 'org-self-insert-command)
+                     (member (this-command-keys) '(" " "+" "|" "-"))))
+      ;; uses zero-idle timer so the buffer content is settled after
+      ;; the change, the cursor is moved, so we know what state we
+      ;; have to restore after auto align
+      (run-with-idle-timer
+       0 nil
+       (lambda ()
+         (if (looking-back "| *\\([^|]+\\)")
+             (let ((pos (string-trim-right (match-string 1))))
+               (setq org-table-auto-align-in-progress t)
+               (unwind-protect
+                   (progn
+                     (org-table-align)
+                     (search-forward pos nil t))
+                 (setq org-table-auto-align-in-progress nil)))))))))
+
+
+(define-minor-mode org-table-auto-align-mode
+  "A mode for aligning Org mode tables automatically as you type."
+  (if org-table-auto-align-mode
+      (add-hook 'after-change-functions #'org-table-auto-align t t)
+    (remove-hook 'after-change-functions #'org-table-auto-align t)))
+#+end_src
+
 ** Occur
 #+BEGIN_SRC emacs-lisp
 (defun gopar/occur-definitions ()
@@ -869,9 +905,8 @@ When called with a prefix aurgument, it will open annotations file."
      :init
      (defun gopar/eshell-setup-aliases ()
        (eshell/alias "oc" "/usr/bin/find . -name \"*.org\" | xargs wc -l")
-       (eshell/alias "l" "/usr/local/bin/exa --long --classify --all --group --header --blocks --git --color=never $1")
+       (eshell/alias "l" "exa --long --classify --all --group --header --blocks --git --color=never $1")
        (eshell/alias "rmpyc" "/usr/bin/find . -name *pyc -delete")
-       (eshell/alias "docker-auth" "aws-vault exec styleseat-dev -- aws ecr get-login-password --region us-west-2 | docker login -u AWS --password-stdin https://788799692764.dkr.ecr.us-west-2.amazonaws.com")
        (eshell/alias "ledger" "/opt/homebrew/bin/ledger --no-color --no-pager --strict $*")
        (eshell/alias "tithe" "ledger bal Liabilities:Tithe -V $*")
        (eshell/alias "netw" "ledger balance ^assets ^liabilities -V -R $*")
@@ -1098,117 +1133,117 @@ All these modules are configured down below after this section.
     #+end_src
 
 *** Eshell Banner
-    This module is only in charge of showing up the welcome banner when we start eshell.
-    Well, I wanna do some fun stuff so why not override it :P
+This module is only in charge of showing up the welcome banner when we start eshell.
+Well, I wanna do some fun stuff so why not override it :P
 
-    #+begin_src emacs-lisp
-    (use-package em-banner
-      :defer t
-      :ensure nil)
-    #+end_src
+#+begin_src emacs-lisp
+(use-package em-banner
+  :defer t
+  :ensure nil)
+#+end_src
 
 *** Eshell git prompt
-    Makes the eshell prompt fancy
+Makes the eshell prompt fancy
 
-    #+begin_src emacs-lisp
-    (use-package eshell-git-prompt
-      :after eshell
-      :ensure t)
+#+begin_src emacs-lisp
+(use-package eshell-git-prompt
+  :after eshell
+  :ensure t)
 
-    (use-package powerline-with-venv
-      :ensure nil
-      :after eshell-git-prompt
-      :load-path "lisp/themes/powerline-with-venv"
-      :config
-      (add-to-list 'eshell-git-prompt-themes
-                   '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
-      (eshell-git-prompt-use-theme 'powerline-plus))
-    #+end_src
+(use-package powerline-with-venv
+  :ensure nil
+  :after eshell-git-prompt
+  :load-path "lisp/themes/powerline-with-venv"
+  :config
+  (add-to-list 'eshell-git-prompt-themes
+               '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
+  (eshell-git-prompt-use-theme 'powerline-plus))
+#+end_src
 
 *** [[https://github.com/dieggsy/esh-autosuggest/][Eshell autosuggest]]
-    Fish like history completion
+Fish like history completion
 
-    #+begin_src emacs-lisp
-    (use-package esh-autosuggest
-      :defer t
-      :ensure t
-      :hook (eshell-mode . esh-autosuggest-mode))
-    #+end_src
+#+begin_src emacs-lisp
+(use-package esh-autosuggest
+  :defer t
+  :ensure t
+  :hook (eshell-mode . esh-autosuggest-mode))
+#+end_src
 
 *** [[https://github.com/akreisher/eshell-syntax-highlighting][Eshell Syntax Highlihghting]]
 
-    #+begin_src emacs-lisp
-    (use-package eshell-syntax-highlighting
-      :defer t
-      :ensure t
-      :init
-      (defun gopar/dynamic-faces-on-theme (&rest r)
-        "I want to override faces when we're on tao-yin, otherwise just inherit"
-        (interactive)
-        (face-spec-set 'eshell-syntax-highlighting-default-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:inherit default) ;; Maybe change to some very light green
-                                '(:inherit default)))))
+#+begin_src emacs-lisp
+(use-package eshell-syntax-highlighting
+  :defer t
+  :ensure t
+  :init
+  (defun gopar/dynamic-faces-on-theme (&rest r)
+    "I want to override faces when we're on tao-yin, otherwise just inherit"
+    (interactive)
+    (face-spec-set 'eshell-syntax-highlighting-default-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:inherit default) ;; Maybe change to some very light green
+                            '(:inherit default)))))
 
-        (face-spec-set 'eshell-syntax-highlighting-envvar-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:foreground "DeepSkyBlue1")
-                                '(:inherit font-lock-function-name-face)))))
+    (face-spec-set 'eshell-syntax-highlighting-envvar-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:foreground "DeepSkyBlue1")
+                            '(:inherit font-lock-function-name-face)))))
 
-        (face-spec-set 'eshell-syntax-highlighting-string-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:foreground "RosyBrown1") ;; "gold" next maybe
-                                '(:inherit font-lock-function-name-face)))))
+    (face-spec-set 'eshell-syntax-highlighting-string-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:foreground "RosyBrown1") ;; "gold" next maybe
+                            '(:inherit font-lock-function-name-face)))))
 
-        (face-spec-set 'eshell-syntax-highlighting-shell-command-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:foreground "green")
-                                '(:inherit font-lock-function-name-face)))))
+    (face-spec-set 'eshell-syntax-highlighting-shell-command-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:foreground "green")
+                            '(:inherit font-lock-function-name-face)))))
 
-        (face-spec-set 'eshell-syntax-highlighting-lisp-function-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:foreground "mediumspringgreen")
-                                '(:inherit font-lock-function-name-face)))))
+    (face-spec-set 'eshell-syntax-highlighting-lisp-function-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:foreground "mediumspringgreen")
+                            '(:inherit font-lock-function-name-face)))))
 
-        (face-spec-set 'eshell-syntax-highlighting-alias-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:foreground "plum1")
-                                '(:inherit font-lock-function-name-face)))))
+    (face-spec-set 'eshell-syntax-highlighting-alias-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:foreground "plum1")
+                            '(:inherit font-lock-function-name-face)))))
 
-        (face-spec-set 'eshell-syntax-highlighting-invalid-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:foreground "red")
-                                '(:inherit error)))))
+    (face-spec-set 'eshell-syntax-highlighting-invalid-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:foreground "red")
+                            '(:inherit error)))))
 
-        (face-spec-set 'eshell-syntax-highlighting-directory-face
-                       `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
-                                  '(:foreground "SteelBlue1")
-                                '(:inherit font-lock-type-face))))))
-      ;; (advice-add 'load-theme :after 'gopar/dynamic-faces-on-theme)
-      :hook (eshell-mode . eshell-syntax-highlighting-mode))
-    #+end_src
+    (face-spec-set 'eshell-syntax-highlighting-directory-face
+                   `((t ,@(if (eq 'tao-yin (car custom-enabled-themes))
+                              '(:foreground "SteelBlue1")
+                            '(:inherit font-lock-type-face))))))
+  ;; (advice-add 'load-theme :after 'gopar/dynamic-faces-on-theme)
+  :hook (eshell-mode . eshell-syntax-highlighting-mode))
+#+end_src
 
 *** [[https://github.com/Phundrak/eshell-info-banner.el][Eshell Info Banner]]
-    #+begin_src emacs-lisp
-    (use-package eshell-info-banner
-      :ensure t
-      :defer t
-      :hook (eshell-banner-load . eshell-info-banner-update-banner)
-      :custom
-      (eshell-info-banner-tramp-aware nil)
-      :init
-      (defun eshell/banner (&rest args)
-        (eshell-banner-initialize)))
-    #+end_src
+#+begin_src emacs-lisp
+(use-package eshell-info-banner
+  :ensure t
+  :defer t
+  :hook (eshell-banner-load . eshell-info-banner-update-banner)
+  :custom
+  (eshell-info-banner-tramp-aware nil)
+  :init
+  (defun eshell/banner (&rest args)
+    (eshell-banner-initialize)))
+#+end_src
 
 *** Eshell Compile
-    Dumb deferring of commands to compile buffer
-    #+begin_src emacs-lisp
-    (use-package em-compile
-      :defer t
-      :ensure nil
-      :load-path "lisp/eshell/module/")
-    #+end_src
+Dumb deferring of commands to compile buffer
+#+begin_src emacs-lisp
+(use-package em-compile
+  :defer t
+  :ensure nil
+  :load-path "lisp/eshell/module/")
+#+end_src
 
 ** EWW
 ~Love these snippets but don't use it that often and not sure if its broken~
@@ -1873,6 +1908,7 @@ go through the search engine"
                          ("https://youtube.com/.*" . browse-url-firefox)
                          ("https://www.bible.com/.*" . browse-url-firefox)
                          ("https://www.google.com/maps/.*" . browse-url-firefox)
+                         ("https://stackoverflow.com/questions/.*" . sx-open-link)
                          ("." . eww-browse-url)))
   (browse-url-firefox-new-window-is-tab t)
   :config
@@ -2258,7 +2294,7 @@ Helps with finding out what keybindings are available.
   :ensure t
   :config
   (which-key-mode)
-  (setq which-key-idle-delay 0.3))
+  (setq which-key-idle-delay 3))
 #+END_SRC
 
 ** [[https://github.com/Wilfred/helpful][Helpful]]
@@ -2385,7 +2421,26 @@ Edit multiple regions simultaneously
 (use-package iedit
   :ensure t
   :defer t
-  :bind (("C-c o" . iedit-mode)))
+  :bind (("C-c o" . iedit-mode))
+;;   :init
+;;   (defun gopar/iedit-dwim (arg)
+;;     "Starts iedit but uses \\[narrow-to-defun] to limit its scope.
+;; With ARG, revert back to normal iedit."
+;;     (interactive "P")
+;;     (require 'iedit)
+;;     (if arg
+;;         (iedit-mode)
+;;       (save-excursion
+;;         (save-restriction
+;;           (widen)
+;;           ;; this function determines the scope of `iedit-start'.
+;;           (if iedit-mode
+;;               (iedit-done)
+;;             ;; `current-word' can of course be replaced by other
+;;             ;; functions.
+;;             (narrow-to-defun)
+;;             (iedit-start (current-word) (point-min) (point-max)))))))
+  )
 #+end_src
 
 ** [[https://github.com/joaotavora/yasnippet/][Yasnippets]]
@@ -2398,7 +2453,8 @@ After adding or updating a snippet run:
   :ensure t
   :defer t
   :diminish
-  :hook (prog-mode . yas-minor-mode))
+  :hook ((prog-mode . yas-minor-mode)
+         (fundamental-mode . yas-minor-mode)))
 #+end_src
 
 Install the actual snippets
@@ -2985,7 +3041,7 @@ Made this since I rebinding semicolon to always put an underscore since I spent 
   (company-dabbrev-ignore-case t)
   (company-dabbrev-code-ignore-case t)
   (company-selection-wrap-around t)
-  (company-minimum-prefix-length 1)
+  (company-minimum-prefix-length 2)
   (company-idle-delay 0.0)
   :init
   (global-company-mode)
@@ -3116,11 +3172,11 @@ Search Engine goodies
         (eww url))))
   :config
   (defengine DRF-documentation
-    "https://html.duckduckgo.com/html?q=django+rest+framework+documentation+%s"
+    "https://html.duckduckgo.com/html?q=django+rest+framework+%s"
     :keybinding "r")
 
   (defengine django-documentation
-    "https://html.duckduckgo.com/html?q=django+documentation+%s"
+    "https://html.duckduckgo.com/html?q=django+%s"
     :keybinding "d")
 
   ;; (defengine actual-url
@@ -3289,6 +3345,7 @@ Visual undo graph. Only for every now and then
 #+end_src
 
 ** [[https://github.com/alphapapa/topsy.el][Topsy]]
+Sticky header that shows the func
 #+begin_src emacs-lisp
 (use-package topsy
   :ensure t
@@ -3302,4 +3359,34 @@ Visual undo graph. Only for every now and then
   :ensure t
   :defer t
   :bind (("M-/" . goto-last-change)))
+#+end_src
+
+** [[https://github.com/vermiculus/sx.el][SX]]
+Client for Stackoverflow and friends
+#+begin_src emacs-lisp
+(use-package sx
+  :ensure t
+  :defer t)
+#+end_src
+
+** [[https://github.com/osener/github-browse-file][Github-Browse-File]]
+#+begin_src emacs-lisp
+(use-package github-browse-file :ensure t :defer t)
+#+end_src
+
+** [[https://github.com/ag91/code-compass][Code Compass]]
+#+begin_src emacs-lisp
+(use-package code-compass
+  :ensure nil
+  :defer t
+  :load-path "/Users/daniel.gopar/work/code-compass")
+#+end_src
+
+** [[https://github.com/andyjda/sticky-shell][Sticky Eshell Header]]
+#+begin_src emacs-lisp
+(use-package sticky-shell
+  :ensure t
+  :defer t
+  :straight (:host github :repo "andyjda/sticky-shell")
+  :hook ((eshell-mode . sticky-shell-mode)))
 #+end_src

@@ -10,6 +10,8 @@
                ;; pdf tools
                "/Library/TeX/texbin/"
                "/Applications/Emacs.app/Contents/MacOS/"
+               "/opt/homebrew/opt/openjdk/bin/"
+               "/opt/homebrew/bin/"
                ))
       (PATH-ENV (getenv "PATH")))
   (dolist (path paths)
@@ -31,6 +33,8 @@
 (setenv "LEDGER_PRICE_DB" "${HOME}/personal/finances/data/price_db.dat" t)
 
 (setenv "PEEKALINK_API_KEY" "36a7e527-27f0-4606-bb87-32327f1462f7")
+
+(setenv "MPLBACKEND" "TkAgg")
 
 ;; Set color for most programs
 ;; Can't figure out how to set this dynamicall eg $(vivid generate theme)
