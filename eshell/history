@@ -483,7 +483,6 @@ rm -rf .cache/
 ff Makefile 
 graph --xtick-angle 90 /tmp/data-file-graph-cli.csv
 echo $MPLBACKEND
-exit
 ledger bal chase -R --columns 80
 clear 1 && ledger reg chase -R --columns 80
 tldr tc
@@ -501,3 +500,11 @@ tithe
 netc
 tree -d
 exit
+aspell
+brew install aspell
+git status
+git checkout HEAD
+git checkout master
+git pull
+cd ..
+git status

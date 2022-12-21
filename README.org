@@ -554,7 +554,7 @@ Mode for time management. Pretty usefull. I use it a lot.
      nil
      ""))
   (org-agenda-prefix-format
-   '((agenda . " %i %-12:c%?-12t% s")
+   '((agenda . " %i %-12:c%?-12t% s%-4e ")
      (todo . " %i %-10:c %-5e %(gopar/get-schedule-or-deadline-if-available)")
      (tags . " %i %-12:c")
      (search . " %i %-12:c")))
