@@ -12,7 +12,7 @@
 
 ;; Find where asdf dir is located in:
 ;; $ echo $(brew --prefix asdf)
-(setenv "ASDF_DIR" "/usr/local/opt/asdf/libexec")
+(setenv "ASDF_DIR" "/opt/homebrew/opt/asdf/libexec")
 
 ;; Default aws config.
 (setenv "AWS_DEFAULT_REGION" "us-east-1")

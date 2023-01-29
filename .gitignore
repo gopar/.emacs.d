@@ -31,3 +31,6 @@ transient/
 /url/
 /forge-database.sqlite
 /.org-id-locations
+/elpa/
+eshell/history
+eshell/alias

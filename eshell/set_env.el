@@ -8,10 +8,11 @@
                ":/sbin/"
                ":/bin/"
                ;; pdf tools
-               "/Library/TeX/texbin/"
-               "/Applications/Emacs.app/Contents/MacOS/"
-               "/opt/homebrew/opt/openjdk/bin/"
-               "/opt/homebrew/bin/"
+               ":/Library/TeX/texbin/"
+               ":/Applications/Emacs.app/Contents/MacOS/"
+               ":/opt/homebrew/opt/openjdk/bin/"
+               ":/opt/homebrew/bin/"
+               ":/opt/homebrew/opt/asdf/libexec/bin/"
                ))
       (PATH-ENV (getenv "PATH")))
   (dolist (path paths)
@@ -35,6 +36,8 @@
 (setenv "PEEKALINK_API_KEY" "36a7e527-27f0-4606-bb87-32327f1462f7")
 
 (setenv "MPLBACKEND" "TkAgg")
+
+(setenv "EDITOR" "emacsclient")
 
 ;; Set color for most programs
 ;; Can't figure out how to set this dynamicall eg $(vivid generate theme)

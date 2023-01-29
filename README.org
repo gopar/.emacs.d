@@ -367,7 +367,7 @@ All general org mode settings
   ;; :pin gnu
   :defer t
   :custom
-  (fill-column 120)
+  (fill-column 100)
   ;; Where the org files live
   (org-directory "~/.emacs.d/org/")
   ;; Where archives should go
@@ -427,6 +427,7 @@ All general org mode settings
      ("misc" . ?x) ;; Anything that doesn't fit these tags
      ("health" . ?h) ;; Health related things. Mucho important
      ("watch" . ?w) ;; Things to watch. Might never get to these sigh
+     ("fun" . ?g) ;; FUN
      ))
   ;; The right side of | indicates the DONE states
   (org-todo-keywords
@@ -437,7 +438,7 @@ All general org mode settings
      ("Points_ALL" . "1 2 3 5 8 13")))
   ;; Needed to allow helm to compute all refile options in buffer
   (org-outline-path-complete-in-steps nil)
-  (org-deadline-warning-days 5)
+  (org-deadline-warning-days 2)
   (org-log-redeadline t)
   (org-log-reschedule t)
   ;; Repeat to previous todo state
@@ -519,7 +520,8 @@ Mode for time management. Pretty usefull. I use it a lot.
   (org-clock-into-drawer "CLOCKING")
   ;; Setup default clocktable summary
   (org-clock-clocktable-default-properties
-   '(:maxlevel 2 :scope file :formula % :properties ("Effort" "Points") :sort (5 . ?t) :compact t :block today))
+   '(:maxlevel 2 :scope file :formula % ;; :properties ("Effort" "Points")
+               :sort (5 . ?t) :compact t :block today))
   :bind (:map global-map
               ("C-c j" . (lambda () (interactive) (org-clock-jump-to-current-clock)))
               :map org-mode-map
@@ -554,7 +556,7 @@ Mode for time management. Pretty usefull. I use it a lot.
      nil
      ""))
   (org-agenda-prefix-format
-   '((agenda . " %i %-12:c%?-12t% s%-4e ")
+   '((agenda . " %-4e %i %-12:c%?-12t% s ")
      (todo . " %i %-10:c %-5e %(gopar/get-schedule-or-deadline-if-available)")
      (tags . " %i %-12:c")
      (search . " %i %-12:c")))
@@ -562,7 +564,8 @@ Mode for time management. Pretty usefull. I use it a lot.
   (org-agenda-custom-commands
    '(("h" "Agenda and Home tasks"
       ((agenda "" ((org-agenda-span 2)))
-       (todo "NEXT|WAITING|IN-PROGRESS"))
+       (todo "WAITING|IN-PROGRESS")
+       (todo "NEXT"))
       ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
 
      ("w" "Agenda and break|inbox tasks"
@@ -582,9 +585,8 @@ Mode for time management. Pretty usefull. I use it a lot.
 
      ("r" "Weekly Review"
       ((agenda "")
-       (tags-todo "+tickler-DEADLINE={.+}-SCHEDULED={.+}")
        (todo))
-      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))
+      ((org-agenda-sorting-strategy '(habit-up category-up priority-down ))
        (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org"))))))
 #+END_SRC
 
@@ -625,10 +627,11 @@ Unconditionally have org tables everywhere.
 Having this of for now since I don't really need it.
 
 #+begin_src
-    (use-package org-table
-      :defer t
-      :ensure nil
-      :hook (prog-mode . turn-on-orgtbl))
+(use-package org-table
+  :defer t
+  :ensure nil
+  :hook (prog-mode . turn-on-orgtbl)
+  :config (set-face-attribute 'org-table nil  :inherit 'fixed-pitch))
 #+end_src
 
 *** Org Links
@@ -679,6 +682,29 @@ Habit tracking in org mode
 (use-package org-indent
   :ensure nil
   :diminish)
+#+end_src
+
+*** Org Faces
+#+begin_src emacs-lisp
+(use-package org-faces
+  :ensure nil
+  :custom
+  (org-tag-faces '(("12WY" . "#1C6ABD")
+                   ("break" . "#1CBFB724CEEE")
+                   ("calls" . "#F2BB91E8E743")
+                   ("driving" . "#CC32AC19011C")
+                   ("emacs" . "#CA4D2BF09267")
+                   ("freetime" . "#BA17AFFAA266")
+                   ("health" . "#555BF8344CA0")
+                   ("inbox" . "#AF1CD994DFCB")
+                   ("ORDERED" . (:weight bold))
+                   ("misc" . "#BC957E26FF41")
+                   ("moneyMaker" . "#77C5CA7D702B")
+                   ("project" . "#753AA7CDA2EE")
+                   ("someday" . "#A96B6F786DEC")
+                   ("watch" . "#E83BA21AED77")
+                   ("fun" . (:weight bold :foreground "#BA5A31"))
+                   )))
 #+end_src
 
 *** [[https://github.com/marcinkoziej/org-pomodoro/][Org Pomorodo]]
@@ -737,6 +763,7 @@ A neat knowledge base in org
   (org-roam-db-location (expand-file-name "~/.emacs.d/org/private/org-roam.db"))
   (org-roam-tag-sources '(prop))
   (org-roam-db-update-method 'immediate)
+  (org-roam-graph-viewer 'browse-url-firefox)
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
       :target (file+head "./references/${slug}.org" "#+title: ${title}\n")
@@ -768,19 +795,6 @@ A neat knowledge base in org
   :hook (org-mode . org-superstar-mode))
 #+end_src
 
-*** [[https://github.com/KaratasFurkan/org-rainbow-tags][Org Rainbow Tags]]
-#+begin_src emacs-lisp
-(use-package org-rainbow-tags
-  :straight (:host github :repo "KaratasFurkan/org-rainbow-tags")
-  :hook ((org-mode . org-rainbow-tags-mode)
-         (org-agenda-mode . gopar/ort-workaround))
-  ;; Enable once I catch all indented properties
-  ;; :custom
-  ;; (org-rainbow-tags--org-tag-regexp ":\\([[:alnum:]_@#%]+\\):")
-  :init
-  (defun gopar/ort-workaround ()
-    (run-with-timer 1 nil 'org-rainbow-tags-mode)))
-#+end_src
 *** Org Private
 My private stuff
 
@@ -904,13 +918,15 @@ Mode that I got off reddit.
      :hook (eshell-directory-change . gopar/sync-dir-in-buffer-name)
      :init
      (defun gopar/eshell-setup-aliases ()
-       (eshell/alias "oc" "/usr/bin/find . -name \"*.org\" | xargs wc -l")
+       (eshell/alias "ff" "find-file $1"
        (eshell/alias "l" "exa --long --classify --all --group --header --blocks --git --color=never $1")
-       (eshell/alias "rmpyc" "/usr/bin/find . -name *pyc -delete")
        (eshell/alias "ledger" "/opt/homebrew/bin/ledger --no-color --no-pager --strict $*")
-       (eshell/alias "tithe" "ledger bal Liabilities:Tithe -V $*")
+       (eshell/alias "netc" "ledger balance ^expenses ^income -V -R $*")
        (eshell/alias "netw" "ledger balance ^assets ^liabilities -V -R $*")
-       (eshell/alias "netc" "ledger balance ^expenses ^income -V -R $*"))
+       (eshell/alias "oc" "/usr/bin/find . -name \"*.org\" | xargs wc -l")
+       (eshell/alias "rmpyc" "/usr/bin/find . -name *pyc -delete")
+       (eshell/alias "tithe" "ledger bal Liabilities:Tithe -V $*")
+       )
 
      (defun eshell/ff (&rest args)
        "Open files in emacs.
@@ -1909,6 +1925,7 @@ go through the search engine"
                          ("https://www.bible.com/.*" . browse-url-firefox)
                          ("https://www.google.com/maps/.*" . browse-url-firefox)
                          ("https://stackoverflow.com/questions/.*" . sx-open-link)
+                         ("https://github.com/.*" . browse-url-chrome)
                          ("." . eww-browse-url)))
   (browse-url-firefox-new-window-is-tab t)
   :config
@@ -2108,7 +2125,7 @@ Essentially a vertical line showing where =fill-column=
 (use-package display-fill-column-indicator
   :ensure nil
   :defer t
-  :hook (python-mode org-mode))
+  :hook (python-mode))
 #+end_src
 
 ** Dired
@@ -2139,6 +2156,14 @@ Essentially a vertical line showing where =fill-column=
   :custom
   (insert-directory-program "gls") ; Will not work if system does not have GNU gls installed
   )
+#+end_src
+
+** Server
+#+begin_src emacs-lisp
+(use-package server
+  :ensure nil
+  :defer t
+  :hook (after-init . server-start))
 #+end_src
 
 * Third Party Packages
@@ -2244,8 +2269,8 @@ Also dark theme available
   :defer t
   :ensure t
   :custom
-  (alert-default-style 'osx-notifier)
-  (alert-fade-time 3))
+  (alert-default-style 'message)
+  (alert-fade-time 5))
 #+end_src
 
 ** [[https://github.com/purcell/exec-path-from-shell/][Exec-Path-From-Shell]]
@@ -3261,7 +3286,7 @@ instead of whats originally there which is (setq eshell-path)
  :ensure t
  :init
  (venv-initialize-eshell)
- (setq venv-location '("~/work/color/local/virtualenv3/" "~/personal/books")))
+ (setq venv-location '("~/work/color/local/virtualenv3/" "~/personal/books" "~/personal/arcade-traxx/traxx")))
 #+end_src
 
 ** [[https://github.com/flycheck/flycheck][Flycheck]]
