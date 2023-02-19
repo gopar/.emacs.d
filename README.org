@@ -918,7 +918,7 @@ Mode that I got off reddit.
      :hook (eshell-directory-change . gopar/sync-dir-in-buffer-name)
      :init
      (defun gopar/eshell-setup-aliases ()
-       (eshell/alias "ff" "find-file $1"
+       (eshell/alias "ff" "find-file $1")
        (eshell/alias "l" "exa --long --classify --all --group --header --blocks --git --color=never $1")
        (eshell/alias "ledger" "/opt/homebrew/bin/ledger --no-color --no-pager --strict $*")
        (eshell/alias "netc" "ledger balance ^expenses ^income -V -R $*")
@@ -1012,17 +1012,17 @@ Mode that I got off reddit.
    #+END_SRC
 
 *** Eshell cmd
-    Not a eshell module
+Not a eshell module
 
-    #+begin_src emacs-lisp
-    (use-package esh-cmd
-      :defer t
-      :ensure nil
-      :hook (eshell-pre-command . eshell-save-some-history)
-      :custom
-      ;; cant remember why i put t
-      (eshell-prefer-lisp-functions t))
-    #+end_src
+#+begin_src emacs-lisp
+(use-package esh-cmd
+  :defer t
+  :ensure nil
+  :hook (eshell-pre-command . eshell-save-some-history)
+  :custom
+  ;; cant remember why i put t
+  (eshell-prefer-lisp-functions t))
+#+end_src
 
 *** Esh Mode
 Not a eshell module
@@ -1100,53 +1100,53 @@ All these modules are configured down below after this section.
     #+end_src
 
 *** Eshell History
-    Module that handles history
-    #+begin_src emacs-lisp
-    (use-package em-hist
-      :defer t
-      :ensure nil
-      :config
-      (defun gopar/eshell-input-filter (input)
-        "Do not save empty lines, commands that start with a space or 'l'/'ls'"
-        (and
-         (not (string-prefix-p "ls" input))
-         (not (string= "l" input))
-         (eshell-input-filter-default input)
-         (eshell-input-filter-initial-space input)))
-      :custom
-      (eshell-history-size 1024)
-      (eshell-hist-ignoredups t)
-      (eshell-input-filter 'gopar/eshell-input-filter))
-    #+end_src
+Module that handles history
+#+begin_src emacs-lisp
+(use-package em-hist
+  :defer t
+  :ensure nil
+  :config
+  (defun gopar/eshell-input-filter (input)
+    "Do not save empty lines, commands that start with a space or 'l'/'ls'"
+    (and
+     (not (string-prefix-p "ls" input))
+     (not (string= "l" input))
+     (eshell-input-filter-default input)
+     (eshell-input-filter-initial-space input)))
+  :custom
+  (eshell-history-size 1024)
+  (eshell-hist-ignoredups t)
+  (eshell-input-filter 'gopar/eshell-input-filter))
+#+end_src
 
 *** COMMENT Eshell smart
-    #+begin_src emacs-lisp
-    (use-package eshell-smart
-      :defer t
-      :ensure nil
-      :custom
-      (eshell-where-to-jump 'begin)
-      (eshell-review-quick-commands nil)
-      (eshell-smart-space-goes-to-end t))
-    #+end_src
+#+begin_src emacs-lisp
+(use-package eshell-smart
+  :defer t
+  :ensure nil
+  :custom
+  (eshell-where-to-jump 'begin)
+  (eshell-review-quick-commands nil)
+  (eshell-smart-space-goes-to-end t))
+#+end_src
 
 *** Eshell directories
-    Module that does some cool stuff, mainly use it for =cd= command
+Module that does some cool stuff, mainly use it for =cd= command
 
-    #+begin_src emacs-lisp
-    (use-package em-dirs
-      :defer t
-      :ensure nil
-      :custom
-      (eshell-cd-shows-directory nil)
-      ;; pretty cool, type dir name and jump to it
-      (eshell-cd-on-directory t)
-      (eshell-list-files-after-cd nil)
-      (eshell-pushd-dunique t)
-      (eshell-last-dir-unique t)
-      (eshell-last-dir-ring-size 32)
-      (eshell-list-files-after-cd nil))
-    #+end_src
+#+begin_src emacs-lisp
+(use-package em-dirs
+  :defer t
+  :ensure nil
+  :custom
+  (eshell-cd-shows-directory nil)
+  ;; pretty cool, type dir name and jump to it
+  (eshell-cd-on-directory t)
+  (eshell-list-files-after-cd nil)
+  (eshell-pushd-dunique t)
+  (eshell-last-dir-unique t)
+  (eshell-last-dir-ring-size 32)
+  (eshell-list-files-after-cd nil))
+#+end_src
 
 *** Eshell Banner
 This module is only in charge of showing up the welcome banner when we start eshell.
@@ -3282,11 +3282,15 @@ NOTE: In the source code of this package I do (setq-default eshell-path)
 instead of whats originally there which is (setq eshell-path)
 #+begin_src emacs-lisp
 (use-package virtualenvwrapper
- :defer t
- :ensure t
- :init
- (venv-initialize-eshell)
- (setq venv-location '("~/work/color/local/virtualenv3/" "~/personal/books" "~/personal/arcade-traxx/traxx")))
+  :defer t
+  :ensure t
+  :init
+  (venv-initialize-eshell)
+  (setq venv-location '("~/work/color/local/virtualenv3/"
+                        "~/personal/books"
+                        "~/personal/arcade-traxx/traxx"
+                        "~/personal/Litigation-Locator/ll"
+                        )))
 #+end_src
 
 ** [[https://github.com/flycheck/flycheck][Flycheck]]
@@ -3403,7 +3407,8 @@ Client for Stackoverflow and friends
 #+begin_src emacs-lisp
 (use-package code-compass
   :ensure nil
-  :defer t
+  :defer nil
+  :load t
   :load-path "/Users/daniel.gopar/work/code-compass")
 #+end_src
 
@@ -3412,6 +3417,13 @@ Client for Stackoverflow and friends
 (use-package sticky-shell
   :ensure t
   :defer t
-  :straight (:host github :repo "andyjda/sticky-shell")
   :hook ((eshell-mode . sticky-shell-mode)))
 #+end_src
+
+** [[https://github.com/emacs-typescript/typescript.el][TypeScript]]
+#+begin_src emacs-lisp
+(use-package typescript-mode
+  :ensure t
+  :defer t)
+#+end_src
+
