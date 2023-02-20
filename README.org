@@ -109,8 +109,11 @@ And finally some misc stuff
 #+BEGIN_SRC emacs-lisp
 (defconst gopar/gc-cons-threshold (* 1024 1024 1024))
 (defun gopar/after-init-stuff ()
-  ;; (alert (format "Emacs took %s" (emacs-init-time)) :title "Emacs Init")
-  (find-file "~/.emacs.d/org/private/org-roam/references/20220818120004-color.org")
+  ;; Only open work file when work computer, else open this file
+  (if (string= user-login-name "gopar")
+      (find-file "~/.emacs.d/README.org")
+    (find-file "~/.emacs.d/org/private/org-roam/references/20220818120004-color.org"))
+
   (setq custom-file "~/.emacs.d/ignoreme.el")
   (load custom-file t)
 
@@ -3426,4 +3429,3 @@ Client for Stackoverflow and friends
   :ensure t
   :defer t)
 #+end_src
-
