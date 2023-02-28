@@ -2202,7 +2202,11 @@ My favorite theme
 #+BEGIN_SRC emacs-lisp
 (use-package tao-theme
   :ensure t
-  :hook (after-init .  (lambda () (load-theme 'tao-yin))))
+  :hook (after-init .  (lambda () (load-theme 'tao-yin)))
+  :custom
+  (tao-theme-use-boxes t)
+  (tao-theme-use-height nil)
+  (tao-theme-use-sepia nil))
 #+END_SRC
 
 **** [[https://github.com/thblt/eziam-theme-emacs][Eziam]]
