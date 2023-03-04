@@ -8,11 +8,10 @@
                ":/sbin/"
                ":/bin/"
                ;; pdf tools
-               ":/Library/TeX/texbin/"
+               ;; ":/Library/TeX/texbin/"
+               ;; ":/opt/homebrew/opt/openjdk/bin/"
                ":/Applications/Emacs.app/Contents/MacOS/"
-               ":/opt/homebrew/opt/openjdk/bin/"
                ":/opt/homebrew/bin/"
-               ":/opt/homebrew/opt/asdf/libexec/bin/"
                ))
       (PATH-ENV (getenv "PATH")))
   (dolist (path paths)
