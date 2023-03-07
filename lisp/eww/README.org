@@ -1,0 +1,472 @@
+Snippets for EWW that mimic Vimium browser plugin
+
+They need to be updated
+
+#+BEGIN_SRC emacs-lisp
+(defun gopar/open-eww-with-recent-kill-ring (&optional arg)
+  "Open current EWW with most recent item in kill ring.
+If prefix arg is passed, then open in new EWW buffer."
+  (interactive "P")
+  (if arg
+      (with-current-buffer
+          (if (eq major-mode 'eww-mode) (clone-buffer)
+            (generate-new-buffer "*eww*"))
+        (eww-mode)
+        (eww (current-kill 0)))
+    (eww (current-kill 0))))
+
+(defun gopar/eww--rename-eww-buffer ()
+  "Rename `eww-mode' buffer so sites open in new page.
+Stolen from `http://ergoemacs.org/emacs/emacs_eww_web_browser.html'
+Version 2017-11-10"
+  (let ((title (plist-get eww-data :title)))
+    (when (eq major-mode 'eww-mode )
+      (if title
+          (rename-buffer (concat "eww " title ) t)
+        (rename-buffer "eww" t)))))
+
+(defun gopar/eww--go-up-url-heirarchy ()
+  "Go up the URL heirarchy."
+  (interactive)
+  (let* ((url (url-generic-parse-url (eww-current-url)))
+         (filepath (url-filename url))
+         (paths (s-split "/" filepath))
+         (new-path (s-join "/" (butlast paths 1)))
+         (new-url nil))
+    (setq new-url (url-parse-make-urlobj
+                   (url-type url)
+                   (url-user url)
+                   (url-password url)
+                   (url-host url)
+                   (url-port url)
+                   new-path
+                   (url-target url)
+                   nil
+                   (url-fullness url)))
+    (eww-browse-url (url-recreate-url new-url))))
+
+(defun gopar/eww--go-to-root-url-heirarchy ()
+  "Go to root of current URL heirarchy"
+  (interactive)
+  (let* ((url (url-generic-parse-url (eww-current-url)))
+         (new-url nil))
+    (setq new-url (url-parse-make-urlobj
+                   (url-type url)
+                   (url-user url)
+                   (url-password url)
+                   (url-host url)
+                   (url-port url)
+                   ""
+                   (url-target url)
+                   nil
+                   (url-fullness url)))
+    (eww-browse-url (url-recreate-url new-url))))
+
+(defun gopar/eww--get-list-of-buffers ()
+  "Return a list of plist.
+Each plist contains a :buffer, :title, :url and :type.
+
+:BUFFER Points to the buffer we are referencing in the plist.
+
+:URL The URL that the buffer is in.
+
+:TITLE The title of the current url in said buffer.
+
+:TYPE Symbol to let me know where its from.
+Always set to 'buffer."
+  (let (buffers-info)
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (when (derived-mode-p 'eww-mode)
+          (push (list :buffer buffer
+                      :title (plist-get eww-data :title)
+                      :url (plist-get eww-data :url)
+                      :type 'buffer)
+                buffers-info))))
+    buffers-info))
+
+(defun gopar/eww--get-list-of-bookmarks ()
+  "Return a list of plists.
+Each plist contains a :title, :url and :type.
+
+:URL The URL of the saved bookmark.
+
+:TITLE The page title of said URL bookmark.
+
+:TYPE Symbol to let me know where its from.
+Always set to 'bookmark."
+  ;; Lets load bookmarks
+  (eww-read-bookmarks)
+  (if (not eww-bookmarks)
+      '() ;; return empty list
+    (let (bookmarks-info)
+      (dolist (bookmark eww-bookmarks)
+        (push (list :url (plist-get bookmark :url)
+                    :title (plist-get bookmark :title)
+                    :type 'bookmark)
+              bookmarks-info))
+      bookmarks-info)))
+
+(defun gopar/eww--get-list-of-history ()
+  "Return a list of plists.
+Each plist contains a title, :url and :type.
+
+:URL The URL of one point in time.
+
+:TITLE The page title of said URL.
+
+:TYPE Symbol to let me know where its from.
+Always set to 'history."
+  (let (history-list)
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (when (derived-mode-p 'eww-mode)
+          (dolist (history eww-history)
+            (push (list :url (plist-get history :url)
+                        :title (plist-get history :title)
+                        :type 'history)
+                  history-list)))))
+    history-list))
+
+(defun gopar/eww--prep-choices-for-helm (history bookmarks buffers)
+  "Return data thats preped for helm to consume.
+
+If HISTORY is non-nil then include history data.
+
+If BOOKMARKS is non-nil then include bookmark data.
+
+If BUFFERS is non-nil then include BUFFERS data."
+  ;; Hmm this allows duplciates since we have a bookmarked url in our history b/c
+  ;; we previously visited it, but this isn't a big deal. It's only me using this.
+  (let (options)
+    (when history
+      (dolist (entry (gopar/eww--get-list-of-history))
+        (push entry options)))
+    (when bookmarks
+      (dolist (entry (gopar/eww--get-list-of-bookmarks))
+        (push entry options)))
+    (when buffers
+      (dolist (entry (gopar/eww--get-list-of-buffers))
+        (push entry options)))
+    (setq options (mapcar (lambda (item)
+                            (let* ((title (plist-get item :title))
+                                   (url (plist-get item :url))
+                                   (type (plist-get item :type))
+                                   (buffer (plist-get item :buffer)))
+                              (list (format "%s - %s"
+                                            (propertize (s-truncate 40 title) 'face 'shrface-links-title-face)
+                                            (propertize (s-truncate 40 url) 'face 'shrface-links-url-face))
+                                    url type buffer)))
+                          options))
+    options))
+
+(defun gopar/eww-open-url-or-bookmark-or-history (&optional arg)
+  "Show prompt to either open a new query, bookmark or history.
+Passing ARG as non-nil, means open in new eww buffer."
+  (interactive "P")
+  (let (chosen chosen-type)
+    (setq chosen (helm-comp-read "URL/Bookmark/History: "
+                                 (gopar/eww--prep-choices-for-helm t t t)
+                                 :header-name (lambda (name) (concat "[[" name "]]"))))
+    ;; We get a string when we want a new search query
+    ;; And not any of the options we displayed
+    (if (stringp chosen)
+        (setq chosen-type 'string)
+      (setq chosen-type (nth 1 chosen)))
+    (cond
+     ((eq chosen-type 'buffer)
+      (switch-to-buffer (nth 2 chosen)))
+     ((eq chosen-type 'bookmark)
+      (eww (nth 0 chosen) (if arg 4 nil)))
+     ((eq chosen-type 'history)
+      (eww (nth 0 chosen) (if arg 4 nil)))
+     ;; When it's a string
+     (t
+      (eww chosen (if arg 4 nil))))))
+
+(defun gopar/eww-open-bookmark (&optional arg)
+  "Show prompt to open a bookmark.
+Providing a prefix will open in new eww buffer."
+  (interactive "P")
+  (let (chosen)
+    (setq chosen (helm-comp-read "Bookmark: " (gopar/eww--prep-choices-for-helm nil t nil)))
+    (if (not (listp chosen))
+        (message "No Bookmark chosen.")
+      (eww (nth 0 chosen) (if arg 4 nil)))))
+
+(defun gopar/eww-list-buffers ()
+  "Show a prompt of all EWW buffers to switch to."
+  (interactive)
+  (let (chosen)
+    (setq chosen (helm-comp-read "EWW Buffer: " (gopar/eww--prep-choices-for-helm nil nil t)))
+    (if (not (listp chosen))
+        (message "No Bookmark chosen.")
+      (switch-to-buffer (nth 2 chosen)))))
+
+(defun gopar/eww-edit-current-url (&optional arg)
+  (interactive)
+  (let* ((url (eww-copy-page-url))
+         (uris (eww-suggested-uris)))
+    (setq url (read-string "Edit URL or new search: " url 'eww-promt-history uris))
+    (setq url (eww--dwim-expand-url url))
+    (eww url (if arg 4 nil))))
+
+(defun gopar/eww-next-buffer (&optional arg)
+  "Go to the next/previous EWW buffer in line.
+
+If ARG is non-bil then go back one buffer, otherwise
+go forward one buffer.
+
+One thing to note, is the order in which they iterate.
+Since I am ordering them by URL, the ordering can change.
+
+Eg
+
+Another.com
+Boo.com
+youtube.com
+
+(Go from Another.com -> Zebra.com)
+Order is now:
+
+Boo.com
+youtube.com
+zebra.com
+"
+  ;; Not the prettiest function but who's watching :P
+  (interactive)
+  (cl-flet ((next-buffer (buffers index)
+                         (if (>= (1+ index) (length buffers))
+                             (nth 0 buffers)
+                           (nth (1+ index) buffers)))
+            (prev-buffer (buffers index)
+                         (if (= index 0)
+                             (nth (1- (length buffers)) buffers)
+                           (nth (1- index) buffers))))
+
+    (let* ((buffer-plist nil)
+           (buffers (gopar/eww--get-list-of-buffers))
+           ;; Sort them by URL
+           (buffers (cl-sort buffers 'string< :key '(lambda (x) (plist-get x :url))))
+           (index (cl-position (current-buffer) buffers :key '(lambda (x) (plist-get x :buffer)))))
+      (if (= (length buffers) 1)
+          (message "Only one EWW buffer present.")
+        (setq buffer-plist (if arg (prev-buffer buffers index) (next-buffer buffers index)))
+        (switch-to-buffer (plist-get buffer-plist :buffer))))))
+
+(defun gopar/eww-previous-buffer ()
+  "Go to the next/previous EWW buffer in line."
+  (interactive)
+  (gopar/eww-next-buffer t))
+
+(defun gopar/eww-not-implemented ()
+  (interactive)
+  (message "Not Implemented :("))
+
+(defun gopar/eww-advice-filter-args (args)
+  "When using a search engine, sometimes the redirects don't work.
+To work around this, we'll grab the url that we're targetting so that it doesn't
+go through the search engine"
+  (let (url path-and-query query is-ddg is-google param)
+    (setq url (car args))
+    (setq is-ddg (string-prefix-p "https://duckduckgo.com/l/?uddg=" url))
+    (setq is-google (string-prefix-p "https://www.google.com/url?" url))
+    (print url)
+
+    (when (or is-ddg is-google)
+      (setq url (url-generic-parse-url url))
+      (setq path-and-query (url-path-and-query url))
+      (setq query (cdr path-and-query))
+      (setq param (if is-ddg "uddg" "q"))
+      (setq url (car (cdr (assoc-string param (url-parse-query-string query))))))
+
+    `(,url ,@(cdr args))))
+#+end_src
+
+I like using EWW for viewing documentation but I really like [[https://vimium.github.io/][Vimiums]] keybindings.
+
+So here I try to mimic those keybindings, but there are a few things to be aware about.
+
+#+BEGIN_SRC emacs-lisp
+;; Eww uses the =shr-map= and =shr-image-map= from =shr.el=.
+(use-package eww
+  :after (shr)    ;; Maybe do :config (require 'hydra/shr) ??
+  :init
+  (setq eww-goto-map (let ((map (make-sparse-keymap)))
+                       (define-key map "g" 'beginning-of-buffer)
+                       (define-key map "u" 'gopar/eww--go-up-url-heirarchy)
+                       (define-key map "U" 'gopar/eww--go-to-root-url-heirarchy)
+                       (define-key map "s" 'eww-view-source)
+                       (define-key map "e" 'gopar/eww-edit-current-url)
+                       (define-key map "E" '(lambda () (interactive) (gopar/eww-edit-current-url)))
+                       (define-key map "i" '(lambda () (interactive) (gopar/avy-property-jump 'eww-form :prop-pred (lambda (val prop-val) (string= "text" (plist-get prop-val :type))))))
+                       map))
+  (setq eww-y-map (let ((map (make-sparse-keymap)))
+                    (define-key map "y" 'eww-copy-page-url)
+                    (define-key map "f" 'shr-maybe-probe-and-copy-url) ;; shold prob replace with ivy link selection
+                    ;; Duplicate current buffer
+                    (define-key map "t" 'gopar/eww-not-implemented)
+                    map))
+  (setq eww-open-bracket-map (let ((map (make-sparse-keymap)))
+                               (define-key map "[" 'eww-previous-url)
+                               map))
+  (setq eww-close-bracket-map (let ((map (make-sparse-keymap)))
+                                (define-key map "]" 'eww-next-url)
+                                map))
+
+  (fset 'eww-goto-map eww-goto-map)
+  (fset 'eww-y-map eww-y-map)
+  (fset 'eww-open-bracket-map eww-open-bracket-map)
+  (fset 'eww-close-bracket-map eww-close-bracket-map)
+  :config
+  (require 'shrface)
+  :hook ((eww-after-render . shrface-mode)
+         (eww-after-render . gopar/eww--rename-eww-buffer)
+         (eww-after-render . visual-line-mode))
+  :bind (:map eww-mode-map
+              ;; ("." . hydra-eww/body)
+              ;; Lets unbind some stuff
+              ("l" . nil)
+              ;;;;;;;;;;;;;;
+              ;; Extras
+              ;;;;;;;;;;;;;;
+              ("<tab>" . shrface-outline-cycle)
+              ("S-<tab>" . shrface-outline-cycle-buffer)
+              ("C-t" . shrface-toggle-bullets)
+              ("C-i" . shrface-links-helm)
+              ("C-o" . shrface-headline-helm)
+              ("a" . shr-show-alt-text)
+              ("z" . shr-zoom-image)
+              ("i" . shr-next-link)
+              ("I" . shr-previous-link)
+              ;;;;;;;;;;;;;;
+              ;; Navigation
+              ;;;;;;;;;;;;;;
+              ("j" . (lambda () (interactive) (scroll-up 1)))
+              ("k" . (lambda () (interactive) (scroll-down 1)))
+              ("n" . shrface-next-headline)
+              ("N" . shrface-previous-headline)
+              ("p" . previous-line)
+              ("G" . end-of-buffer)
+              ("d" . View-scroll-half-page-forward)
+              ("u" . View-scroll-half-page-backward)
+              ("r" . eww-reload)
+              ("p" . gopar/open-eww-with-recent-kill-ring)
+              ("P" . (lambda () (interactive) (gopar/open-eww-with-recent-kill-ring t)))
+              ;; I can make a custom avy action function but meh, too lazy
+              ("f" . (lambda () (interactive)
+                       (gopar/avy-property-jump 'shr-url
+                                                :action '(lambda (pt) (avy-action-goto pt) (shr-browse-url)))))
+              ("F" . (lambda () (interactive)
+                       (gopar/avy-property-jump 'shr-url
+                                                :action '(lambda (pt) (avy-action-goto pt) (eww-open-in-new-buffer)))))
+              ;;;;;;;;;;;;;;
+              ;; Vomnibar
+              ;;;;;;;;;;;;;;
+              ("o" . gopar/eww-open-url-or-bookmark-or-history)
+              ("O" . (lambda () (interactive) (gopar/eww-open-url-or-bookmark-or-history t)))
+              ("b" . gopar/eww-open-bookmark)
+              ("B" . (lambda () (interactive) (gopar/eww-open-bookmark t)))
+              ("T" . gopar/eww-list-buffers)
+              ;;;;;;;;;;;;;;
+              ;; Navigating history
+              ;;;;;;;;;;;;;;
+              ("H" . eww-back-url)
+              ("L" . eww-forward-url)
+              ;;;;;;;;;;;;;;
+              ;; Manipulating Buffers
+              ;;;;;;;;;;;;;;
+              ("J" . gopar/eww-previous-buffer)
+              ("K" . gopar/eww-next-buffer)
+              ;;;;;;;;;;;;;;
+              ;; Prefix keymaps
+              ;;;;;;;;;;;;;;
+              ("g" . eww-goto-map)
+              ("y" . eww-y-map)
+              ("[" . eww-open-bracket-map)
+              ("]" . eww-close-bracket-map)
+              :map shr-map
+              ("." . hydra-eww/body)
+              ("i" . shr-next-link)
+              ("I" . shr-previous-link)
+              ("C-i" . shrface-links-helm))
+
+  ;; :hydra (hydra-eww (:hint nil)
+  ;;                     "
+  ;; Vimium(ish) bidings for EWW
+
+  ;;       Navigation
+  ;; --------------------------------------------------------------------------------------------
+  ;;  _j_: Next Headline _[_: Follow link labeled Next     _gu_: Go up URL
+  ;;  _k_: Prev Headline _]_: Follow link labeled Previous _gU_: Go to root URL
+  ;;  _n_: Next line    _yy_: Copy page URL                 _o_: Open Bookmark/Hist/Tab
+  ;;  _r_: Reload       _yf_: Copy URL on under point       _O_: Open Bookmark/Hist/Tab
+  ;;  _d_: Scroll Down   _p_: Open Clipboard                     in new buffer
+  ;;  _u_: Scroll Up     _P_: Open Clipboard in new Buffer
+  ;; "
+  ;;                     ("j" shrface-next-headline nil)
+  ;;                     ("k" shrface-previous-headline nil)
+  ;;                     ("n" next-line nil)
+  ;;                     ("u" View-scroll-half-page-backward nil)
+  ;;                     ("d" View-scroll-half-page-forward nil)
+  ;;                     ("r" eww-reload nil)
+  ;;                     ("yy" eww-copy-page-url nil)
+  ;;                     ("yf" (get-text-property (point) 'shr-url) nil)
+  ;;                     ("p" gopar/open-eww-with-recent-kill-ring nil)
+  ;;                     ("P" (gopar/open-eww-with-recent-kill-ring t) nil)
+  ;;                     ("[" eww-next-url nil)
+  ;;                     ("]" eww-previous-url nil)
+  ;;                     ("gu" gopar/eww--go-up-url-heirarchy)
+  ;;                     ("gU" gopar/eww--go-to-root-url-heirarchy)
+  ;;                     ("o" gopar/open-url-or-bookmark-or-history)
+  ;;                     ("O" (gopar/open-url-or-bookmark-or-history t)))
+  )
+#+end_src
+
+#+BEGIN_SRC emacs-lisp
+(use-package view
+  :ensure nil
+  :after eww)
+
+(defun gopar/avy--property-candidates (property &optional beg end pred group prop-pred)
+    "Return all elements that have a property PROPERTY.
+Each element of the list is ((BEG . END) . WND)
+When PRED is non-nil, it's a filter for matching point positions."
+    (setq group (or group 0))
+    (let ((found-link nil)
+          (case-fold-search (or avy-case-fold-search
+                                (string= regex (downcase regex))))
+          candidates)
+      (avy-dowindows current-prefix-arg
+                     (dolist (pair (avy--find-visible-regions
+                                    (or beg (window-start))
+                                    (or end (window-end (selected-window) t))))
+                       (save-excursion
+                         (goto-char (car pair))
+                         (save-restriction
+                           (narrow-to-region (car pair) (cdr pair))
+                           (setq found-link (text-property-search-forward property nil prop-pred))
+                           (while found-link
+                             (when (avy--visible-p (1- (point)))
+                               (when (or (null pred)
+                                         (funcall pred))
+                                 (push (cons (cons (prop-match-beginning found-link)
+                                                   (prop-match-end found-link)) wnd) candidates)))
+                             (setq found-link (text-property-search-forward property nil prop-pred)))))))
+      (nreverse candidates)))
+
+  (cl-defun gopar/avy-property-jump (property &key window-flip beg end action pred group prop-pred)
+    "Provide avy jump completions but for text properties that match PROPERTY.
+Usefule for when browsing EWW.
+
+When ARG is non-nil, open in new EWW buffer."
+    (interactive)
+    (require 'avy)
+    (setq avy-action (or action avy-action))
+    (let ((avy-all-windows
+           (if window-flip
+               (not avy-all-windows)
+             avy-all-windows)))
+      (avy-process
+       (gopar/avy--property-candidates property beg end pred group prop-pred))))
+#+end_src

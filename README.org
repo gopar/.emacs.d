@@ -770,13 +770,13 @@ A neat knowledge base in org
       :unnarrowed t)))
   (org-roam-dailies-directory (expand-file-name "~/.emacs.d/org/private/journal/"))
   (org-roam-dailies-capture-templates
-   `(("d" "daily" plain (file "/Users/daniel.gopar/.emacs.d/org/templates/dailies-daily.template")
+   `(("d" "daily" plain (file "/Users/gopar/.emacs.d/org/templates/dailies-daily.template")
       :target (file+head "daily/%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))
 
-     ("w" "weekly" plain (file "/Users/daniel.gopar/.emacs.d/org/templates/dailies-weekly.template")
+     ("w" "weekly" plain (file "/Users/gopar/.emacs.d/org/templates/dailies-weekly.template")
       :target (file+head "weekly/%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))
 
-     ("m" "monthly" plain (file "/Users/daniel.gopar/.emacs.d/org/templates/dailies-monthly.template")
+     ("m" "monthly" plain (file "/Users/gopar/.emacs.d/org/templates/dailies-monthly.template")
       :target (file+head "monthly/%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))))
 
   :bind (:map global-map
@@ -784,7 +784,8 @@ A neat knowledge base in org
                ("C-c n f" . org-roam-node-find)
                ("C-c n g" . org-roam-graph)
                ("C-c n n" . org-roam-capture)
-               ("C-c n d" . org-roam-dailies-capture-today)))
+               ("C-c n d" . org-roam-dailies-capture-today)
+               ("C-c n s" . consult-org-roam-search)))
   :hook (after-init . org-roam-db-autosync-mode))
 #+end_src
 
@@ -1294,12 +1295,16 @@ Window management
   :bind (:map python-mode-map
               ("C-c C-p" . nil)
               ("C-c C-z" . run-python))
-  :hook (python-mode . (lambda () (setq forward-sexp-function nil) (make-local-variable 'python-shell-virtualenv-root)))
+  :hook (python-mode . (lambda ()
+                         (setq forward-sexp-function nil)
+                         (make-local-variable 'python-shell-virtualenv-root)
+                         (setq completion-at-point '(cape-file cape-dabbrev python-completion-at-point))))
   :custom
   (python-shell-interpreter "ipython")
   (python-shell-interpreter-args "-i --simple-prompt")
   :config
-  (add-to-list 'python-shell-completion-native-disabled-interpreters "python"))
+  (add-to-list 'python-shell-completion-native-disabled-interpreters "python")
+  )
 #+END_SRC
 
 ** GUD (Grand Unified Debugger)
@@ -1416,7 +1421,7 @@ go through the search engine"
                          ("https://www.google.com/maps/.*" . browse-url-firefox)
                          ("https://stackoverflow.com/questions/.*" . sx-open-link)
                          ("https://github.com/.*" . browse-url-chrome)
-                         ("." . eww-browse-url)))
+                         ("." . browse-url-firefox)))
   (browse-url-firefox-new-window-is-tab t)
   :config
   (put 'browse-url-handlers 'safe-local-variable (lambda (x) t))
@@ -1615,7 +1620,6 @@ Essentially a vertical line showing where =fill-column=
 #+end_src
 
 ** Dired
-
 #+begin_src emacs-lisp
 (use-package dired
   :ensure nil
@@ -1653,7 +1657,10 @@ Essentially a vertical line showing where =fill-column=
 (use-package dabbrev
   :custom
   (dabbrev-upcase-means-case-search t)
-  (dabbrev-check-all-buffers nil))
+  (dabbrev-check-all-buffers nil)
+  (dabbrev-check-other-buffers t)
+  (dabbrev-friend-buffer-function 'dabbrev--same-major-mode-p)
+  )
 #+end_src
 
 * Third Party Packages
@@ -2037,16 +2044,19 @@ Packages for built in SHR (Simple HTML Renderer)
   :ensure t
   :init
   (setq rand-theme-light '(minimal-light tao-yang soft-stone autumn-light))
-  (setq rand-theme-dark '(tao-yin minsk manoj-dark shanty-themes-dark github-dark-vscode eziam-dusk tsdh-dark deeper-blue afternoon))
+  (setq rand-theme-dark '(tao-yin minsk manoj-dark shanty-themes-dark github-dark-vscode tsdh-dark deeper-blue afternoon))
   (setq rand-theme-wanted rand-theme-dark)
+  (setq consult-themes rand-theme-wanted)
 
   (defun gopar/switch-to-light-themes ()
     (interactive)
-    (setq rand-theme-wanted rand-theme-light))
+    (setq rand-theme-wanted rand-theme-light)
+    (setq consult-themes rand-theme-wanted))
 
   (defun gopar/switch-to-dark-themes ()
     (interactive)
-    (setq rand-theme-wanted rand-theme-dark))
+    (setq rand-theme-wanted rand-theme-dark)
+    (setq consult-themes rand-theme-wanted))
 
   :bind (("C-z" . rand-theme-iterate)
          ("C-S-z" . rand-theme-iterate-backwards)))
@@ -2066,6 +2076,7 @@ To help getting around projects
 ;; (put 'projectile-project-run-cmd 'safe-local-variable (lambda (x) t))
 (use-package projectile
   :ensure t
+  :load t
   :commands projectile-project-root
   :bind-keymap
   ("C-c p" . projectile-command-map)
@@ -2613,7 +2624,7 @@ Client for Stackoverflow and friends
 (use-package github-browse-file :ensure t)
 #+end_src
 
-** COMMENT [[https://github.com/ag91/code-compass][Code Compass]]
+** [[https://github.com/ag91/code-compass][Code Compass]]
 #+begin_src emacs-lisp
 (use-package code-compass
   :ensure nil
@@ -2682,6 +2693,7 @@ Upgraded version of default completion framework
 (use-package cape
   :ensure t
   :init
+  (setq cape-dabbrev-check-other-buffers 'some)
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
   (add-to-list 'completion-at-point-functions #'cape-file)
   (add-to-list 'completion-at-point-functions #'cape-history)
@@ -2713,7 +2725,7 @@ The new helm but slim
   :ensure
   :after projectile
   :bind (("C-s" . gopar/consult-line)
-  ;; ("M-x" . consult-mode-command)
+  ("C-c M-x" . consult-mode-command)
   ("C-x b" . consult-buffer)
   ("C-x r b" . consult-bookmark)
   ("M-y" . consult-yank-pop)
@@ -2731,9 +2743,10 @@ The new helm but slim
 
   :init
   (setq consult-project-function (lambda (_) (projectile-project-root)))
-  (setq xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
+  ;; (setq xref-show-xrefs-function #'consult-xref
+  ;;       xref-show-definitions-function #'consult-xref)
   (setq consult-narrow-key "<")
+  (setq consult-line-start-from-top t)
 
   (defun gopar/consult-line (&optional arg)
     "Start consult search with selected region if any.
@@ -2770,7 +2783,7 @@ If used with a prefix, it will search all buffers as well."
    (consult-org-roam-buffer-narrow-key ?r)
    ;; Display org-roam buffers right after non-org-roam buffers
    ;; in consult-buffer (and not down at the bottom)
-   (consult-org-roam-buffer-after-buffers t)
+   (consult-org-roam-buffer-after-buffers nil)
    :config
    ;; Eventually suppress previewing for certain functions
    (consult-customize
@@ -2786,4 +2799,11 @@ If used with a prefix, it will search all buffers as well."
   ;; Must be in the :init section of use-package such that the mode gets
   ;; enabled right away. Note that this forces loading the package.
   (marginalia-mode))
+#+end_src
+
+** [[https://github.com/Silex/docker.el][Docker]]
+#+begin_src emacs-lisp
+(use-package docker
+  :ensure t
+  :bind ("C-c d" . docker))
 #+end_src
