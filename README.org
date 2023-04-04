@@ -914,6 +914,7 @@ See: https://github.com/noctuid/general.el/issues/80
   :ensure nil
   ;; :hook (eshell-mode . gopar/eshell-setup-aliases)
   :hook (eshell-directory-change . gopar/sync-dir-in-buffer-name)
+  :bind ("C-c >" . gopar/eshell-redirect-to-buffer)
   :init
   (defun gopar/eshell-setup-aliases ()
     (eshell/alias "ff" "find-file $1")
@@ -1005,8 +1006,13 @@ Stolen from aweshell."
     (let* ((root (projectile-project-root))
            (root-name (projectile-project-name root)))
       (if root-name
-          (rename-buffer (format "*eshell %s* %s" root-name (s-chop-prefix root default-directory)))
-        (rename-buffer (format "*eshell %s*" default-directory))))))
+          (rename-buffer (format "*eshell %s* %s" root-name (s-chop-prefix root default-directory)) t)
+        (rename-buffer (format "*eshell %s*" default-directory) t))))
+
+  (defun gopar/eshell-redirect-to-buffer (buffer)
+    "Auto create command for redirecting to buffer."
+    (interactive (list (read-buffer "Redirect to buffer: ")))
+    (insert (format " >>> #<%s>" buffer))))
 #+END_SRC
 
 *** Eshell cmd
@@ -1300,8 +1306,8 @@ Window management
                          (make-local-variable 'python-shell-virtualenv-root)
                          (setq completion-at-point '(cape-file cape-dabbrev python-completion-at-point))))
   :custom
-  (python-shell-interpreter "ipython")
-  (python-shell-interpreter-args "-i --simple-prompt")
+  (python-shell-interpreter "python")
+  (python-shell-interpreter-args "")
   :config
   (add-to-list 'python-shell-completion-native-disabled-interpreters "python")
   )
@@ -1320,7 +1326,7 @@ Just a small wrapper around  `pdb`"
       (pdb command-line))))
 #+end_src
 
-** COMMENT JavaScript JS
+** JavaScript JS
 
 #+begin_src emacs-lisp
 (use-package js-mode
@@ -1330,8 +1336,11 @@ Just a small wrapper around  `pdb`"
               :map js-jsx-mode-map
               (";" . easy-camelcase))
   :custom
-  (js-indent-level 2)
-  (js-jsx-indent-level 2))
+  (js-indent-level 4)
+  (js-jsx-indent-level 4)
+  :hook (js-mode . (lambda ()
+                     (define-key js-mode-map (kbd ";") 'easy-camelcase)
+                     (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase))))
 #+end_src
 
 ** Pulse
@@ -1379,7 +1388,7 @@ via [[https://github.com/redguardtoo/emacs.d/issues/796][this threads]] suggesti
   :bind (:map flyspell-mode-map
               ("C-;" . nil)
               ("C-," . flyspell-goto-next-error)
-              ("C-." . flyspell-correct)))
+              ("C-." . flyspell-auto-correct-word)))
 #+end_src
 
 ** Browse URL
@@ -1420,7 +1429,7 @@ go through the search engine"
                          ("https://www.bible.com/.*" . browse-url-firefox)
                          ("https://www.google.com/maps/.*" . browse-url-firefox)
                          ("https://stackoverflow.com/questions/.*" . sx-open-link)
-                         ("https://github.com/.*" . browse-url-chrome)
+                         ("https://github.com/.*" . browse-url-firefox)
                          ("." . browse-url-firefox)))
   (browse-url-firefox-new-window-is-tab t)
   :config
@@ -1594,7 +1603,9 @@ Automatically input a closing parens when putting an open parens
   :hook ((prog-mode . subword-mode)
          (prog-mode . which-function-mode)
          (prog-mode . gopar/set-pretty-symbols)
-         (after-init . global-prettify-symbols-mode))
+         (after-init . global-prettify-symbols-mode)
+         (prog-mode . (lambda () (setq-local fill-column 120)))
+         )
   :init
   (defun gopar/set-pretty-symbols ()
     (interactive)
@@ -1695,7 +1706,7 @@ My favorite theme
 #+BEGIN_SRC emacs-lisp
 (use-package tao-theme
   :ensure t
-  :hook (after-init .  (lambda () (load-theme 'manoj-dark)))
+  :hook (after-init .  (lambda () (load-theme 'tao-yin)))
   :custom
   (tao-theme-use-boxes t)
   (tao-theme-use-height nil)
@@ -1950,7 +1961,9 @@ After adding or updating a snippet run:
   :ensure t
   :diminish
   :hook ((prog-mode . yas-minor-mode)
-         (fundamental-mode . yas-minor-mode)))
+         (fundamental-mode . yas-minor-mode))
+  :bind (:map yas-minor-mode-map
+              ("C-c C-SPC" . yas-insert-snippet)))
 #+end_src
 
 Install the actual snippets
@@ -2103,8 +2116,8 @@ Argument COMPILATION-MODE is the name of the major mode used for the compilation
   :ensure t
   :commands magit-get-current-branch
   :bind (("C-x g" . magit))
+  :hook (magit-mode . magit-wip-mode)
   :config
-  (setq vc-handled-backends nil)
   (setq magit-diff-refine-hunk 'all)
   (setq magit-process-finish-apply-ansi-colors t)
 
@@ -2116,6 +2129,14 @@ Argument COMPILATION-MODE is the name of the major mode used for the compilation
                  1)))
       (magit-reset-soft (format "HEAD^%d" num)))))
 #+END_SRC
+
+*** [[https://github.com/alphapapa/magit-todos][Magit Todos]]
+#+begin_src emacs-lisp
+(use-package magit-todos
+  :ensure
+  :defer
+  :hook (magit-mode . magit-todos-mode))
+#+end_src
 
 ** Git-Commit
 This package is also part of magit
@@ -2150,6 +2171,17 @@ Mainly for doom moodline
   :ensure t
   :if (display-graphic-p))
 #+end_src
+
+*** All the icons completion
+#+begin_src emacs-lisp
+(use-package all-the-icons-completion
+  :ensure t
+  :defer
+  :hook (marginalia-mode . #'all-the-icons-completion-marginalia-setup)
+  :init
+  (all-the-icons-completion-mode))
+#+end_src
+
 
 ** [[https://github.com/seagle0128/doom-modeline/][Doom Modeline]]
 Better UI for Modeline.
@@ -2229,7 +2261,7 @@ Map keybindings in an easier way
 Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
   Move: _s_wap
 Frames: _f_rame new  _df_ delete
-  Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+  Misc: _m_ark _a_ce  _u_ndo  _r_edo _b_uffer"
   ("h" windmove-left)
   ("j" windmove-down)
   ("k" windmove-up)
@@ -2262,7 +2294,7 @@ Frames: _f_rame new  _df_ delete
   ("df" delete-frame :exit t)
   ("q" nil)
   ;("i" ace-maximize-window "ace-one" :color blue)
-  ;("b" ido-switch-buffer "buf")
+  ("b" consult-buffer)
   ("m" headlong-bookmark-jump))))
 #+END_SRC
 
@@ -2385,7 +2417,8 @@ highlight TODO's in buffer
 (use-package emmet-mode
   :ensure t
   :hook ((js-mode . emmet-mode)
-         (typescript-mode . emmet-mode))
+         (typescript-mode . emmet-mode)
+         (web-mode . emmet-mode))
   :custom
   (emmet-expand-jsx-className? t))
 #+end_src
@@ -2396,7 +2429,7 @@ highlight TODO's in buffer
   :ensure t)
 #+end_src
 
-** [[https://github.com/paradoxxxzero/jinja2-mode][Jinja2]]
+** COMMENT [[https://github.com/paradoxxxzero/jinja2-mode][Jinja2]]
 #+begin_src emacs-lisp
 (use-package jinja2-mode
   :ensure t)
@@ -2461,7 +2494,9 @@ Search Engine goodies
               ("C-c C-b" . ledger-navigate-previous-uncleared))
   :custom
   (ledger-clear-whole-transactions t)
-  (ledger-report-use-native-highlighting nil))
+  (ledger-report-use-native-highlighting nil)
+  (ledger-accounts-file (expand-file-name "~/personal/finances/data/accounts.dat"))
+  )
 #+end_src
 
 ** [[https://github.com/bkaestner/redacted.el][Redacted]]
@@ -2518,7 +2553,8 @@ instead of whats originally there which is (setq eshell-path)
   (setq venv-location '("~/work/color/local/virtualenv3/"
                         "~/personal/books"
                         "~/personal/arcade-traxx/traxx"
-                        "~/personal/Litigation-Locator/ll"
+                        "~/work/fiagents/env/"
+                        "~/personal/positron/venv/"
                         )))
 #+end_src
 
@@ -2550,24 +2586,50 @@ Otherwise flycheck chokes and starts to slow down emacs"
 #+end_src
 
 ** [[https://github.com/davidmiller/dizzee][dizzee]]
+Issues with commands changing the current files default directory to whatever the command points to:
+Fix is https://github.com/davidmiller/dizzee/pull/5
+(Manually editing fix here until its merged which is likely never gonna happen :/ )
 #+begin_src emacs-lisp
 (use-package dizzee
   :ensure t
   :config
+  (dz-defservice bfd-runserver "python"
+                 :args ("manage.py" "runserver")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-flower "flower"
+                 :args ("-A" "core" "--host=127.0.0.1" "--port=9002")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-bot-run "python"
+                 :args ("manage.py" "bot" "run")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-downloader-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "Downloader" "-Q" "Downloader" "--concurrency=8" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-slow-downloader-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "SlowDownloader" "-Q" "SlowDownloader" "--concurrency=2" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-diffbot-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "Diffbot" "-Q" "Diffbot" "--concurrency=8" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-launcher-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "Launcher" "-Q" "Launcher" "--concurrency=8" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+
+
   (dz-defservice color-gulp "./src/bin/gulp.sh"
-                         :cd "/Users/daniel.gopar/work/color/")
+                 :cd "/Users/daniel.gopar/work/color/")
   (dz-defservice color-webserver "clr"
-                         :args ("web:runserver")
-                         :cd "/Users/daniel.gopar/work/color/")
+                 :args ("web:runserver")
+                 :cd "/Users/daniel.gopar/work/color/")
   (dz-defservice color-webserver-clinical "clr"
-                         :args ("web:runserver" "clinical")
-                         :cd "/Users/daniel.gopar/work/color/")
+                 :args ("web:runserver" "clinical")
+                 :cd "/Users/daniel.gopar/work/color/")
   (dz-defservice color-fe-portal "yarn"
-                         :args ("start")
-                         :cd "/Users/daniel.gopar/work/color/src/projects/home/frontend")
+                 :args ("start")
+                 :cd "/Users/daniel.gopar/work/color/src/projects/home/frontend")
   (dz-defservice color-fe-clinical "yarn"
-                         :args ("start:clinical")
-                         :cd "/Users/daniel.gopar/work/color/src/projects/home/frontend")
+                 :args ("start:clinical")
+                 :cd "/Users/daniel.gopar/work/color/src/projects/home/frontend")
   (dz-defservice-group color-servers (color-gulp color-webserver color-webserver-clinical
                                                  color-fe-portal color-fe-clinical)))
 #+end_src
@@ -2629,7 +2691,9 @@ Client for Stackoverflow and friends
 (use-package code-compass
   :ensure nil
   :load t
-  :load-path "/Users/gopar/personal/code-compass")
+  :load-path "/Users/gopar/personal/code-compass"
+  :config
+  (code-compass-toggle-display-contributors))
 #+end_src
 
 ** [[https://github.com/andyjda/sticky-shell][Sticky Eshell Header]]
@@ -2665,6 +2729,7 @@ Upgraded version of default completion framework
   ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
   (setq vertico-cycle t)
   )
+
 (use-package corfu
   :ensure t
   ;; Optional customizations
@@ -2672,9 +2737,10 @@ Upgraded version of default completion framework
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
   (corfu-on-exact-match 'insert) ;; Insert when there's only one match
+  (corfu-quit-no-match t)        ;; Quit when ther is no match
   ;; (corfu-separator ?\s)          ;; Orderless field separator
   ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-  ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+
   ;; (corfu-preview-current nil)    ;; Disable current candidate preview
   ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
   ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
@@ -2689,10 +2755,12 @@ Upgraded version of default completion framework
   ;; This is recommended since Dabbrev can be used globally (M-/).
   ;; See also `corfu-excluded-modes'.
   :init
-  (global-corfu-mode)  )
+  (global-corfu-mode))
+
 (use-package cape
   :ensure t
   :init
+  (setq cape-dabbrev-min-length 2)
   (setq cape-dabbrev-check-other-buffers 'some)
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
   (add-to-list 'completion-at-point-functions #'cape-file)
@@ -2701,6 +2769,7 @@ Upgraded version of default completion framework
   ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
   ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
+  :bind ("C-c SPC" . cape-dabbrev)
 )
 
 (use-package savehist
@@ -2743,10 +2812,10 @@ The new helm but slim
 
   :init
   (setq consult-project-function (lambda (_) (projectile-project-root)))
-  ;; (setq xref-show-xrefs-function #'consult-xref
-  ;;       xref-show-definitions-function #'consult-xref)
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
   (setq consult-narrow-key "<")
-  (setq consult-line-start-from-top t)
+  (setq consult-line-start-from-top nil)
 
   (defun gopar/consult-line (&optional arg)
     "Start consult search with selected region if any.
@@ -2806,4 +2875,82 @@ If used with a prefix, it will search all buffers as well."
 (use-package docker
   :ensure t
   :bind ("C-c d" . docker))
+#+end_src
+
+** Web Mode
+#+begin_src emacs-lisp
+(use-package web-mode
+  :ensure
+  :defer
+  :init
+  (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.jinja2?\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.jinja?\\'" . web-mode)))
+#+end_src
+
+** [[https://github.com/stanaka/dash-at-point][Dash at Point]]
+#+begin_src emacs-lisp
+(use-package dash-at-point
+  :ensure
+  :defer
+  :bind ("M-s d" . dash-at-point)
+  :config
+  (setq dash-at-point-mode-alist
+   '((actionscript-mode . "actionscript")
+     (arduino-mode . "arduino")
+     (c++-mode . "cpp,net,boost,qt,cvcpp,cocos2dx,c,manpages")
+     (c-mode . "c,glib,gl2,gl3,gl4,manpages")
+     (caml-mode . "ocaml")
+     (clojure-mode . "clojure")
+     (coffee-mode . "coffee")
+     (common-lisp-mode . "lisp")
+     (cperl-mode . "perl")
+     (css-mode . "css,bootstrap,foundation,less,awesome,cordova,phonegap")
+     (dart-mode . "dartlang,polymerdart,angulardart")
+     (elixir-mode . "elixir")
+     (emacs-lisp-mode . "elisp")
+     (enh-ruby-mode . "ruby")
+     (erlang-mode . "erlang")
+     (gfm-mode . "markdown")
+     (go-mode . "go,godoc")
+     (groovy-mode . "groovy")
+     (haml-mode . "haml")
+     (haskell-mode . "haskell")
+     (html-mode . "html,svg,css,bootstrap,foundation,awesome,javascript,jquery,jqueryui,jquerym,angularjs,backbone,marionette,meteor,moo,prototype,ember,lodash,underscore,sencha,extjs,knockout,zepto,cordova,phonegap,yui")
+     (jade-mode . "jade")
+     (java-mode . "java,javafx,grails,groovy,playjava,spring,cvj,processing,javadoc")
+     (js2-mode . "javascript,backbone,angularjs")
+     (js3-mode . "nodejs")
+     (kotlin-mode . "kotlin,droid")
+     (latex-mode . "latex")
+     (less-css-mode . "less")
+     (lua-mode . "lua,corona")
+     (markdown-mode . "markdown")
+     (nginx-mode . "nginx")
+     (objc-mode . "cpp,iphoneos,macosx,appledoc,cocoapods,cocos2dx,cocos2d,cocos3d,kobold2d,sparrow,c,manpages")
+     (perl-mode . "perl,manpages")
+     (php-mode . "php,wordpress,drupal,zend,laravel,yii,joomla,ee,codeigniter,cakephp,phpunit,symfony,typo3,twig,smarty,phpp,html,mysql,sqlite,mongodb,psql,redis")
+     (processing-mode . "processing")
+     (puppet-mode . "puppet")
+     (python-mode . "python3,django,twisted,sphinx,flask,tornado,sqlalchemy,numpy,scipy,saltcvp,psql,bs,requests")
+     (ruby-mode . "ruby,rubygems,rails")
+     (rust-mode . "rust")
+     (sass-mode . "sass,compass,bourbon,neat,css")
+     (scala-mode . "scala,akka,playscala,scaladoc")
+     (sql-mode . "psql,mysql,sqlite,postgis")
+     (stylus-mode . "stylus")
+     (swift-mode . "cpp,iphoneos,macosx,appledoc,cocoapods,cocos2dx,cocos2d,cocos3d,kobold2d,sparrow,c,manpages")
+     (tcl-mode . "tcl")
+     (tuareg-mode . "ocaml")
+     (twig-mode . "twig")
+     (vim-mode . "vim")
+     (web-mode . "html,svg,css,bootstrap,awesome,bulma,color,media")
+     (yaml-mode . "chef,ansible"))))
+#+end_src
+
+** [[https://github.com/Emacs-Kotlin-Mode-Maintainers/kotlin-mode][Kotlin]]
+#+begin_src emacs-lisp
+(use-package kotlin-mode
+  :ensure
+  :defer)
 #+end_src

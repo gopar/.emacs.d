@@ -37,7 +37,8 @@
                         " ")
               'face git-face 'read-only t)))
     (concat
-     (when (and (boundp 'venv-current-name) venv-current-name)
+     (when (and (boundp 'venv-current-name) venv-current-name python-shell-virtualenv-path (getenv "VIRTUAL_ENV"))
+       (venv-workon venv-current-name)
        (concat
         (with-read-only-face venv-current-name
           :background "#5B3758")
