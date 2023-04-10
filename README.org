@@ -2954,3 +2954,11 @@ If used with a prefix, it will search all buffers as well."
   :ensure
   :defer)
 #+end_src
+
+** Vue
+#+begin_src emacs-lisp
+(use-package vue-mode
+  :ensure
+  :defer
+  :mode "\\.vue\\'")
+#+end_src
