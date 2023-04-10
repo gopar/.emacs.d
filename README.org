@@ -1911,7 +1911,7 @@ Nicer helpful output
    ((eq major-mode 'hy-mode)
     (string-inflection-kebab-case))
    ;; for javascript
-   ((eq major-mode 'js-mode)
+   (((eq major-mode 'js-mode) or (eq major-mode 'vue-mode))
     (gopar/string-inflection-js-cycle))
    (t
     ;; default
