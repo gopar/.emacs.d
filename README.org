@@ -1571,7 +1571,8 @@ Automatically input a closing parens when putting an open parens
   :hook (after-init . electric-pair-mode))
 #+end_src
 
-** Hl-Line
+** COMMENT Hl-Line
+Highlight current line
 #+begin_src emacs-lisp
 (use-package hl-line
   :ensure nil
