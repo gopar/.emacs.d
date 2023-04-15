@@ -1912,7 +1912,7 @@ Nicer helpful output
    ((eq major-mode 'hy-mode)
     (string-inflection-kebab-case))
    ;; for javascript
-   (((eq major-mode 'js-mode) or (eq major-mode 'vue-mode))
+   ((or (eq major-mode 'js-mode)  (eq major-mode 'vue-mode))
     (gopar/string-inflection-js-cycle))
    (t
     ;; default
@@ -2707,7 +2707,10 @@ Client for Stackoverflow and friends
 ** [[https://github.com/emacs-typescript/typescript.el][TypeScript]]
 #+begin_src emacs-lisp
 (use-package typescript-mode
-  :ensure t)
+  :ensure t
+  :custom
+  (typescript-indent-level 2)
+  )
 #+end_src
 
 ** Vertico
