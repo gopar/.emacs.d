@@ -23,6 +23,8 @@
 (setenv "GIT_PAGER" "")
 (setenv "BAT_PAGER" "")
 
+(setenv "ANDROID_HOME" "/Users/gopar/Library/Android/sdk")
+
 (setenv "LIBRARY_PATH" "${LIBRARY_PATH}:/usr/local/lib" t)
 
 (setenv "EXA_ICON_SPACING" "2") ;; Default is 1
