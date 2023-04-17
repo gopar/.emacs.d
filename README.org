@@ -2690,9 +2690,7 @@ Client for Stackoverflow and friends
 ** [[https://github.com/ag91/code-compass][Code Compass]]
 #+begin_src emacs-lisp
 (use-package code-compass
-  :ensure nil
-  :load t
-  :load-path "/Users/gopar/personal/code-compass"
+  :ensure
   :config
   (code-compass-toggle-display-contributors))
 #+end_src
