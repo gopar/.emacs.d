@@ -1336,8 +1336,8 @@ Just a small wrapper around  `pdb`"
               :map js-jsx-mode-map
               (";" . easy-camelcase))
   :custom
-  (js-indent-level 4)
-  (js-jsx-indent-level 4)
+  (js-indent-level 2)
+  (js-jsx-indent-level 2)
   :hook (js-mode . (lambda ()
                      (define-key js-mode-map (kbd ";") 'easy-camelcase)
                      (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase))))
