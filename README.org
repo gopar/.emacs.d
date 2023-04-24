@@ -305,16 +305,6 @@ Pair programming settings
 #+end_src
 
 * Built-in Packages
-** COMMENT Hydra use-package
-This isn't built in but I need here for it to load sooner. sigh.
-
-Provides a handy =:hydra= keyword to use inside of =use-package=
-
-#+BEGIN_SRC emacs-lisp
-(use-package use-package-hydra
-  :ensure t)
-
-#+END_SRC
 ** Diminish
 #+begin_src emacs-lisp
 (use-package diminish
