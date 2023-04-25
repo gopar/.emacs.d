@@ -1190,7 +1190,6 @@ Dumb deferring of commands to compile buffer
   :load-path "lisp/eshell/module/")
 #+end_src
 
-
 ** Compilation
 
 Allow me to send keystrokes to compilation buffer.
@@ -2095,8 +2094,6 @@ To help getting around projects
 Argument COMPILATION-MODE is the name of the major mode used for the compilation buffer."
     (concat "*" (downcase compilation-mode) "*"
             (if (projectile-project-p) (concat "<" (projectile-project-name) ">") "")))
-
-  ;; (projectile-register-project-type 'color '("BUILD.pants"))
   )
 #+END_SRC
 
