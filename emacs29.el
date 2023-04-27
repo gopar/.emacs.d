@@ -17,8 +17,8 @@
 
 ;; Recommended to have this at the top
 (setq load-prefer-newer t)
-;; (use-package no-littering
-;;   :ensure t)
+(use-package no-littering
+  :ensure t)
 
 ;; Customize default emacs
 (use-package emacs
@@ -735,6 +735,27 @@ With ARG, revert back to normal iedit."
                      ))
    :config
   (dashboard-setup-startup-hook))
+
+(use-package display-fill-column-indicator
+  :ensure nil
+  :hook (python-mode))
+
+(use-package dired
+  :ensure nil
+  :custom
+  (dired-listing-switches "-alhoF --group-directories-first"))
+
+(use-package all-the-icons-dired
+  :ensure t
+  :hook (dired-mode . all-the-icons-dired-mode)
+  :custom
+  (all-the-icons-dired-monochrome nil))
+
+(use-package files
+  :ensure nil
+  :custom
+  (insert-directory-program "gls") ; Will not work if system does not have GNU gls installed
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; End of My Stuff
