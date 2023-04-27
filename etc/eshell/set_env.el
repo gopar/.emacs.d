@@ -34,8 +34,6 @@
 (setenv "LEDGER_FILE" "${HOME}/personal/finances/main.dat" t)
 (setenv "LEDGER_PRICE_DB" "${HOME}/personal/finances/data/price_db.dat" t)
 
-(setenv "PEEKALINK_API_KEY" "36a7e527-27f0-4606-bb87-32327f1462f7")
-
 (setenv "MPLBACKEND" "TkAgg")
 
 (setenv "EDITOR" "emacsclient")

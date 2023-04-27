@@ -5,6 +5,12 @@
 This is my emacs configuration setup.
 It used to be a elisp script (=init.old.el= which is a copy of my old config)
 
+* Recommended packages to have early init
+#+begin_src emacs-lisp
+(use-package no-littering
+  :ensure t)
+#+end_src
+
 * User Interface
 Default settings that makes Emacs UI less cluttered in my opinion
 
@@ -1776,7 +1782,7 @@ Settings up env vars manually :(
 #+BEGIN_SRC emacs-lisp
 (defun gopar/add-env-vars ()
   "Setup environment variables that I will need."
-  (load-file "~/.emacs.d/eshell/set_env.el")
+  (load-file "~/.emacs.d/etc/eshell/set_env.el")
   (setq-default eshell-path-env (getenv "PATH"))
 
   (setq exec-path (append exec-path
@@ -1958,9 +1964,9 @@ After adding or updating a snippet run:
 
 Install the actual snippets
 #+BEGIN_SRC emacs-lisp
-(use-package yasnippet-snippets
-  :ensure t
-  :diminish)
+;; (use-package yasnippet-snippets
+;;   :ensure t
+;;   :diminish)
 #+end_src
 
 ** [[https://github.com/magnars/expand-region.el][Expand Region]]

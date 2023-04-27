@@ -3,18 +3,9 @@
 
 ;; Default layout (optional)
 (require 'nano-layout)
-
-;; Theming Command line options (this will cancel warning messages)
-(add-to-list 'command-switch-alist '("-dark"   . (lambda (args))))
-(add-to-list 'command-switch-alist '("-light"  . (lambda (args))))
-(add-to-list 'command-switch-alist '("-default"  . (lambda (args))))
-(add-to-list 'command-switch-alist '("-no-splash" . (lambda (args))))
-(add-to-list 'command-switch-alist '("-no-help" . (lambda (args))))
-(add-to-list 'command-switch-alist '("-compact" . (lambda (args))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; My Stuff
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'package)
 (setq package-enable-at-startup nil
       package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
@@ -23,6 +14,10 @@
                          ("org" . "https://orgmode.org/elpa/")))
 (package-initialize)
 (setq use-package-always-ensure nil)
+
+;; Recommended to have this at the top
+(use-package no-littering
+  :ensure t)
 
 ;; Customize default emacs
 (use-package emacs
@@ -92,120 +87,120 @@
 
   :init
   (defun gopar/easy-underscore (arg)
-  "Convert all inputs of semicolon to an underscore.
+    "Convert all inputs of semicolon to an underscore.
 If given ARG, then it will insert an acutal semicolon."
-  (interactive "P")
-  (if arg
-      (insert ";")
-    (insert "_")))
+    (interactive "P")
+    (if arg
+        (insert ";")
+      (insert "_")))
 
-(defun easy-camelcase (arg)
-  (interactive "c")
-  ;; arg is between a-z
-  (cond ((and (>= arg 97) (<= arg 122))
-         (insert (capitalize (char-to-string arg))))
-        ;; If it's a new line
-        ((= arg 13)
-         (newline-and-indent))
-        ((= arg 59)
-         (insert ";"))
-        ;; We probably meant a key command, so lets execute that
-        (t (call-interactively
-            (lookup-key (current-global-map) (char-to-string arg))))))
+  (defun easy-camelcase (arg)
+    (interactive "c")
+    ;; arg is between a-z
+    (cond ((and (>= arg 97) (<= arg 122))
+           (insert (capitalize (char-to-string arg))))
+          ;; If it's a new line
+          ((= arg 13)
+           (newline-and-indent))
+          ((= arg 59)
+           (insert ";"))
+          ;; We probably meant a key command, so lets execute that
+          (t (call-interactively
+              (lookup-key (current-global-map) (char-to-string arg))))))
 
-(defun sudo-edit (&optional arg)
-  "Edit currently visited file as root.
+  (defun sudo-edit (&optional arg)
+    "Edit currently visited file as root.
 With a prefix ARG prompt for a file to visit.
 Will also prompt for a file to visit if current
 buffer is not visiting a file."
-  (interactive "P")
-  (if (or arg (not buffer-file-name))
-      (find-file (concat "/sudo:root@localhost:"
-                         (completing-read "Find file(as root): ")))
-    (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
+    (interactive "P")
+    (if (or arg (not buffer-file-name))
+        (find-file (concat "/sudo:root@localhost:"
+                           (completing-read "Find file(as root): ")))
+      (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
 
-;; Stolen from https://emacs.stackexchange.com/a/13096/8964
-(defun gopar/reload-dir-locals-for-current-buffer ()
-  "Reload dir locals for the current buffer"
-  (interactive)
-  (let ((enable-local-variables :all))
-    (hack-dir-local-variables-non-file-buffer)))
+  ;; Stolen from https://emacs.stackexchange.com/a/13096/8964
+  (defun gopar/reload-dir-locals-for-current-buffer ()
+    "Reload dir locals for the current buffer"
+    (interactive)
+    (let ((enable-local-variables :all))
+      (hack-dir-local-variables-non-file-buffer)))
 
-(defun gopar/delete-word (arg)
-  "Delete characters forward until encountering the end of a word.
+  (defun gopar/delete-word (arg)
+    "Delete characters forward until encountering the end of a word.
 With argument, do this that many times.
 This command does not push text to `kill-ring'."
-  (interactive "p")
-  (delete-region
-   (point)
-   (progn
-     (forward-word arg)
-     (point))))
+    (interactive "p")
+    (delete-region
+     (point)
+     (progn
+       (forward-word arg)
+       (point))))
 
-(defun gopar/backward-delete-word (arg)
-  "Delete characters backward until encountering the beginning of a word.
+  (defun gopar/backward-delete-word (arg)
+    "Delete characters backward until encountering the beginning of a word.
 With argument, do this that many times.
 This command does not push text to `kill-ring'."
-  (interactive "p")
-  (gopar/delete-word (- arg)))
+    (interactive "p")
+    (gopar/delete-word (- arg)))
 
-(defun gopar/delete-line ()
-  "Delete text from current position to end of line char.
+  (defun gopar/delete-line ()
+    "Delete text from current position to end of line char.
 This command does not push text to `kill-ring'."
-  (interactive)
-  (delete-region
-   (point)
-   (progn (end-of-line 1) (point)))
-  (delete-char 1))
+    (interactive)
+    (delete-region
+     (point)
+     (progn (end-of-line 1) (point)))
+    (delete-char 1))
 
-(defadvice gopar/delete-line (before kill-line-autoreindent activate)
-  "Kill excess whitespace when joining lines.
+  (defadvice gopar/delete-line (before kill-line-autoreindent activate)
+    "Kill excess whitespace when joining lines.
 If the next line is joined to the current line, kill the extra indent whitespace in front of the next line."
-  (when (and (eolp) (not (bolp)))
-    (save-excursion
-      (forward-char 1)
-      (just-one-space 1))))
+    (when (and (eolp) (not (bolp)))
+      (save-excursion
+        (forward-char 1)
+        (just-one-space 1))))
 
-(defun gopar/delete-line-backward ()
-  "Delete text between the beginning of the line to the cursor position.
+  (defun gopar/delete-line-backward ()
+    "Delete text between the beginning of the line to the cursor position.
 This command does not push text to `kill-ring'."
-  (interactive)
-  (let (p1 p2)
-    (setq p1 (point))
-    (beginning-of-line 1)
-    (setq p2 (point))
-    (delete-region p1 p2)))
+    (interactive)
+    (let (p1 p2)
+      (setq p1 (point))
+      (beginning-of-line 1)
+      (setq p2 (point))
+      (delete-region p1 p2)))
 
-(defun gopar/next-sentence ()
-  "Move point forward to the next sentence.
+  (defun gopar/next-sentence ()
+    "Move point forward to the next sentence.
 Start by moving to the next period, question mark or exclamation.
 If this punctuation is followed by one or more whitespace
 characters followed by a capital letter, or a '\', stop there. If
 not, assume we're at an abbreviation of some sort and move to the
 next potential sentence end"
-  (interactive)
-  (re-search-forward "[.?!]")
-  (if (looking-at "[    \n]+[A-Z]\\|\\\\")
-      nil
-    (gopar/next-sentence)))
+    (interactive)
+    (re-search-forward "[.?!]")
+    (if (looking-at "[    \n]+[A-Z]\\|\\\\")
+        nil
+      (gopar/next-sentence)))
 
-(defun gopar/last-sentence ()
-  "Does the same as 'gopar/next-sentence' except it goes in reverse"
-  (interactive)
-  (re-search-backward "[.?!][   \n]+[A-Z]\\|\\.\\\\" nil t)
-  (forward-char))
+  (defun gopar/last-sentence ()
+    "Does the same as 'gopar/next-sentence' except it goes in reverse"
+    (interactive)
+    (re-search-backward "[.?!][   \n]+[A-Z]\\|\\.\\\\" nil t)
+    (forward-char))
 
-(defvar gopar-ansi-escape-re
-  (rx (or ?\233 (and ?\e ?\[))
-      (zero-or-more (char (?0 . ?\?)))
-      (zero-or-more (char ?\s ?- ?\/))
-      (char (?@ . ?~))))
+  (defvar gopar-ansi-escape-re
+    (rx (or ?\233 (and ?\e ?\[))
+        (zero-or-more (char (?0 . ?\?)))
+        (zero-or-more (char ?\s ?- ?\/))
+        (char (?@ . ?~))))
 
-(defun gopar/nuke-ansi-escapes (beg end)
-  (save-excursion
-    (goto-char beg)
-    (while (re-search-forward gopar-ansi-escape-re end t)
-      (replace-match "")))))
+  (defun gopar/nuke-ansi-escapes (beg end)
+    (save-excursion
+      (goto-char beg)
+      (while (re-search-forward gopar-ansi-escape-re end t)
+        (replace-match "")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar gopar-pair-programming nil)
@@ -273,7 +268,7 @@ next potential sentence end"
   (dabbrev-check-other-buffers t)
   (dabbrev-friend-buffer-function 'dabbrev--same-major-mode-p)
   )
- 
+
 (use-package corfu
   :ensure t
   ;; Optional customizations
@@ -494,7 +489,7 @@ If used with a prefix, it will search all buffers as well."
          ("M-\"" . corral-single-quotes-backward)
          ("M-'" . corral-single-quotes-forward)))
 
-;; Works with themes except with nano? 
+;; Works with themes except with nano?
 (use-package highlight-indentation
   :ensure t
   :diminish
@@ -542,14 +537,9 @@ With ARG, revert back to normal iedit."
   :ensure nil
   :hook (after-init . global-so-long-mode))
 
-;; (use-package exec-path-from-shell
-;;   :ensure t
-;;   :init
-;;   (exec-path-from-shell-initialize))
-
 (defun gopar/add-env-vars ()
   "Setup environment variables that I will need."
-  (load-file "~/.emacs.d/eshell/set_env.el")
+  (load-file "~/.emacs.d/etc/eshell/set_env.el")
   (setq-default eshell-path-env (getenv "PATH"))
 
   (setq exec-path (append exec-path
@@ -557,8 +547,7 @@ With ARG, revert back to normal iedit."
                             "/usr/bin"
                             "/usr/sbin"
                             "/sbin"
-                            "/bin"
-                            )
+                            "/bin")
                           (split-string (getenv "PATH") ":"))))
 (add-hook 'after-init-hook 'gopar/add-env-vars)
 
@@ -617,7 +606,6 @@ With ARG, revert back to normal iedit."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(load-file "~/.emacs.d/lisp/myemacs/magit.el")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package elec-pair
@@ -628,7 +616,9 @@ With ARG, revert back to normal iedit."
   :ensure nil
   :hook (after-init . show-paren-mode)
   :custom
-  (show-paren-style 'mixed)) 
+  (show-paren-style 'mixed))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package virtualenvwrapper
@@ -669,8 +659,68 @@ With ARG, revert back to normal iedit."
   (eshell-git-prompt-use-theme 'powerline-plus))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package magit
+  :ensure t
+  :commands magit-get-current-branch
+  :demand t
+  :bind ("C-x g" . magit)
+  :hook (magit-mode . magit-wip-mode)
+  :config
+  (setq magit-diff-refine-hunk 'all)
+  (setq magit-process-finish-apply-ansi-colors t)
+
+  (defun magit/undo-last-commit (number-of-commits)
+    "Undoes the latest commit or commits without loosing changes"
+    (interactive "P")
+    (let ((num (if (numberp number-of-commits)
+                   number-of-commits
+                 1)))
+      (magit-reset-soft (format "HEAD^%d" num)))))
+
+(use-package magit-todos
+  :ensure
+  :defer
+  :hook (magit-mode . magit-todos-mode))
+
+;; Part of magit
+(use-package git-commit
+  :after magit
+  :hook (git-commit-setup . gopar/auto-insert-jira-ticket-in-commit-msg)
+  :init
+  (defun gopar/auto-insert-jira-ticket-in-commit-msg ()
+    (let ((has-ticket-title (string-match "^[A-Z]+-[0-9]+" (magit-get-current-branch)))
+          (has-ss-ticket (string-match "^[A-Za-Z]+/[A-Z]+-[0-9]+" (magit-get-current-branch)))
+          (words (s-split-words (magit-get-current-branch))))
+      (if has-ticket-title
+          (insert (format "[%s-%s] " (car words) (car (cdr words)))))
+      (if has-ss-ticket
+          (insert (format "[%s-%s] " (nth 1 words) (nth 2 words)))))))
+
+(use-package git-gutter
+  :ensure t
+  :diminish
+  :hook (after-init . global-git-gutter-mode))
+
+
+;; After adding or updating a snippet run:
+;; =M-x yas-recompile-all=
+;; =M-x yas-reload-all=
+(use-package yasnippet
+  :ensure t
+  :diminish
+  :hook ((prog-mode . yas-minor-mode)
+         (fundamental-mode . yas-minor-mode))
+  :bind (:map yas-minor-mode-map
+              ("C-c C-SPC" . yas-insert-snippet)))
+
+(use-package boolcase
+  :load-path "lisp/modes/boolcase"
+  :diminish
+  :hook (python-mode . boolcase-mode)) 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; End of My Stuff
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Theme
 (setq nano-font-size 15)
@@ -694,6 +744,5 @@ With ARG, revert back to normal iedit."
 ;; Nano key bindings modification (optional)
 (require 'nano-bindings)
 
-;; Help (optional)
-(unless (member "-no-help" command-line-args)
-  (require 'nano-help))
+;; Nano custom mode writier-mode
+(require 'nano-writer)
