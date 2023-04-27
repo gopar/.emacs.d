@@ -1,5 +1,6 @@
 (if (string= emacs-version "29.0.90")
     (load-file (concat user-emacs-directory "emacs29.el"))
+    ;; nil
   ;; Do the normal thing
   (require 'package)
   (setq package-enable-at-startup nil
@@ -8,7 +9,7 @@
                            ("melpa" . "https://melpa.org/packages/")
                            ;; ("org" . "https://orgmode.org/elpa/")
                            ))
-  (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
+  ;; (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
   (package-initialize)
 
 

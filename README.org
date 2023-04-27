@@ -2341,6 +2341,7 @@ Made this since I rebinding semicolon to always put an underscore since I spent 
 ** [[vc-relative-file][ibuffer Icons]]
 Ibuffer Icons sets it's own local buffer format and overrides the =ibuffer-formats= variable.
 So in order for ibuffer-vc to work, i have to include it in the icons-buffer format -_-
+
 #+begin_src emacs-lisp
 (use-package all-the-icons-ibuffer
   :ensure t
