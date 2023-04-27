@@ -12,7 +12,6 @@
   ;; (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
   (package-initialize)
 
-
   ;; Bootstrap `use-package'
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)

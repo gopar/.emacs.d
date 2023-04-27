@@ -16,8 +16,9 @@
 (setq use-package-always-ensure nil)
 
 ;; Recommended to have this at the top
-(use-package no-littering
-  :ensure t)
+(setq load-prefer-newer t)
+;; (use-package no-littering
+;;   :ensure t)
 
 ;; Customize default emacs
 (use-package emacs
