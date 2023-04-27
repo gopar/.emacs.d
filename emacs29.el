@@ -412,7 +412,7 @@ If used with a prefix, it will search all buffers as well."
 (use-package prog-mode
   :ensure nil
   :hook ((prog-mode . subword-mode)
-         ;; (prog-mode . which-function-mode) ;; TODO: Make it work with nano
+         ;; (prog-mode . which-function-mode) ;; TODO: Make it work with nano --> which-func-format
          (prog-mode . (lambda () (setq-local fill-column 120)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
