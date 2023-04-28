@@ -626,23 +626,22 @@ With ARG, revert back to normal iedit."
   :custom
   (show-paren-style 'mixed))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package virtualenvwrapper
   :ensure t
   :init
   (venv-initialize-eshell)
   (setq venv-location '("~/personal/arcade-traxx/traxx"
-                        "~/work/fiagents/env/"
-                        )))
+                        "~/work/fiagents/env/")))
 
 (use-package python
+  :ensure nil
   :bind (:map python-mode-map
               ("C-c C-p" . nil)
               ("C-c C-z" . run-python))
   :hook (python-mode . (lambda ()
-                         (setq forward-sexp-function nil)
+                         (setq forward-sexp-function nil
+                               python-forward-sexp-function nil)
                          (make-local-variable 'python-shell-virtualenv-root)
                          (setq completion-at-point '(cape-file cape-dabbrev python-completion-at-point))))
   :custom
@@ -715,7 +714,8 @@ With ARG, revert back to normal iedit."
   :ensure t
   :diminish
   :hook ((prog-mode . yas-minor-mode)
-         (fundamental-mode . yas-minor-mode))
+         (fundamental-mode . yas-minor-mode)
+         (after-init . yas-reload-all))
   :bind (:map yas-minor-mode-map
               ("C-c C-SPC" . yas-insert-snippet)))
 
