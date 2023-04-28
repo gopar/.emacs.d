@@ -17,6 +17,8 @@
 
 ;; Recommended to have this at the top
 (setq load-prefer-newer t)
+(setq gc-cons-percentage .6)
+
 (use-package no-littering
   :ensure t)
 
@@ -24,7 +26,10 @@
 (use-package emacs
   :ensure nil
   :defer
-  :hook (after-init . pending-delete-mode)
+  :hook ((after-init . pending-delete-mode)
+         (after-init . (lambda () (load-file custom-file)))
+         ;; (after-init . toggle-frame-maximized)
+         )
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
@@ -295,6 +300,7 @@ next potential sentence end"
   ;; This is recommended since Dabbrev can be used globally (M-/).
   ;; See also `corfu-excluded-modes'.
   :init
+  (setq corfu-exclude-modes '(eshell-mode))
   (global-corfu-mode))
 
 (use-package cape
@@ -340,8 +346,7 @@ next potential sentence end"
   ("M-s" . consult-history)                 ;; orig. next-matching-history-element
   ("M-r" . consult-history)
   :map projectile-command-map
-  ("b" . consult-project-buffer)
-  )
+  ("b" . consult-project-buffer))
 
   :init
   (setq consult-project-function (lambda (_) (projectile-project-root)))
@@ -531,6 +536,8 @@ With ARG, revert back to normal iedit."
 ;; window management
 (use-package windmove
   :ensure nil
+  :hook ((minibuffer-setup . (lambda () (interactive) (windmove-mode -1)))
+         (minibuffer-exit . windmove-mode))
   :init
   (windmove-default-keybindings))
 
@@ -626,11 +633,9 @@ With ARG, revert back to normal iedit."
   :ensure t
   :init
   (venv-initialize-eshell)
-  (setq venv-location '("~/work/color/local/virtualenv3/"
-                        "~/personal/books"
-                        "~/personal/arcade-traxx/traxx"
+  (setq venv-location '("~/personal/arcade-traxx/traxx"
                         "~/work/fiagents/env/"
-                        "~/personal/positron/venv/")))
+                        )))
 
 (use-package python
   :bind (:map python-mode-map
@@ -755,7 +760,204 @@ With ARG, revert back to normal iedit."
   :ensure nil
   :custom
   (insert-directory-program "gls") ; Will not work if system does not have GNU gls installed
-  )
+   ;; Don't have backup
+  (backup-inhibited t)
+  ;; Don't save anything.
+  (auto-save-default nil)
+  ;; If file doesn't end with a newline on save, automatically add one.
+  (require-final-newline t)
+  :config
+  (add-to-list 'auto-mode-alist '("Pipfile" . conf-toml-mode)))
+
+(use-package replace
+  :ensure nil
+  :bind (("C-c C-o" . gopar/occur-definitions)
+         :map occur-mode-map
+         ("RET" . occur-mode-goto-occurrence)
+         ("<C-return>" . gopar/jump-to-defintion-and-kill-all-other-windows))
+  :init
+  (defun gopar/occur-definitions ()
+    "Show all the function/method/class definitions for the current language."
+    (interactive)
+    (cond
+     ((eq major-mode 'emacs-lisp-mode)
+      (occur "\(defun"))
+     ((eq major-mode 'python-mode)
+      (occur "^\s*\\(\\(async\s\\|\\)def\\|class\\)\s"))
+     ;; If no matching, then just do regular occur
+     (t (call-interactively 'occur)))
+
+    ;; Lets switch to that new occur buffer
+    (let ((window (get-buffer-window "*Occur*")))
+      (if window
+          (select-window window)
+        (switch-to-buffer "*Occur*"))))
+
+  (defun gopar/jump-to-defintion-and-kill-all-other-windows ()
+    (interactive)
+    (occur-mode-goto-occurrence)
+    (kill-buffer "*Occur*")
+    (delete-other-windows)))
+
+(use-package compile
+  :ensure nil
+  :custom
+  ;; (compilation-scroll-output t)
+  (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
+  :hook (compilation-mode . hl-line-mode)
+  :bind (:map compilation-mode-map
+              ("y" . gopar/send-self)
+              ("n" . gopar/send-self)
+              ("RET" . gopar/send-self) ;; maybe M-RET?
+              ("C-d" . gopar/send-self))
+  :init
+  (defun gopar/compilation-buffer-name-function (arg)
+    "Rename buffer to whatever command was used.
+eg. *python main.py*"
+    (format "*%s*" compile-command)))
+
+(use-package ansi-color
+  :ensure nil
+  :hook (compilation-filter . gopar/colorize-compilation-buffer)
+  :init
+  (defun gopar/compilation-nuke-ansi-escapes ()
+    (toggle-read-only)
+    (gopar/nuke-ansi-escapes (point-min) (point-max))
+    (toggle-read-only))
+
+  ;; https://stackoverflow.com/questions/3072648/cucumbers-ansi-colors-messing-up-emacs-compilation-buffer
+  (defun gopar/colorize-compilation-buffer ()
+    "Colorize the output from compile buffer"
+    (toggle-read-only)
+    (ansi-color-apply-on-region (point-min) (point-max))
+    (toggle-read-only)))
+
+(use-package winner-mode
+  :ensure nil
+  :hook after-init
+  :commands (winner-undo winnner-redo))
+
+(use-package js-mode
+  :bind (:map js-mode-map
+              (";" . easy-camelcase)
+
+              :map js-jsx-mode-map
+              (";" . easy-camelcase))
+  :custom
+  (js-indent-level 2)
+  (js-jsx-indent-level 2)
+  :hook (js-mode . (lambda ()
+                     (define-key js-mode-map (kbd ";") 'easy-camelcase)
+                     (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase))))
+
+(use-package pulse
+  :ensure nil
+  :init
+  (defun pulse-line (&rest _)
+    "Pulse the current line."
+    (pulse-momentary-highlight-one-line (point)))
+
+  (dolist (command '(scroll-up-command scroll-down-command
+                                       recenter-top-bottom other-window))
+    (advice-add command :after #'pulse-line)))
+
+(use-package ispell
+  :ensure nil
+  :custom
+  (ispell-program-name "aspell")
+  (ispell-personal-dictionary "~/.aspell.lang.pws")
+  (ispell-dictionary nil)
+  (ispell-local-dictionary nil)
+  (ispell-extra-args '("--sug-mode=ultra" "--lang=en_US"
+                       ;; "--run-together" "--run-together-limit=16"
+                       "--camel-case")))
+
+(use-package flyspell
+  :ensure nil
+  :diminish
+  :hook ((prog-mode . flyspell-prog-mode)
+         (org-mode . flyspell-mode)
+         (text-mode . flyspell-mode))
+  :bind (:map flyspell-mode-map
+              ("C-;" . nil)
+              ("C-," . flyspell-goto-next-error)
+              ("C-." . flyspell-auto-correct-word)))
+
+(use-package browse-url
+  :ensure nil
+  :init
+  (defun gopar/eww-advice-filter-args (args)
+    "When using a search engine, sometimes the redirects don't work.
+To work around this, we'll grab the url that we're targetting so that it doesn't
+go through the search engine"
+    (let (url path-and-query query is-ddg is-google param)
+      (setq url (car args))
+      (setq is-ddg (string-prefix-p "https://duckduckgo.com/l/?uddg=" url))
+      (setq is-google (string-prefix-p "https://www.google.com/url?" url))
+
+      (when (or is-ddg is-google)
+        (setq url (url-generic-parse-url url))
+        (setq path-and-query (url-path-and-query url))
+        (setq query (cdr path-and-query))
+        (setq param (if is-ddg "uddg" "q"))
+        (setq url (car (cdr (assoc-string param (url-parse-query-string query))))))
+
+      `(,url ,@(cdr args))))
+  :custom
+  ;; Emacs can't find browser binaries
+  (browse-url-chrome-program "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+  (browse-url-firefox-program "/Applications/Firefox.app/Contents/MacOS/firefox")
+  ;; Neat trick to open that route to different places
+  (browse-url-firefox-new-window-is-tab t)
+  :config
+  (put 'browse-url-handlers 'safe-local-variable (lambda (x) t))
+  (advice-add 'browse-url :filter-args 'gopar/eww-advice-filter-args))
+
+;; It may also be wise to raise gc-cons-threshold while the minibuffer is active,
+;; so the GC doesn't slow down expensive commands (or completion frameworks, like
+;; helm and ivy. The following is taken from doom-emacs
+
+(use-package minibuffer
+  :ensure nil
+  :hook ((minibuffer-setup . defer-garbage-collection-h)
+         (minibuffer-exit . restore-garbage-collection-h))
+  :custom
+  (completion-styles '(initials partial-completion flex))
+  :init
+  (defun defer-garbage-collection-h ()
+    (setq gc-cons-threshold most-positive-fixnum))
+
+  (defun restore-garbage-collection-h ()
+    ;; Defer it so that commands launched immediately after will enjoy the
+    ;; benefits.
+    (run-at-time
+     1 nil (lambda () (setq gc-cons-threshold 1600000)))))
+
+(use-package whitespace
+  :ensure nil
+  :hook (before-save . whitespace-cleanup))
+
+(use-package autorevert
+  :ensure nil
+  :custom
+  ;; auto refresh files when changed from disk
+  (global-auto-revert-mode t))
+
+;; Do I need this???
+(use-package simple
+  :ensure nil
+  :hook ((makefile-mode . indent-tabs-mode)
+         (fundamental-mode . delete-selection-mode)
+         (fundamental-mode . auto-fill-mode)
+         (org-mode . auto-fill-mode)))
+
+(use-package neotree
+  :ensure t
+  :bind ("<f5>" . neotree-toggle
+         )
+  :custom
+  (neo-theme 'icons)
+  (neo-smart-open t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; End of My Stuff
@@ -781,7 +983,7 @@ With ARG, revert back to normal iedit."
 (require 'nano-modeline)
 
 ;; Nano key bindings modification (optional)
-(require 'nano-bindings)
+;; (require 'nano-bindings)
 
 ;; Nano custom mode writier-mode
 (require 'nano-writer)

@@ -1432,22 +1432,6 @@ go through the search engine"
   (advice-add 'browse-url :filter-args 'gopar/eww-advice-filter-args))
 #+end_src
 
-** Files
-
-#+begin_src emacs-lisp
-(use-package files
-  :ensure nil
-  :custom
-  ;; Don't have backup
-  (backup-inhibited t)
-  ;; Don't save anything.
-  (auto-save-default nil)
-  ;; If file doesn't end with a newline on save, automatically add one.
-  (require-final-newline t)
-  :config
-  (add-to-list 'auto-mode-alist '("Pipfile" . conf-toml-mode)))
-#+end_src
-
 ** Minibuffer
 
 #+begin_src emacs-lisp
@@ -1649,7 +1633,14 @@ Essentially a vertical line showing where =fill-column=
   :ensure nil
   :custom
   (insert-directory-program "gls") ; Will not work if system does not have GNU gls installed
-  )
+  ;; Don't have backup
+  (backup-inhibited t)
+  ;; Don't save anything.
+  (auto-save-default nil)
+  ;; If file doesn't end with a newline on save, automatically add one.
+  (require-final-newline t)
+  :config
+  (add-to-list 'auto-mode-alist '("Pipfile" . conf-toml-mode)))
 #+end_src
 
 ** Server
