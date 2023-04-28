@@ -957,7 +957,10 @@ go through the search engine"
          )
   :custom
   (neo-theme 'icons)
-  (neo-smart-open t))
+  (neo-smart-open t)
+  ;; takes too long to update on first try
+  ;; (neo-vc-integration '(face char))
+  (neo-show-hidden-files t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; End of My Stuff
