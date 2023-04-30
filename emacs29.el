@@ -431,7 +431,7 @@ If used with a prefix, it will search all buffers as well."
 (use-package prog-mode
   :ensure nil
   :hook ((prog-mode . subword-mode)
-         ;; (prog-mode . which-function-mode) ;; TODO: Make it work with nano --> which-func-format
+         (prog-mode . which-function-mode)
          (prog-mode . (lambda () (setq-local fill-column 120)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -796,7 +796,9 @@ Stolen from aweshell."
 (use-package magit-todos
   :ensure
   :defer
-  :hook (magit-mode . magit-todos-mode))
+  :hook (magit-mode . magit-todos-mode)
+  :custom
+  (magit-todos-exclude-globs '(".git/" "*.yasnippet")))
 
 ;; Part of magit
 (use-package git-commit
