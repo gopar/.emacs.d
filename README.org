@@ -1883,25 +1883,24 @@ Nicer helpful output
   "Switching by major mode."
   (interactive)
   (cond
-   ;; for emacs-lisp-mode
    ((eq major-mode 'emacs-lisp-mode)
     (string-inflection-all-cycle))
-   ;; for python
+
    ((eq major-mode 'python-mode)
     (string-inflection-python-style-cycle))
-   ;; for java
-   ((eq major-mode 'java-mode)
+
+   ((or (eq major-mode 'js-mode)
+        (eq major-mode 'vue-mode)
+        (eq major-mode 'java-mode))
     (string-inflection-java-style-cycle))
-   ;; for xml
+
    ((eq major-mode 'nxml-mode)
     (string-inflection-java-style-cycle))
+
    ((eq major-mode 'hy-mode)
     (string-inflection-kebab-case))
-   ;; for javascript
-   ((or (eq major-mode 'js-mode)  (eq major-mode 'vue-mode))
-    (gopar/string-inflection-js-cycle))
+
    (t
-    ;; default
     (string-inflection-ruby-style-cycle))))
 
 (use-package string-inflection
@@ -2600,24 +2599,12 @@ Fix is https://github.com/davidmiller/dizzee/pull/5
   (dz-defservice bfd-celery-launcher-queue "celery"
                  :args ("-A" "core" "worker" "-n" "Launcher" "-Q" "Launcher" "--concurrency=8" "--purge" "-l" "info")
                  :cd "/Users/gopar/work/fiagents/")
-
-
-  (dz-defservice color-gulp "./src/bin/gulp.sh"
-                 :cd "/Users/daniel.gopar/work/color/")
-  (dz-defservice color-webserver "clr"
-                 :args ("web:runserver")
-                 :cd "/Users/daniel.gopar/work/color/")
-  (dz-defservice color-webserver-clinical "clr"
-                 :args ("web:runserver" "clinical")
-                 :cd "/Users/daniel.gopar/work/color/")
-  (dz-defservice color-fe-portal "yarn"
-                 :args ("start")
-                 :cd "/Users/daniel.gopar/work/color/src/projects/home/frontend")
-  (dz-defservice color-fe-clinical "yarn"
-                 :args ("start:clinical")
-                 :cd "/Users/daniel.gopar/work/color/src/projects/home/frontend")
-  (dz-defservice-group color-servers (color-gulp color-webserver color-webserver-clinical
-                                                 color-fe-portal color-fe-clinical)))
+  (dz-defservice-group bfd-celerys-flower-and-server (bfd-celery-diffbot-queue
+                                                      bfd-celery-downloader-queue
+                                                      bfd-celery-slow-downloader-queue
+                                                      bfd-celery-launcher-queue
+                                                      bfd-flower
+                                                      bfd-runserver)))
 #+end_src
 
 ** [[https://elpa.gnu.org/packages/vundo.html][vundo]]

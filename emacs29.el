@@ -219,7 +219,7 @@ next potential sentence end"
         (global-display-line-numbers-mode -1)
         ;; disable all themes change to a friendlier theme
         (mapcar 'disable-theme custom-enabled-themes)
-        (load-theme 'tao-yin)
+        ;; (load-theme 'tao-yin)
         (setq gopar-pair-programming nil))
 
     (progn
@@ -239,10 +239,9 @@ next potential sentence end"
   ("C-c p" . projectile-command-map)
 
   :custom
-  ;; (projectile-mode-line-function '(lambda () (format " Proj[%s]" (projectile-project-name))))
-  (projectile-ignored-projects '("~/.emacs.d/") "Never acknowledge these projects")
+  ;; (projectile-ignored-projects '("~/.emacs.d/") "Never acknowledge these projects")
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
-
+  (projectile-per-project-compilation-buffer t)
   :config
   (projectile-global-mode))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -266,6 +265,20 @@ next potential sentence end"
   ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
   (setq vertico-cycle t)
   )
+
+(use-package vertico-multiform
+  :ensure nil
+  :hook (after-init . vertico-multiform-mode)
+  :init
+  (setq vertico-multiform-commands
+      '((consult-line (:not posframe))
+        (gopar/consult-line (:not posframe))
+        (consult-ag (:not posframe))
+        (t posframe))))
+
+;; just for looks
+(use-package vertico-posframe
+  :ensure t)
 
 (use-package dabbrev
   :custom
@@ -435,10 +448,14 @@ If used with a prefix, it will search all buffers as well."
 (use-package vue-mode
   :ensure
   :defer
+  :bind (:map vue-mode-map
+              (";" . easy-camelcase))
   :mode "\\.vue\\'")
 
 (use-package typescript-mode
   :ensure t
+  :bind (:map typescript-mode-map
+              (";" . easy-camelcase))
   :custom
   (typescript-indent-level 2))
 
@@ -474,7 +491,6 @@ If used with a prefix, it will search all buffers as well."
   (alert-fade-time 5))
 
 (use-package which-key
-  ;; :diminish
   :ensure t
   :config
   (which-key-mode)
@@ -498,7 +514,6 @@ If used with a prefix, it will search all buffers as well."
 ;; Works with themes except with nano?
 (use-package highlight-indentation
   :ensure t
-  :diminish
   :hook ((prog-mode . highlight-indentation-mode)
          ;; (prog-mode . highlight-indentation-current-column-mode)
          ))
@@ -663,6 +678,102 @@ With ARG, revert back to normal iedit."
                '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
   (eshell-git-prompt-use-theme 'powerline-plus))
 
+(use-package eshell-syntax-highlighting
+  :ensure t
+  :config
+  (eshell-syntax-highlighting-global-mode +1))
+
+(use-package eshell
+  :ensure nil
+  :hook (eshell-directory-change . gopar/sync-dir-in-buffer-name)
+  :bind ("C-c >" . gopar/eshell-redirect-to-buffer)
+  :custom
+  (eshell-buffer-maximum-lines 10000)
+  (eshell-scroll-to-bottom-on-input t)
+  (eshell-highlight-prompt nil)
+  (eshell-history-size 1024)
+  (eshell-hist-ignoredups t)
+  (eshell-input-filter 'gopar/eshell-input-filter)
+  (eshell-cd-on-directory t)
+  (eshell-list-files-after-cd nil)
+  (eshell-pushd-dunique t)
+  (eshell-last-dir-unique t)
+  (eshell-last-dir-ring-size 32)
+  (eshell-list-files-after-cd nil)
+  :init
+  (defun gopar/eshell-input-filter (input)
+    "Do not save empty lines, commands that start with a space or 'l'/'ls'"
+    (and
+     (not (string-prefix-p "ls" input))
+     (not (string= "l" input))
+     (eshell-input-filter-default input)
+     (eshell-input-filter-initial-space input)))
+
+  (defun eshell/ff (&rest args)
+    "Open files in emacs.
+Stolen form aweshell"
+    (if (null args)
+        ;; If I just ran "emacs", I probably expect to be launching
+        ;; Emacs, which is rather silly since I'm already in Emacs.
+        ;; So just pretend to do what I ask.
+        (bury-buffer)
+      ;; We have to expand the file names or else naming a directory in an
+      ;; argument causes later arguments to be looked for in that directory,
+      ;; not the starting directory
+      (mapc #'find-file (mapcar #'expand-file-name (eshell-flatten-list (reverse args)))))
+    )
+
+  (defun eshell/clear ()
+    "Clear the eshell buffer.
+This overrides the built in eshell/clear cmd in esh-mode."
+    (interactive)
+    (eshell/clear-scrollback))
+
+  (defun eshell/z (&optional regexp)
+    "Navigate to a previously visited directory in eshell.
+Similar to `cd =`"
+    (let ((eshell-dirs (delete-dups
+                        (mapcar 'abbreviate-file-name
+                                (ring-elements eshell-last-dir-ring)))))
+      (eshell/cd (if regexp (eshell-find-previous-directory regexp)
+                   (completing-read "cd: " eshell-dirs)))))
+
+  (defun eshell/jj ()
+    "Jumpt to Root."
+    (eshell/cd (projectile-project-root)))
+
+  (defun eshell/cat (filename)
+    "Like cat(1) but with syntax highlighting.
+Stole from aweshell"
+    (let ((existing-buffer (get-file-buffer filename))
+          (buffer (find-file-noselect filename)))
+      (eshell-print
+       (with-current-buffer buffer
+         (if (fboundp 'font-lock-ensure)
+             (font-lock-ensure)
+           (with-no-warnings
+             (font-lock-fontify-buffer)))
+         (let ((contents (buffer-string)))
+           (remove-text-properties 0 (length contents) '(read-only nil) contents)
+           contents)))
+      (unless existing-buffer
+        (kill-buffer buffer))
+      nil))
+
+  (defun gopar/sync-dir-in-buffer-name ()
+    "Update eshell buffer to show directory path.
+Stolen from aweshell."
+    (let* ((root (projectile-project-root))
+           (root-name (projectile-project-name root)))
+      (if root-name
+          (rename-buffer (format "*eshell %s* %s" root-name (s-chop-prefix root default-directory)) t)
+        (rename-buffer (format "*eshell %s*" default-directory) t))))
+
+  (defun gopar/eshell-redirect-to-buffer (buffer)
+    "Auto create command for redirecting to buffer."
+    (interactive (list (read-buffer "Redirect to buffer: ")))
+    (insert (format " >>> #<%s>" buffer))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package magit
   :ensure t
@@ -703,7 +814,6 @@ With ARG, revert back to normal iedit."
 
 (use-package git-gutter
   :ensure t
-  :diminish
   :hook (after-init . global-git-gutter-mode))
 
 
@@ -712,7 +822,6 @@ With ARG, revert back to normal iedit."
 ;; =M-x yas-reload-all=
 (use-package yasnippet
   :ensure t
-  :diminish
   :hook ((prog-mode . yas-minor-mode)
          (fundamental-mode . yas-minor-mode)
          (after-init . yas-reload-all))
@@ -721,7 +830,6 @@ With ARG, revert back to normal iedit."
 
 (use-package boolcase
   :load-path "lisp/modes/boolcase"
-  :diminish
   :hook (python-mode . boolcase-mode))
 
 (use-package dashboard
@@ -773,8 +881,8 @@ With ARG, revert back to normal iedit."
   :ensure nil
   :bind (("C-c C-o" . gopar/occur-definitions)
          :map occur-mode-map
-         ("RET" . occur-mode-goto-occurrence)
-         ("<C-return>" . gopar/jump-to-defintion-and-kill-all-other-windows))
+         ("RET" . gopar/jump-to-defintion-and-kill-all-other-windows)
+         ("<C-return>" . occur-mode-goto-occurrence))
   :init
   (defun gopar/occur-definitions ()
     "Show all the function/method/class definitions for the current language."
@@ -802,7 +910,7 @@ With ARG, revert back to normal iedit."
 (use-package compile
   :ensure nil
   :custom
-  ;; (compilation-scroll-output t)
+  (compilation-scroll-output t)
   (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
   :bind (:map compilation-mode-map
@@ -814,7 +922,8 @@ With ARG, revert back to normal iedit."
   (defun gopar/compilation-buffer-name-function (arg)
     "Rename buffer to whatever command was used.
 eg. *python main.py*"
-    (format "*%s*" compile-command)))
+    (concat "*" compile-command "*"
+            (if (projectile-project-p) (concat "<" (projectile-project-name) ">") ""))))
 
 (use-package ansi-color
   :ensure nil
@@ -828,9 +937,9 @@ eg. *python main.py*"
   ;; https://stackoverflow.com/questions/3072648/cucumbers-ansi-colors-messing-up-emacs-compilation-buffer
   (defun gopar/colorize-compilation-buffer ()
     "Colorize the output from compile buffer"
-    (toggle-read-only)
+    (read-only-mode -1)
     (ansi-color-apply-on-region (point-min) (point-max))
-    (toggle-read-only)))
+    (read-only-mode 1)))
 
 (use-package winner-mode
   :ensure nil
@@ -874,7 +983,6 @@ eg. *python main.py*"
 
 (use-package flyspell
   :ensure nil
-  :diminish
   :hook ((prog-mode . flyspell-prog-mode)
          (org-mode . flyspell-mode)
          (text-mode . flyspell-mode))
@@ -961,6 +1069,71 @@ go through the search engine"
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
   (neo-show-hidden-files t))
+
+(use-package dizzee
+  :ensure t
+  :config
+  (dz-defservice bfd-runserver "python"
+                 :args ("manage.py" "runserver")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-flower "flower"
+                 :args ("-A" "core" "--host=127.0.0.1" "--port=9002")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-bot-run "python"
+                 :args ("manage.py" "bot" "run")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-downloader-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "Downloader" "-Q" "Downloader" "--concurrency=8" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-slow-downloader-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "SlowDownloader" "-Q" "SlowDownloader" "--concurrency=2" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-diffbot-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "Diffbot" "-Q" "Diffbot" "--concurrency=8" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice bfd-celery-launcher-queue "celery"
+                 :args ("-A" "core" "worker" "-n" "Launcher" "-Q" "Launcher" "--concurrency=8" "--purge" "-l" "info")
+                 :cd "/Users/gopar/work/fiagents/")
+  (dz-defservice-group bfd-celerys-flower-and-server (bfd-celery-diffbot-queue
+                                                      bfd-celery-downloader-queue
+                                                      bfd-celery-slow-downloader-queue
+                                                      bfd-celery-launcher-queue
+                                                      bfd-flower
+                                                      bfd-runserver)))
+
+(use-package string-inflection
+  :ensure t
+  :commands string-inflection-insert
+  :bind (("C-;" . gopar/string-inflection-cycle-auto))
+  :init
+  (defun gopar/string-inflection-cycle-auto ()
+    "Switching by major mode."
+    (interactive)
+    (cond
+     ((eq major-mode 'emacs-lisp-mode)
+      (string-inflection-all-cycle))
+
+     ((eq major-mode 'python-mode)
+      (string-inflection-python-style-cycle))
+
+     ((or (eq major-mode 'js-mode)
+          (eq major-mode 'vue-mode)
+          (eq major-mode 'java-mode)
+          (eq major-mode 'typescript-mode))
+      (string-inflection-java-style-cycle))
+
+     ((eq major-mode 'nxml-mode)
+      (string-inflection-java-style-cycle))
+
+     ((eq major-mode 'hy-mode)
+      (string-inflection-kebab-case))
+
+     (t
+      (string-inflection-ruby-style-cycle)))))
+
+(use-package boolcase
+  :load-path "lisp/modes/boolcase"
+  :hook (python-mode . boolcase-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; End of My Stuff
