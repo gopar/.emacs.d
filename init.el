@@ -1,5 +1,7 @@
 (if (string= emacs-version "29.0.90")
-    (load-file (concat user-emacs-directory "emacs29.el"))
+    ;; (load-file (concat user-emacs-directory "emacs29.el"))
+    (org-babel-load-file (expand-file-name "~/.emacs.d/emacs29.org"))
+
     ;; nil
   ;; Do the normal thing
   (require 'package)

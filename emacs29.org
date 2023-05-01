@@ -1,3 +1,12 @@
+#+TITLE: Emacs Configuration
+#+STARTUP: showeverything
+
+* Emacs Configuration
+
+Test to see if org babel is causing down slowdowns.
+If not, then I can use org as my config which I really want :D
+
+#+begin_src emacs-lisp
 ;; Path to nano emacs modules (mandatory)
 (add-to-list 'load-path "/Users/gopar/personal/nano-emacs")
 
@@ -1286,3 +1295,4 @@ go through the search engine"
 
 ;; Nano custom mode writier-mode
 (require 'nano-writer)
+#+end_src
