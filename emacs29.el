@@ -28,8 +28,7 @@
   :defer
   :hook ((after-init . pending-delete-mode)
          (after-init . (lambda () (load-file custom-file)))
-         ;; (after-init . toggle-frame-maximized)
-         )
+         (after-init . toggle-frame-maximized))
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
@@ -221,10 +220,10 @@ next potential sentence end"
             (when (derived-mode-p 'prog-mode)
               (display-line-numbers-mode -1))))
         (remove-hook 'prog-mode-hook 'display-line-numbers-mode)
+        (neotree-hide)
 
         ;; disable all themes change to a friendlier theme
         (mapcar 'disable-theme custom-enabled-themes)
-        ;; (load-theme 'tao-yin)
         (setq gopar-pair-programming nil))
 
     (progn
@@ -238,12 +237,8 @@ next potential sentence end"
       ;; disable all themes change to a friendlier theme
       (mapcar 'disable-theme custom-enabled-themes)
       (load-theme 'manoj-dark)
+      (neotree-show)
       (setq gopar-pair-programming t))))
-
-(use-package display-line-numbers
-  :ensure nil
-  ;; :hook (display-line-numbers-mode . gopar/display-line-numbers-mode-blacklist)
-  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package projectile
@@ -286,10 +281,10 @@ next potential sentence end"
   :hook (after-init . vertico-multiform-mode)
   :init
   (setq vertico-multiform-commands
-      '((consult-line (:not posframe))
-        (gopar/consult-line (:not posframe))
-        (consult-ag (:not posframe))
-        (t posframe))))
+        '((consult-line (:not posframe))
+          (gopar/consult-line (:not posframe))
+          (consult-ag (:not posframe))
+          (t posframe))))
 
 ;; just for looks
 (use-package vertico-posframe
@@ -344,7 +339,7 @@ next potential sentence end"
   ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
   :bind ("C-c SPC" . cape-dabbrev)
-)
+  )
 
 (use-package savehist
   :init
@@ -361,20 +356,20 @@ next potential sentence end"
   :ensure
   :after projectile
   :bind (("C-s" . gopar/consult-line)
-  ("C-c M-x" . consult-mode-command)
-  ("C-x b" . consult-buffer)
-  ("C-x r b" . consult-bookmark)
-  ("M-y" . consult-yank-pop)
-  ;; M-g bindings (goto-map)
-  ("M-g M-g" . consult-goto-line)
-  ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
-  ("M-g m" . consult-mark)
-  ("M-g k" . consult-global-mark)
-  :map minibuffer-local-map
-  ("M-s" . consult-history)                 ;; orig. next-matching-history-element
-  ("M-r" . consult-history)
-  :map projectile-command-map
-  ("b" . consult-project-buffer))
+         ("C-c M-x" . consult-mode-command)
+         ("C-x b" . consult-buffer)
+         ("C-x r b" . consult-bookmark)
+         ("M-y" . consult-yank-pop)
+         ;; M-g bindings (goto-map)
+         ("M-g M-g" . consult-goto-line)
+         ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+         ("M-g m" . consult-mark)
+         ("M-g k" . consult-global-mark)
+         :map minibuffer-local-map
+         ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+         ("M-r" . consult-history)
+         :map projectile-command-map
+         ("b" . consult-project-buffer))
 
   :init
   (setq consult-project-function (lambda (_) (projectile-project-root)))
@@ -389,10 +384,10 @@ If used with a prefix, it will search all buffers as well."
     (interactive "p")
     (let ((cmd (if current-prefix-arg '(lambda (arg) (consult-line-multi t arg)) 'consult-line)))
       (if (use-region-p)
-        (let ((regionp (buffer-substring-no-properties (region-beginning) (region-end))))
-          (deactivate-mark)
-          (funcall cmd regionp))
-      (funcall cmd "")))))
+          (let ((regionp (buffer-substring-no-properties (region-beginning) (region-end))))
+            (deactivate-mark)
+            (funcall cmd regionp))
+        (funcall cmd "")))))
 
 (use-package consult-ag
   :ensure
@@ -400,24 +395,24 @@ If used with a prefix, it will search all buffers as well."
               ("s s" . consult-ag)))
 
 (use-package consult-org-roam
-   :ensure t
-   :after org-roam
-   :init
-   (require 'consult-org-roam)
-   ;; Activate the minor mode
-   (consult-org-roam-mode 1)
-   :custom
-   (consult-org-roam-grep-func #'consult-ag)
-   ;; Configure a custom narrow key for `consult-buffer'
-   (consult-org-roam-buffer-narrow-key ?r)
-   ;; Display org-roam buffers right after non-org-roam buffers
-   ;; in consult-buffer (and not down at the bottom)
-   (consult-org-roam-buffer-after-buffers nil)
-   :config
-   ;; Eventually suppress previewing for certain functions
-   (consult-customize
-    consult-org-roam-forward-links
-    :preview-key (kbd "M-.")))
+  :ensure t
+  :after org-roam
+  :init
+  (require 'consult-org-roam)
+  ;; Activate the minor mode
+  (consult-org-roam-mode 1)
+  :custom
+  (consult-org-roam-grep-func #'consult-ag)
+  ;; Configure a custom narrow key for `consult-buffer'
+  (consult-org-roam-buffer-narrow-key ?r)
+  ;; Display org-roam buffers right after non-org-roam buffers
+  ;; in consult-buffer (and not down at the bottom)
+  (consult-org-roam-buffer-after-buffers nil)
+  :config
+  ;; Eventually suppress previewing for certain functions
+  (consult-customize
+   consult-org-roam-forward-links
+   :preview-key (kbd "M-.")))
 
 (use-package marginalia
   :ensure
@@ -531,7 +526,16 @@ If used with a prefix, it will search all buffers as well."
   :ensure t
   :hook ((prog-mode . highlight-indentation-mode)
          ;; (prog-mode . highlight-indentation-current-column-mode)
-         ))
+         )
+  :config
+  (set-face-attribute 'highlight-indentation-face nil :background "black")
+  ;; (defface highlight-indentation-face
+  ;;   ;; Fringe has non intrusive color in most color-themes
+  ;;   '((t (:background "black")))
+  ;;   "Basic face for highlighting indentation guides."
+  ;;   :group 'highlight-indentation)
+  )
+
 
 (use-package move-text
   :ensure t
@@ -540,6 +544,9 @@ If used with a prefix, it will search all buffers as well."
 (use-package iedit
   :ensure t
   :bind (("C-c o" . gopar/iedit-dwim))
+  :custom
+  ;; Perhaps bind this to something? Handy how it hooks up to even search!
+  (iedit-toggle-key-default nil)
   :init
   (defun gopar/iedit-dwim (arg)
     "Starts iedit but uses \\[narrow-to-defun] to limit its scope.
@@ -612,21 +619,21 @@ With ARG, revert back to normal iedit."
   :ensure t
   :custom
   (all-the-icons-ibuffer-formats
-        `((mark modified read-only locked vc-status-mini
-          ;; Here you may adjust by replacing :right with :center or :left
-          ;; According to taste, if you want the icon further from the name
-          " " ,(if all-the-icons-ibuffer-icon
-                   '(icon 2 2 :left :elide)
-                 "")
-          ,(if all-the-icons-ibuffer-icon
-               (propertize " " 'display `(space :align-to 8))
-             "")
-          (name 18 18 :left :elide)
-          " " (size-h 9 -1 :right)
-          " " (mode+ 16 16 :left :elide)
-          " " (vc-status 16 16 :left)
-          " " vc-relative-file)
-    (mark " " (name 16 -1) " " filename)))
+   `((mark modified read-only locked vc-status-mini
+           ;; Here you may adjust by replacing :right with :center or :left
+           ;; According to taste, if you want the icon further from the name
+           " " ,(if all-the-icons-ibuffer-icon
+                    '(icon 2 2 :left :elide)
+                  "")
+           ,(if all-the-icons-ibuffer-icon
+                (propertize " " 'display `(space :align-to 8))
+              "")
+           (name 18 18 :left :elide)
+           " " (size-h 9 -1 :right)
+           " " (mode+ 16 16 :left :elide)
+           " " (vc-status 16 16 :left)
+           " " vc-relative-file)
+     (mark " " (name 16 -1) " " filename)))
 
   :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
 
@@ -635,12 +642,12 @@ With ARG, revert back to normal iedit."
 (use-package ibuffer-vc
   :ensure t
   :hook (ibuffer . (lambda ()
-      (ibuffer-vc-set-filter-groups-by-vc-root)
-      (unless (eq ibuffer-sorting-mode 'alphabetic)
-        (ibuffer-do-sort-by-vc-status)
-        ;; (ibuffer-do-sort-by-alphabetic)
-        )
-      )))
+                     (ibuffer-vc-set-filter-groups-by-vc-root)
+                     (unless (eq ibuffer-sorting-mode 'alphabetic)
+                       (ibuffer-do-sort-by-vc-status)
+                       ;; (ibuffer-do-sort-by-alphabetic)
+                       )
+                     )))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -670,13 +677,14 @@ With ARG, revert back to normal iedit."
               ("C-c C-p" . nil)
               ("C-c C-z" . run-python))
   :hook (python-mode . (lambda ()
-                         (setq forward-sexp-function nil
-                               python-forward-sexp-function nil)
+                         (setq-local forward-sexp-function nil)
                          (make-local-variable 'python-shell-virtualenv-root)
                          (setq completion-at-point '(cape-file cape-dabbrev python-completion-at-point))))
+
   :custom
   (python-shell-interpreter "python")
   (python-shell-interpreter-args "")
+  (python-forward-sexp-function nil)
   :config
   (add-to-list 'python-shell-completion-native-disabled-interpreters "python"))
 
@@ -867,12 +875,12 @@ Stolen from aweshell."
                      (bookmarks . 5)
                      ;; (agenda . 5)
                      ))
-   :config
+  :config
   (dashboard-setup-startup-hook))
 
 (use-package display-fill-column-indicator
   :ensure nil
-  :hook (python-mode))
+  :hook (python-mode . display-fill-column-indicator-mode))
 
 (use-package dired
   :ensure nil
@@ -889,7 +897,7 @@ Stolen from aweshell."
   :ensure nil
   :custom
   (insert-directory-program "gls") ; Will not work if system does not have GNU gls installed
-   ;; Don't have backup
+  ;; Don't have backup
   (backup-inhibited t)
   ;; Don't save anything.
   (auto-save-default nil)
@@ -934,11 +942,6 @@ Stolen from aweshell."
   (compilation-scroll-output t)
   (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
-  :bind (:map compilation-mode-map
-              ("y" . gopar/send-self)
-              ("n" . gopar/send-self)
-              ("RET" . gopar/send-self) ;; maybe M-RET?
-              ("C-d" . gopar/send-self))
   :init
   (defun gopar/compilation-buffer-name-function (arg)
     "Rename buffer to whatever command was used.
@@ -961,6 +964,12 @@ eg. *python main.py*"
     (read-only-mode -1)
     (ansi-color-apply-on-region (point-min) (point-max))
     (read-only-mode 1)))
+
+(use-package fancy-compilation
+  :ensure t
+  :defer 3
+  :config
+  (fancy-compilation-mode))
 
 (use-package winner-mode
   :ensure nil
