@@ -34,3 +34,4 @@ transient/
 /elpa/
 eshell/history
 eshell/alias
+emacs29.el

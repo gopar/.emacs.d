@@ -940,7 +940,7 @@ Window Management
          (prog-mode . (lambda () (setq-local fill-column 120)))))
 #+end_src
 
-** Rest
+** Projectile
 #+begin_src emacs-lisp
 (use-package projectile
   :ensure
@@ -955,10 +955,13 @@ Window Management
   (projectile-per-project-compilation-buffer t)
   :config
   (projectile-global-mode))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; (load-file "~/.emacs.d/lisp/myemacs/org.el")
+#+end_src
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+** Code Completion
+A collection of packages that act as 'smart' completion in which really are not :)
+Also includes displaying of them
+
+#+begin_src emacs-lisp
 (use-package vertico
   :ensure t
   :init
@@ -1121,12 +1124,20 @@ If used with a prefix, it will search all buffers as well."
   ;; Must be in the :init section of use-package such that the mode gets
   ;; enabled right away. Note that this forces loading the package.
   (marginalia-mode))
+#+end_src
 
+** Code Compass
+Package for code base analysis
+#+begin_src emacs-lisp
 (use-package code-compass
   :ensure
   :config
   (code-compass-toggle-display-contributors))
+#+end_src
 
+** Dumb Jump
+A basic 'go to' functionality that works really well. So I don't need LSP
+#+begin_src emacs-lisp
 (use-package dumb-jump
   :ensure t
   :custom
@@ -1138,10 +1149,11 @@ If used with a prefix, it will search all buffers as well."
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   ;; (setq xref-show-definitions-function #'xref-show-definitions-completing-read)
   )
+#+end_src
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+** Tree Sitter
+Should be built in but as of =29.0.90= i have to install it via melpa
+#+begin_src emacs-lisp
 (use-package tree-sitter-langs
   :ensure t)
 
@@ -1149,29 +1161,42 @@ If used with a prefix, it will search all buffers as well."
   :ensure t
   :hook ((prog-mode . global-tree-sitter-mode)
          (tree-sitter-after-on . tree-sitter-hl-mode)))
+#+end_src
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; List of all languages currently in use
+** Vue
+#+begin_src emacs-lisp
 (use-package vue-mode
   :ensure
   :defer
   :bind (:map vue-mode-map
               (";" . easy-camelcase))
   :mode "\\.vue\\'")
+#+end_src
 
+** TypeScript
+#+begin_src emacs-lisp
 (use-package typescript-mode
   :ensure t
   :bind (:map typescript-mode-map
               (";" . easy-camelcase))
   :custom
   (typescript-indent-level 2))
+#+end_src
 
+** Markdown
+#+begin_src emacs-lisp
 (use-package markdown-mode
   :ensure t)
+#+end_src
 
+** Dockerfile
+#+begin_src emacs-lisp
 (use-package dockerfile-mode
   :ensure t)
+#+end_src
 
+** GNU Ledger
+#+begin_src emacs-lisp
 (use-package ledger-mode
   :ensure t
   :mode ("\\.dat\\'"
@@ -1183,32 +1208,51 @@ If used with a prefix, it will search all buffers as well."
   (ledger-clear-whole-transactions t)
   (ledger-report-use-native-highlighting nil)
   (ledger-accounts-file (expand-file-name "~/personal/finances/data/accounts.dat")))
+#+end_src
 
+** YAML
+#+begin_src emacs-lisp
 (use-package yaml-mode
   :ensure t)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#+end_src
+
+** Rainbow mode
+Color the string of whatever color code they are holding
+#+begin_src emacs-lisp
 (use-package rainbow-mode
   :ensure t
   :hook (prog-mode . rainbow-mode))
+#+end_src
 
+** Alert
+#+begin_src emacs-lisp
 (use-package alert
   :ensure t
   :custom
   (alert-default-style 'osx-notifier)
   (alert-fade-time 5))
+#+end_src
 
+** Which Key
+#+begin_src emacs-lisp
 (use-package which-key
   :ensure t
   :config
   (which-key-mode)
-  (setq which-key-idle-delay 3))
+  (setq which-key-idle-delay 2))
+#+end_src
 
+** Helpful
+#+begin_src emacs-lisp
 (use-package helpful
   :ensure t
   :bind (("C-h f" . helpful-callable)
          ("C-h v" . helpful-variable)
          ("C-h k" . helpful-key)))
+#+end_src
 
+** Corral
+#+begin_src emacs-lisp
 (use-package corral
   :ensure t
   :bind (("M-9" . corral-parentheses-backward)
@@ -1217,11 +1261,14 @@ If used with a prefix, it will search all buffers as well."
          ("M-]" . corral-brackets-forward)
          ("M-\"" . corral-single-quotes-backward)
          ("M-'" . corral-single-quotes-forward)))
+#+end_src
 
-;; Works with themes except with nano?
+** Highlight Indentation
+#+begin_src emacs-lisp
 (use-package highlight-indentation
   :ensure t
   :hook ((prog-mode . highlight-indentation-mode)
+         ;; Works with themes except with nano?
          ;; (prog-mode . highlight-indentation-current-column-mode)
          )
   :config
@@ -1232,12 +1279,18 @@ If used with a prefix, it will search all buffers as well."
   ;;   "Basic face for highlighting indentation guides."
   ;;   :group 'highlight-indentation)
   )
+#+end_src
 
-
+** Move Text
+#+begin_src emacs-lisp
 (use-package move-text
   :ensure t
   :init (move-text-default-bindings))
+#+end_src
 
+** Iedit
+
+#+begin_src emacs-lisp
 (use-package iedit
   :ensure t
   :bind (("C-c o" . gopar/iedit-dwim))
@@ -1262,29 +1315,44 @@ With ARG, revert back to normal iedit."
             ;; functions.
             (narrow-to-defun)
             (iedit-start (current-word) (point-min) (point-max))))))))
+#+end_src
 
+** Expand Region
+#+begin_src emacs-lisp
 (use-package expand-region
   :ensure t
   :bind (("C-\\" . er/expand-region)))
+#+end_src
 
-;; window management
+** Windmove
+Window Management
+#+begin_src emacs-lisp
 (use-package windmove
   :ensure nil
   :hook ((minibuffer-setup . (lambda () (interactive) (windmove-mode -1)))
          (minibuffer-exit . windmove-mode))
   :init
   (windmove-default-keybindings))
+#+end_src
 
+** So Long
+#+begin_src emacs-lisp
 (use-package so-long
   :ensure nil
   :hook (after-init . global-so-long-mode))
+#+end_src
 
+** Avy
+#+begin_src emacs-lisp
 (use-package avy
   :ensure t
   :bind (("M-g c" . avy-goto-char-2)
          ("M-g g" . avy-goto-line)
          ("M-g w" . avy-goto-word-1)))
+#+end_src
 
+** All The Icons
+#+begin_src emacs-lisp
 (use-package all-the-icons
   :ensure t
   :if (display-graphic-p))
@@ -1295,7 +1363,10 @@ With ARG, revert back to normal iedit."
   :hook (marginalia-mode . #'all-the-icons-completion-marginalia-setup)
   :init
   (all-the-icons-completion-mode))
+#+end_src
 
+** Ibuffer
+#+begin_src emacs-lisp
 ;; Ibuffer Icons sets it's own local buffer format and overrides the =ibuffer-formats= variable.
 ;; So in order for ibuffer-vc to work, i have to include it in the icons-buffer format -_-
 (use-package all-the-icons-ibuffer
@@ -1331,27 +1402,17 @@ With ARG, revert back to normal iedit."
                        ;; (ibuffer-do-sort-by-alphabetic)
                        )
                      )))
+#+end_src
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+** Electric Pair
+#+begin_src emacs-lisp
 (use-package elec-pair
   :ensure nil
   :hook (after-init . electric-pair-mode))
+#+end_src
 
-(use-package paren
-  :ensure nil
-  :hook (after-init . show-paren-mode)
-  :custom
-  (show-paren-style 'mixed))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+** Version Control
+#+begin_src emacs-lisp
 (use-package magit
   :ensure t
   :commands magit-get-current-branch
@@ -1394,8 +1455,19 @@ With ARG, revert back to normal iedit."
 (use-package git-gutter
   :ensure t
   :hook (after-init . global-git-gutter-mode))
+#+end_src
 
+** Parens
+#+begin_src emacs-lisp
+(use-package paren
+  :ensure nil
+  :hook (after-init . show-paren-mode)
+  :custom
+  (show-paren-style 'mixed))
+#+end_src
 
+** Yasnippet
+#+begin_src emacs-lisp
 ;; After adding or updating a snippet run:
 ;; =M-x yas-recompile-all=
 ;; =M-x yas-reload-all=
@@ -1407,7 +1479,10 @@ With ARG, revert back to normal iedit."
          (after-init . yas-reload-all))
   :bind (:map yas-minor-mode-map
               ("C-c C-SPC" . yas-insert-snippet)))
+#+end_src
 
+** Dashboard
+#+begin_src emacs-lisp
 (use-package dashboard
   :ensure t
   :custom
@@ -1415,6 +1490,7 @@ With ARG, revert back to normal iedit."
   (dashboard-center-content t)
   (dashboard-show-shortcuts nil)
   (dashboard-set-heading-icons t)
+  (dashboard-icon-type 'all-the-icons)
   (dashboard-set-file-icons t)
   (dashboard-projects-backend 'projectile)
   (dashboard-items '((recents . 5)
@@ -1424,11 +1500,17 @@ With ARG, revert back to normal iedit."
                      ))
   :config
   (dashboard-setup-startup-hook))
+#+end_src
 
+** Display Fill Column
+#+begin_src emacs-lisp
 (use-package display-fill-column-indicator
   :ensure nil
   :hook (python-mode . display-fill-column-indicator-mode))
+#+end_src
 
+** Dired
+#+begin_src emacs-lisp
 (use-package dired
   :ensure nil
   :custom
@@ -1439,11 +1521,6 @@ With ARG, revert back to normal iedit."
   :hook (dired-mode . all-the-icons-dired-mode)
   :custom
   (all-the-icons-dired-monochrome nil))
-
-;; Doesn't seem to work w/ nano?
-;; (use-package diredfl
-;;   :ensure
-;;   :hook (dired-mode . diredfl-mode))
 
 (use-package files
   :ensure nil
@@ -1457,7 +1534,10 @@ With ARG, revert back to normal iedit."
   (require-final-newline t)
   :config
   (add-to-list 'auto-mode-alist '("Pipfile" . conf-toml-mode)))
+#+end_src
 
+** Replace
+#+begin_src emacs-lisp
 (use-package replace
   :ensure nil
   :bind (("C-c C-o" . gopar/occur-definitions)
@@ -1487,7 +1567,10 @@ With ARG, revert back to normal iedit."
     (occur-mode-goto-occurrence)
     (kill-buffer "*Occur*")
     (delete-other-windows)))
+#+end_src
 
+** Ansi Color
+#+begin_src emacs-lisp
 (use-package ansi-color
   :ensure nil
   :hook (compilation-filter . gopar/colorize-compilation-buffer)
@@ -1503,7 +1586,10 @@ With ARG, revert back to normal iedit."
     (read-only-mode -1)
     (ansi-color-apply-on-region (point-min) (point-max))
     (read-only-mode 1)))
+#+end_src
 
+** JS
+#+begin_src emacs-lisp
 (use-package js-mode
   :bind (:map js-mode-map
               (";" . easy-camelcase)
@@ -1516,7 +1602,10 @@ With ARG, revert back to normal iedit."
   :hook (js-mode . (lambda ()
                      (define-key js-mode-map (kbd ";") 'easy-camelcase)
                      (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase))))
+#+end_src
 
+** Pulse
+#+begin_src emacs-lisp
 (use-package pulse
   :ensure nil
   :init
@@ -1527,26 +1616,36 @@ With ARG, revert back to normal iedit."
   (dolist (command '(scroll-up-command scroll-down-command
                                        recenter-top-bottom other-window))
     (advice-add command :after #'pulse-line)))
+#+end_src
 
-
+** Whitespace
+#+begin_src emacs-lisp
 (use-package whitespace
   :ensure nil
   :hook (before-save . whitespace-cleanup))
+#+end_src
 
+** Auto revert
+#+begin_src emacs-lisp
 (use-package autorevert
   :ensure nil
   :custom
   ;; auto refresh files when changed from disk
   (global-auto-revert-mode t))
+#+end_src
 
-;; Do I need this???
+** Sample
+#+begin_src emacs-lisp
 (use-package simple
   :ensure nil
   :hook ((makefile-mode . indent-tabs-mode)
          (fundamental-mode . delete-selection-mode)
          (fundamental-mode . auto-fill-mode)
          (org-mode . auto-fill-mode)))
+#+end_src
 
+** Neotree
+#+begin_src emacs-lisp
 (use-package neotree
   :ensure t
   :bind ("<f5>" . neotree-toggle)
@@ -1557,7 +1656,15 @@ With ARG, revert back to normal iedit."
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
   (neo-show-hidden-files t))
+#+end_src
 
+** Dizze
+Unfortunately need this:
+https://github.com/davidmiller/dizzee/pull/5
+
+Sooo I manually copied the PR fix into the =init= section. Sigh.
+
+#+begin_src emacs-lisp
 (use-package dizzee
   :ensure t
   :config
@@ -1588,7 +1695,10 @@ With ARG, revert back to normal iedit."
                                                       bfd-celery-launcher-queue
                                                       bfd-flower
                                                       bfd-runserver)))
+#+end_src
 
+** String Inflection
+#+begin_src emacs-lisp
 (use-package string-inflection
   :ensure t
   :commands string-inflection-insert
@@ -1618,14 +1728,23 @@ With ARG, revert back to normal iedit."
 
      (t
       (string-inflection-ruby-style-cycle)))))
+#+end_src
 
+** Type Break
+#+begin_src emacs-lisp
 (use-package type-break
   :ensure nil)
+#+end_src
 
+** Compact Docstring
+#+begin_src emacs-lisp
 (use-package compact-docstrings
   :ensure t
   :hook (prog-mode . compact-docstrings-mode))
+#+end_src
 
+** PDF Tools
+#+begin_src emacs-lisp
 (use-package pdf-tools
   :ensure
   :hook (find-file . my-pdf-view-mode-hook)
@@ -1634,40 +1753,10 @@ With ARG, revert back to normal iedit."
     "Enable `pdf-view-mode' for PDF files."
     (when (and buffer-file-name (string-suffix-p ".pdf" buffer-file-name))
       (pdf-view-mode))))
+#+end_src
 
-
-(defun hydra-move-splitter-left (arg)
-  "Move window splitter left."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (shrink-window-horizontally arg)
-    (enlarge-window-horizontally arg)))
-
-(defun hydra-move-splitter-right (arg)
-  "Move window splitter right."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (enlarge-window-horizontally arg)
-    (shrink-window-horizontally arg)))
-
-(defun hydra-move-splitter-up (arg)
-  "Move window splitter up."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (enlarge-window arg)
-    (shrink-window arg)))
-
-(defun hydra-move-splitter-down (arg)
-  "Move window splitter down."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (shrink-window arg)
-    (enlarge-window arg)))
-
+** Hydra
+#+begin_src emacs-lisp
 (use-package hydra
   :demand ;; to load up :hydra use package
   :ensure t
@@ -1715,40 +1804,45 @@ Frames: _f_rame new  _df_ delete
      ("q" nil)
                                         ;("i" ace-maximize-window "ace-one" :color blue)
      ("b" consult-buffer)
-     ("m" headlong-bookmark-jump))))
+     ("m" headlong-bookmark-jump)))
+  :init
+  (defun hydra-move-splitter-left (arg)
+  "Move window splitter left."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'right))
+      (shrink-window-horizontally arg)
+    (enlarge-window-horizontally arg)))
 
+(defun hydra-move-splitter-right (arg)
+  "Move window splitter right."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'right))
+      (enlarge-window-horizontally arg)
+    (shrink-window-horizontally arg)))
+
+(defun hydra-move-splitter-up (arg)
+  "Move window splitter up."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'up))
+      (enlarge-window arg)
+    (shrink-window arg)))
+
+(defun hydra-move-splitter-down (arg)
+  "Move window splitter down."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'up))
+      (shrink-window arg)
+    (enlarge-window arg))))
+#+end_src
+
+** Vterm
+#+begin_src emacs-lisp
 (use-package vterm
   :ensure t)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; End of My Stuff
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Theme
-(setq nano-font-size 15)
-(require 'nano-faces)
-(require 'nano-theme)
-(require 'nano-theme-dark)
-(require 'nano-theme-light)
-
-(nano-theme-set-dark)
-(call-interactively 'nano-refresh-theme)
-
-;; ;; Nano default settings (optional)
-(require 'nano-defaults)
-
-;; Nano session saving (optional)
-(require 'nano-session)
-
-;; Nano header & mode lines (optional)
-(require 'nano-modeline)
-
-;; Nano key bindings modification (optional)
-;; (require 'nano-bindings)
-
-;; Nano custom mode writier-mode
-(require 'nano-writer)
 #+end_src
 
 * 1st Party Modes
@@ -1794,4 +1888,33 @@ Stuff I've made for myself that are modes
 (use-package boolcase
   :load-path "lisp/modes/boolcase"
   :hook (python-mode . boolcase-mode))
+#+end_src
+
+
+* End
+#+begin_src emacs-lisp
+;; Theme
+(setq nano-font-size 15)
+(require 'nano-faces)
+(require 'nano-theme)
+(require 'nano-theme-dark)
+(require 'nano-theme-light)
+
+(nano-theme-set-dark)
+(call-interactively 'nano-refresh-theme)
+
+;; ;; Nano default settings (optional)
+(require 'nano-defaults)
+
+;; Nano session saving (optional)
+(require 'nano-session)
+
+;; Nano header & mode lines (optional)
+(require 'nano-modeline)
+
+;; Nano key bindings modification (optional)
+;; (require 'nano-bindings)
+
+;; Nano custom mode writier-mode
+(require 'nano-writer)
 #+end_src
