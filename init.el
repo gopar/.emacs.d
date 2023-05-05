@@ -1,26 +1,24 @@
+(require 'package)
+(setq package-enable-at-startup nil
+      package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
+                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+                         ("melpa" . "https://melpa.org/packages/")
+                         ;; ("org" . "https://orgmode.org/elpa/")
+                         ))
+;; (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
+(package-initialize)
+
+;; Bootstrap `use-package'
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(setq use-package-always-ensure nil)
+
 (if (string= emacs-version "29.0.90")
     ;; (load-file (concat user-emacs-directory "emacs29.el"))
     (org-babel-load-file (expand-file-name "~/.emacs.d/emacs29.org"))
-
-    ;; nil
   ;; Do the normal thing
-  (require 'package)
-  (setq package-enable-at-startup nil
-        package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                           ("nongnu" . "https://elpa.nongnu.org/nongnu/")
-                           ("melpa" . "https://melpa.org/packages/")
-                           ;; ("org" . "https://orgmode.org/elpa/")
-                           ))
-  ;; (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
-  (package-initialize)
-
-  ;; Bootstrap `use-package'
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-
-  (setq use-package-always-ensure nil)
-
   ;; Have to set it up here, otherwise it won't take effect in org mode doc
   (setq inhibit-startup-echo-area-message "gopar")
   (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))

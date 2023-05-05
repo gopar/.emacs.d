@@ -37,7 +37,7 @@ Not sure if it really matters but for now I'll follow that structure
 Going to configure all the built in packages first
 And any third party lib that are related to it will go under them.
 
-** Set up Package
+** COMMENT Set up Package
 #+begin_src emacs-lisp
 (use-package package
   :init
