@@ -36,3 +36,6 @@
    ;; If there is more than one, they won't work right.
    )
   )
+
+(add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+(add-to-list 'default-frame-alist '(ns-appearance . dark))

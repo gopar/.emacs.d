@@ -1,7 +1,7 @@
 #+TITLE: Emacs Configuration
 
 * Emacs Configuration
-My emacs config as an org document.
+My Emacs config as an org document.
 Literate Programming :)
 
 * Recommended Packages/Snippets to Have As Early as Possible
@@ -37,19 +37,6 @@ Not sure if it really matters but for now I'll follow that structure
 Going to configure all the built in packages first
 And any third party lib that are related to it will go under them.
 
-** COMMENT Set up Package
-#+begin_src emacs-lisp
-(use-package package
-  :init
-  (setq package-enable-at-startup nil
-        use-package-always-ensure nil
-        package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                           ("nongnu" . "https://elpa.nongnu.org/nongnu/")
-                           ("melpa" . "https://melpa.org/packages/")
-                           ("org" . "https://orgmode.org/elpa/")))
-  (package-initialize))
-#+end_src
-
 ** Emacs Defaults
 Customizing some things that should be defaults ¯\_(ツ)_/¯
 #+begin_src emacs-lisp
@@ -60,8 +47,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   :hook ((after-init . pending-delete-mode)
          (after-init . (lambda () (load-file custom-file)))
          (after-init . toggle-frame-maximized)
-         (after-init . gopar/add-env-vars)
-         )
+         (after-init . gopar/add-env-vars))
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
@@ -804,6 +790,18 @@ Stolen from aweshell."
   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
+*** Eshell vterm
+Defer visual commands to veterm instead of shell
+#+begin_src emacs-lisp
+(use-package eshell-vterm
+  :ensure
+  :after eshell
+  :config
+  (eshell-vterm-mode)
+  :init
+  (defalias 'eshell/v 'eshell-exec-visual))
+#+end_src
+
 ** Python
 #+begin_src emacs-lisp
 (use-package python
@@ -872,23 +870,29 @@ Window Management
 #+end_src
 
 ** Spelling
+There seems to be some weird stuff happeing when using tree-sitter with flyspell.
+The faces aren't showing up :/
+
 #+begin_src emacs-lisp
 (use-package ispell
   :ensure nil
   :custom
   (ispell-program-name "aspell")
-  (ispell-personal-dictionary "~/.aspell.lang.pws")
+  (ispell-personal-dictionary (concat user-emacs-directory "etc/.aspell.lang.pws"))
   (ispell-dictionary nil)
   (ispell-local-dictionary nil)
   (ispell-extra-args '("--sug-mode=ultra" "--lang=en_US"
-                       ;; "--run-together" "--run-together-limit=16"
+                       "--run-together" "--run-together-limit=16"
                        "--camel-case")))
 
 (use-package flyspell
   :ensure nil
   :hook ((prog-mode . flyspell-prog-mode)
          (org-mode . flyspell-mode)
-         (text-mode . flyspell-mode))
+         (text-mode . flyspell-mode)
+         (flyspell-mode . (lambda ()
+                            (set-face-attribute 'flyspell-incorrect nil :underline '(:style wave :color "Red1"))
+                            (set-face-attribute 'flyspell-duplicate nil :underline '(:style wave :color "DarkOrange")))))
   :bind (:map flyspell-mode-map
               ("C-;" . nil)
               ("C-," . flyspell-goto-next-error)
@@ -1000,6 +1004,7 @@ Also includes displaying of them
   (dabbrev-check-all-buffers nil)
   (dabbrev-check-other-buffers t)
   (dabbrev-friend-buffer-function 'dabbrev--same-major-mode-p)
+  (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'"))
   )
 
 (use-package corfu
@@ -1229,7 +1234,7 @@ Color the string of whatever color code they are holding
 (use-package alert
   :ensure t
   :custom
-  (alert-default-style 'osx-notifier)
+  (alert-default-style 'message)
   (alert-fade-time 5))
 #+end_src
 
@@ -1272,13 +1277,7 @@ Color the string of whatever color code they are holding
          ;; (prog-mode . highlight-indentation-current-column-mode)
          )
   :config
-  (set-face-attribute 'highlight-indentation-face nil :background "black")
-  ;; (defface highlight-indentation-face
-  ;;   ;; Fringe has non intrusive color in most color-themes
-  ;;   '((t (:background "black")))
-  ;;   "Basic face for highlighting indentation guides."
-  ;;   :group 'highlight-indentation)
-  )
+  (set-face-attribute 'highlight-indentation-face nil :background "black"))
 #+end_src
 
 ** Move Text
@@ -1731,9 +1730,20 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
 #+end_src
 
 ** Type Break
+Automatically start a pomodoro session when I exit org-pomodoro since I have a tendency of just
+staying in emacs and losing track of time.
+
+Also start type break mode after start up since I might just be dragging along
 #+begin_src emacs-lisp
 (use-package type-break
-  :ensure nil)
+  :ensure nil
+  :hook ((org-pomodoro-killed . type-break-mode)
+         (org-pomodoro-break-finished . type-break-mode)
+         (org-pomodoro-started . (lambda () (type-break-mode -1)))
+         (after-init . type-break-mode))
+  :custom
+  ;; Setting interval of that of a pomodoro session
+  (type-break-interval (* 15 60)))
 #+end_src
 
 ** Compact Docstring
@@ -1843,6 +1853,100 @@ Frames: _f_rame new  _df_ delete
 #+begin_src emacs-lisp
 (use-package vterm
   :ensure t)
+#+end_src
+
+** [[https://github.com/stanaka/dash-at-point][Dash at Point]]
+#+begin_src emacs-lisp
+(use-package dash-at-point
+  :ensure
+  :defer
+  :bind ("M-s d" . dash-at-point)
+  :config
+  (setq dash-at-point-mode-alist
+   '((actionscript-mode . "actionscript")
+     (arduino-mode . "arduino")
+     (c++-mode . "cpp,net,boost,qt,cvcpp,cocos2dx,c,manpages")
+     (c-mode . "c,glib,gl2,gl3,gl4,manpages")
+     (caml-mode . "ocaml")
+     (clojure-mode . "clojure")
+     (coffee-mode . "coffee")
+     (common-lisp-mode . "lisp")
+     (cperl-mode . "perl")
+     (css-mode . "css,bootstrap,foundation,less,awesome,cordova,phonegap")
+     (dart-mode . "dartlang,polymerdart,angulardart")
+     (elixir-mode . "elixir")
+     (emacs-lisp-mode . "elisp")
+     (enh-ruby-mode . "ruby")
+     (erlang-mode . "erlang")
+     (gfm-mode . "markdown")
+     (go-mode . "go,godoc")
+     (groovy-mode . "groovy")
+     (haml-mode . "haml")
+     (haskell-mode . "haskell")
+     (html-mode . "html,svg,css,bootstrap,foundation,awesome,javascript,jquery,jqueryui,jquerym,angularjs,backbone,marionette,meteor,moo,prototype,ember,lodash,underscore,sencha,extjs,knockout,zepto,cordova,phonegap,yui")
+     (jade-mode . "jade")
+     (java-mode . "java,javafx,grails,groovy,playjava,spring,cvj,processing,javadoc")
+     (js2-mode . "javascript,backbone,angularjs")
+     (js3-mode . "nodejs")
+     (kotlin-mode . "kotlin,droid")
+     (latex-mode . "latex")
+     (less-css-mode . "less")
+     (lua-mode . "lua,corona")
+     (markdown-mode . "markdown")
+     (nginx-mode . "nginx")
+     (objc-mode . "cpp,iphoneos,macosx,appledoc,cocoapods,cocos2dx,cocos2d,cocos3d,kobold2d,sparrow,c,manpages")
+     (perl-mode . "perl,manpages")
+     (php-mode . "php,wordpress,drupal,zend,laravel,yii,joomla,ee,codeigniter,cakephp,phpunit,symfony,typo3,twig,smarty,phpp,html,mysql,sqlite,mongodb,psql,redis")
+     (processing-mode . "processing")
+     (puppet-mode . "puppet")
+     (python-mode . "python3,django,twisted,sphinx,flask,tornado,sqlalchemy,numpy,scipy,saltcvp,psql,bs,requests")
+     (ruby-mode . "ruby,rubygems,rails")
+     (rust-mode . "rust")
+     (sass-mode . "sass,compass,bourbon,neat,css")
+     (scala-mode . "scala,akka,playscala,scaladoc")
+     (sql-mode . "psql,mysql,sqlite,postgis")
+     (stylus-mode . "stylus")
+     (swift-mode . "cpp,iphoneos,macosx,appledoc,cocoapods,cocos2dx,cocos2d,cocos3d,kobold2d,sparrow,c,manpages")
+     (tcl-mode . "tcl")
+     (tuareg-mode . "ocaml")
+     (twig-mode . "twig")
+     (vim-mode . "vim")
+     (web-mode . "html,svg,css,bootstrap,awesome,bulma,color,media")
+     (yaml-mode . "chef,ansible"))))
+#+end_src
+
+** Flycheck
+#+begin_src emacs-lisp
+(use-package flycheck
+  :ensure
+  :hook (python-mode . flycheck-mode)
+  :bind (:map flycheck-mode-map
+              ("C-c C-n" . flycheck-next-error)
+              ("C-c C-p" . flycheck-previous-error)))
+#+end_src
+
+** AI Stuff
+*** ChatGPT
+#+begin_src emacs-lisp
+(use-package chatgpt-shell
+  :ensure t
+  :bind (:map shell-maker-map
+              ("RET" . newline)
+              ("M-RET" . shell-maker-return))
+  :init
+  (setq shell-maker-history-path (concat user-emacs-directory "var/"))
+  :custom
+  (chatgpt-shell-openai-key
+   (auth-source-pick-first-password :host "api.openai.com")))
+#+end_src
+*** Dall-E
+
+#+begin_src emacs-lisp
+(use-package dall-e-shell
+  :ensure t
+  :custom
+  (dall-e-shell-openai-key
+      (auth-source-pick-first-password :host "api.openai.com")))
 #+end_src
 
 * 1st Party Modes

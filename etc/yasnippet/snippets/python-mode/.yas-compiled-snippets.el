@@ -6,7 +6,8 @@
                        ("pudb" "import pudb;pudb.set_trace()$0\n" "pudb" nil nil nil "/Users/gopar/.emacs.d/etc/yasnippet/snippets/python-mode/pudb.yasnippet" nil nil)
                        ("pdb" "import pdb;pdb.set_trace()$0\n" "pdb" nil nil nil "/Users/gopar/.emacs.d/etc/yasnippet/snippets/python-mode/pdb.yasnippet" nil nil)
                        ("meta" "class Meta:\n    $0" "Creates Meta class" nil nil nil "/Users/gopar/.emacs.d/etc/yasnippet/snippets/python-mode/meta.yasnippet" nil nil)
+                       ("d" "'''\n$0\n'''\n" "docstring" nil nil nil "/Users/gopar/.emacs.d/etc/yasnippet/snippets/python-mode/docstrings.yasnippet" nil nil)
                        ("bp" "breakpoint()$0\n" "breakpoint" nil nil nil "/Users/gopar/.emacs.d/etc/yasnippet/snippets/python-mode/breakpoint.yasnippet" nil nil)))
 
 
-;;; Do not edit! File generated at Thu May  4 21:30:30 2023
+;;; Do not edit! File generated at Fri May  5 11:06:02 2023
