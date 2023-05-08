@@ -1692,7 +1692,54 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
                                                       bfd-celery-slow-downloader-queue
                                                       bfd-celery-launcher-queue
                                                       bfd-flower
-                                                      bfd-runserver)))
+                                                      bfd-runserver))
+  :init
+  ;; Manually add this bit in since this PR isn't ever going to get merged:
+  ;; https://github.com/davidmiller/dizzee/pull/5/files
+  (defmacro* dz-defservice (service command &key port args cd)
+    "Expand to be an interactive dz service e.g. sse/backend/whitelabel
+Args are expected to be: `name` `command` `args` `dont-pop`
+where name and command are strings, args a list, and dont-pop optional.
+
+This macro will provide the following functions:
+
+name-start
+name-stop
+name-restart
+name-running-p
+
+\(dz-defservice backend \"~/scripts/backend_server\") :port 8080)
+"
+    (with-service-name
+     service
+     (let* ((start (concat service-name "-start"))
+            (stop (concat service-name "-stop")))
+       (if port
+           (puthash service-name port dz-service-hash))
+       `(progn
+          (defun ,(intern start) ()
+            "Start the service"
+            (interactive)
+            (message "starting...")
+            ,(let ((run `(dz-comint-pop ,service-name ,command (list ,@args))))
+               (if cd
+                   `(let ((default-directory ,cd)) ,run)
+                 run)))
+          (defun ,(intern stop) ()
+            "Stop the service"
+            (interactive)
+            (message "stopping")
+            (dz-subp-stop ,service-name))
+          (defun ,(intern (concat service-name "-restart")) ()
+            "Restart the service..."
+            (interactive)
+            (message "Restarting...")
+            (,(intern stop))
+            (run-with-timer 1 nil ',(intern start) ))
+          (defun ,(intern (concat service-name "-running-p")) ()
+            "Determine whether we're running or not"
+            (dz-xp (get-buffer-process ,(concat "*" service-name "*"))))))))
+  )
 #+end_src
 
 ** String Inflection
