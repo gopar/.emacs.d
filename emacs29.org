@@ -796,6 +796,8 @@ Defer visual commands to veterm instead of shell
 (use-package eshell-vterm
   :ensure
   :after eshell
+  :bind (:map vterm-mode-map
+         ("C-q" . vterm-send-next-key))
   :config
   (eshell-vterm-mode)
   :init
@@ -833,6 +835,14 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
   (venv-initialize-eshell)
   (setq venv-location '("~/personal/arcade-traxx/traxx"
                         "~/work/fiagents/env/")))
+#+end_src
+
+** GUD (Debugger)
+#+begin_src emacs-lisp
+(use-package gud
+  :ensure nil
+  :custom
+  (gud-pdb-command-name "PYTHONBREAKPOINT=pdb.set_trace python -m pdb"))
 #+end_src
 
 ** Compile
@@ -1323,17 +1333,6 @@ With ARG, revert back to normal iedit."
   :bind (("C-\\" . er/expand-region)))
 #+end_src
 
-** Windmove
-Window Management
-#+begin_src emacs-lisp
-(use-package windmove
-  :ensure nil
-  :hook ((minibuffer-setup . (lambda () (interactive) (windmove-mode -1)))
-         (minibuffer-exit . windmove-mode))
-  :init
-  (windmove-default-keybindings))
-#+end_src
-
 ** So Long
 #+begin_src emacs-lisp
 (use-package so-long
@@ -1743,7 +1742,9 @@ Also start type break mode after start up since I might just be dragging along
          (after-init . type-break-mode))
   :custom
   ;; Setting interval of that of a pomodoro session
-  (type-break-interval (* 15 60)))
+  (type-break-interval (* 15 60))
+  (type-break-keystroke-threshold '(nil . 2625))
+  )
 #+end_src
 
 ** Compact Docstring
