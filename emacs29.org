@@ -1613,7 +1613,9 @@ With ARG, revert back to normal iedit."
   (js-jsx-indent-level 2)
   :hook (js-mode . (lambda ()
                      (define-key js-mode-map (kbd ";") 'easy-camelcase)
-                     (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase))))
+                     (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase)
+                     ;; Set this to nil to avoid whitespace issues with tabs
+                     (setq-local indent-tabs-mode nil))))
 #+end_src
 
 ** Pulse
