@@ -1,4 +1,5 @@
 alias tithe ledger bal Liabilities:Tithe -V $*
+alias taxes ledger bal Liabilities:Taxes -V $*
 alias rmpyc /usr/bin/find . -name *pyc -delete
 alias oc /usr/bin/find . -name "*.org" | xargs wc -l
 alias netw ledger balance ^assets ^liabilities -V -R $*

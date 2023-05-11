@@ -282,7 +282,7 @@ Main configuration
   ;; See down arrow instead of "..." when we have subtrees
   ;; (org-ellipsis "⤵")
   ;; catch invisible edit
-  ( org-catch-invisible-edits 'error)
+  ( org-catch-invisible-edits 'show-and-error)
   ;; Only useful for property searching only but can slow down search
   (org-use-property-inheritance t)
   ;; Count all children TODO's not just direct ones
@@ -295,20 +295,20 @@ Main configuration
   ;; Where should notes go to? Dont even use them tho
   (org-default-notes-file (concat org-directory "notes.org"))
   ;; List of default tags to choose from
-  (org-tag-alist
-   '(("break" . ?b) ;; Something i can do during my pomodoro break
-     ("freetime" . ?f) ;; To do whenever i have time to kill
-     ("emacs" . ?e) ;; emacs related project/task
-     ("calls" . ?c) ;; involves calling humans
-     ("moneyMaker" . ?m) ;; Things that potentially bring in money
-     ("driving" . ?d) ;; Have to drive to X
-     ("project" . ?p) ;; To let me know this is part of a project
-     ("someday" . ?s) ;; Eventually i'll do this. I'll revisit this weekly thanks to GTD
-     ("misc" . ?x) ;; Anything that doesn't fit these tags
-     ("health" . ?h) ;; Health related things. Mucho important
-     ("watch" . ?w) ;; Things to watch. Might never get to these sigh
-     ("fun" . ?g) ;; FUN
-     ))
+  ;; (org-tag-alist
+  ;;  '(("break" . ?b) ;; Something i can do during my pomodoro break
+  ;;    ("freetime" . ?f) ;; To do whenever i have time to kill
+  ;;    ("emacs" . ?e) ;; emacs related project/task
+  ;;    ("calls" . ?c) ;; involves calling humans
+  ;;    ("moneyMaker" . ?m) ;; Things that potentially bring in money
+  ;;    ("driving" . ?d) ;; Have to drive to X
+  ;;    ("project" . ?p) ;; To let me know this is part of a project
+  ;;    ("someday" . ?s) ;; Eventually i'll do this. I'll revisit this weekly thanks to GTD
+  ;;    ("misc" . ?x) ;; Anything that doesn't fit these tags
+  ;;    ("health" . ?h) ;; Health related things. Mucho important
+  ;;    ("watch" . ?w) ;; Things to watch. Might never get to these sigh
+  ;;    ("fun" . ?g) ;; FUN
+  ;;    ))
   ;; The right side of | indicates the DONE states
   (org-todo-keywords
    '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i!)" "WAITING(w@/@)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(p@)")))
@@ -820,8 +820,7 @@ Defer visual commands to veterm instead of shell
   (python-shell-interpreter "python")
   (python-shell-interpreter-args "")
   (python-forward-sexp-function nil)
-  :config
-  (add-to-list 'python-shell-completion-native-disabled-interpreters "python"))
+  (python-shell-completion-native-disabled-interpreters '("python" "pypy")))
 #+end_src
 
 *** Virtualenv
@@ -835,6 +834,15 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
   (venv-initialize-eshell)
   (setq venv-location '("~/personal/arcade-traxx/traxx"
                         "~/work/fiagents/env/")))
+#+end_src
+
+*** Black
+
+#+begin_src emacs-lisp
+(use-package blacken
+  :ensure nil
+  :hook (python-mode . blackend-mode)
+  )
 #+end_src
 
 ** GUD (Debugger)
@@ -893,7 +901,13 @@ The faces aren't showing up :/
   (ispell-local-dictionary nil)
   (ispell-extra-args '("--sug-mode=ultra" "--lang=en_US"
                        "--run-together" "--run-together-limit=16"
-                       "--camel-case")))
+                       "--camel-case"))
+  :init
+  (defun gopar/add-word-to-dictionary ()
+    (interactive)
+    (let ((word (word-at-point)))
+      (append-to-file word nil ispell-personal-dictionary)
+      (message "Added '%s' to %s" word ispell-personal-dictionary))))
 
 (use-package flyspell
   :ensure nil
@@ -1938,7 +1952,8 @@ Frames: _f_rame new  _df_ delete
   (setq shell-maker-history-path (concat user-emacs-directory "var/"))
   :custom
   (chatgpt-shell-openai-key
-   (auth-source-pick-first-password :host "api.openai.com")))
+   (auth-source-pick-first-password :host "api.openai.com"))
+  (chatgpt-shell-transmitted-context-length 5))
 #+end_src
 *** Dall-E
 
@@ -1948,6 +1963,69 @@ Frames: _f_rame new  _df_ delete
   :custom
   (dall-e-shell-openai-key
       (auth-source-pick-first-password :host "api.openai.com")))
+#+end_src
+
+** Presentation
+#+begin_src emacs-lisp
+(use-package org-present
+  :ensure t
+  :hook ((org-present-mode . gopar/org-present-start)
+         (org-present-mode-quit . gopar/org-present-end))
+  :init
+  (defun gopar/org-present-start ()
+    ; Tweak font sizes
+    (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                       (header-line (:height 4.0) variable-pitch)
+                                       (org-document-title (:height 1.75) org-document-title)
+                                       (org-code (:height 1.55) org-code)
+                                       (org-verbatim (:height 1.55) org-verbatim)
+                                       (org-block (:height 1.25) org-block)
+                                       (org-block-begin-line (:height 0.7) org-block)))
+
+    ;; Set a blank header line string to create blank space at the top
+    (setq header-line-format " ")
+
+    ;; Display inline images automatically
+    (org-display-inline-images)
+    (visual-fill-column-mode 1)
+    (visual-line-mode 1)
+    (read-only-mode))
+
+  (defun gopar/org-present-end ()
+    ;; Reset font customizations
+    (setq-local face-remapping-alist '((default variable-pitch default)))
+
+    ;; Clear the header line string so that it isn't displayed
+    (setq header-line-format nil)
+
+    ;; Stop displaying inline images
+    (org-remove-inline-images)
+    (visual-fill-column-mode -1)
+    (visual-line-mode -1)
+    (read-only-mode -1))
+
+  (defun my/org-present-prepare-slide (buffer-name heading)
+  ;; Show only top-level headlines
+  (org-overview)
+
+  ;; Unfold the current entry
+  (org-show-entry)
+
+  ;; Show only direct subheadings of the slide but don't expand them
+  (org-show-children))
+
+  (add-hook 'org-present-after-navigate-functions 'my/org-present-prepare-slide))
+#+end_src
+
+** Visual Fill Column
+Only being used with =org-present=
+
+#+begin_src emacs-lisp
+(use-package visual-fill-column
+  :ensure t
+  :custom
+  (visual-fill-column-width 120)
+  (visual-fill-column-center-text t))
 #+end_src
 
 * 1st Party Modes
