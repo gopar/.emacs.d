@@ -841,7 +841,7 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
 #+begin_src emacs-lisp
 (use-package blacken
   :ensure nil
-  :hook (python-mode . blackend-mode)
+  :hook (python-mode . blacken-mode)
   )
 #+end_src
 
@@ -906,7 +906,7 @@ The faces aren't showing up :/
   (defun gopar/add-word-to-dictionary ()
     (interactive)
     (let ((word (word-at-point)))
-      (append-to-file word nil ispell-personal-dictionary)
+      (append-to-file (concat word "\n") nil ispell-personal-dictionary)
       (message "Added '%s' to %s" word ispell-personal-dictionary))))
 
 (use-package flyspell
@@ -2074,7 +2074,6 @@ Stuff I've made for myself that are modes
   :load-path "lisp/modes/boolcase"
   :hook (python-mode . boolcase-mode))
 #+end_src
-
 
 * End
 #+begin_src emacs-lisp
