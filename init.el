@@ -3,8 +3,7 @@
       package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                          ("nongnu" . "https://elpa.nongnu.org/nongnu/")
                          ("melpa" . "https://melpa.org/packages/")
-                         ;; ("org" . "https://orgmode.org/elpa/")
-                         ))
+                         ("org" . "https://orgmode.org/elpa/")))
 ;; (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
 (package-initialize)
 
@@ -17,11 +16,11 @@
 
 (if (string= emacs-version "29.0.90")
     ;; (load-file (concat user-emacs-directory "emacs29.el"))
-    (org-babel-load-file (expand-file-name "~/.emacs.d/emacs29.org"))
+    (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
   ;; Do the normal thing
   ;; Have to set it up here, otherwise it won't take effect in org mode doc
   (setq inhibit-startup-echo-area-message "gopar")
-  (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+  (org-babel-load-file (expand-file-name "~/.emacs.d/old_init_files/README.org"))
 
   (custom-set-variables
    ;; custom-set-variables was added by Custom.
@@ -41,4 +40,4 @@
 (add-to-list 'default-frame-alist '(ns-appearance . dark))
 ;; Make it slightly transparent
 (set-frame-parameter (selected-frame) 'alpha '(97 . 100))
-(add-to-list 'default-frame-alist '(alpha . (90 . 90)))
+;; (add-to-list 'default-frame-alist '(alpha . (90 . 90)))
