@@ -841,8 +841,13 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
 #+begin_src emacs-lisp
 (use-package blacken
   :ensure nil
-  :hook (python-mode . blacken-mode)
-  )
+  :hook (python-mode . gopar/enable-blacken-if-found)
+  :init
+  (defun gopar/enable-blacken-if-found ()
+    "Format the current buffer using the 'blacken' program, if available."
+    (interactive)
+    (when (executable-find "black")
+      (blacken-mode))))
 #+end_src
 
 ** GUD (Debugger)

@@ -14,7 +14,7 @@
 
 (setq use-package-always-ensure nil)
 
-(if (string= emacs-version "29.0.90")
+(if (string-prefix-p "29"  emacs-version)
     ;; (load-file (concat user-emacs-directory "emacs29.el"))
     (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
   ;; Do the normal thing
