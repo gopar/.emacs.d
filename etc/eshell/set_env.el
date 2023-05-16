@@ -7,25 +7,30 @@
                ":/usr/sbin/"
                ":/sbin/"
                ":/bin/"
-               ;; pdf tools
-               ;; ":/Library/TeX/texbin/"
-               ;; ":/opt/homebrew/opt/openjdk/bin/"
+               ":/opt/homebrew/opt/openjdk/bin/"
                ":/Applications/Emacs.app/Contents/MacOS/"
                ":/opt/homebrew/bin/"
                ))
-      (PATH-ENV (getenv "PATH")))
+      (PATH-ENV (getenv "PATH"))
+      (non-existing-paths '()))
   (dolist (path paths)
-    (when (not (string-match-p path PATH-ENV))
-      (setenv "PATH" (concat PATH-ENV path)))))
+    ;; When its not in the path and it exists
+    (if (and (not (string-match-p path PATH-ENV)) (file-directory-p (substring path 1)))
+        (setenv "PATH" (concat PATH-ENV path))
+      (add-to-list 'non-existing-paths path)))
+  (message "Unable to add the following paths: %s" non-existing-paths))
 
 ;; Random Stuff
 (setenv "PIPENV_VERBOSITY" "-1")
 (setenv "GIT_PAGER" "")
 (setenv "BAT_PAGER" "")
 
-(setenv "ANDROID_HOME" "/Users/gopar/Library/Android/sdk")
+(when (file-directory-p "/Users/gopar/Library/Android/sdk")
+    (setenv "ANDROID_HOME" "/Users/gopar/Library/Android/sdk"))
 
-(setenv "LIBRARY_PATH" "${LIBRARY_PATH}:/usr/local/lib" t)
+
+(when (file-directory-p "/usr/local/lib")
+  (setenv "LIBRARY_PATH" "${LIBRARY_PATH}:/usr/local/lib" t))
 
 (setenv "EXA_ICON_SPACING" "2") ;; Default is 1
 (setenv "PYTHONBREAKPOINT" "pudb.set_trace")
