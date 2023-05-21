@@ -31,6 +31,32 @@ Not sure if it really matters but for now I'll follow that structure
 
 ;; Default layout (optional)
 (require 'nano-layout)
+
+;; --------------------------
+;; Theme
+(setq nano-font-size 15)
+(require 'nano-faces)
+(require 'nano-theme)
+(require 'nano-theme-dark)
+(require 'nano-theme-light)
+
+(nano-theme-set-dark)
+(call-interactively 'nano-refresh-theme)
+
+;; ;; Nano default settings (optional)
+(require 'nano-defaults)
+
+;; Nano session saving (optional)
+(require 'nano-session)
+
+;; Nano header & mode lines (optional)
+(require 'nano-modeline)
+
+;; Nano key bindings modification (optional)
+;; (require 'nano-bindings)
+
+;; Nano custom mode writier-mode
+(require 'nano-writer)
 #+end_src
 
 * Built-Ins
@@ -352,6 +378,8 @@ Main configuration
   (org-special-ctrl-a/e t)
   (org-insert-heading-respect-content t)
   :hook (org-mode . org-indent-mode)
+  :custom-face
+  (org-scheduled-previously ((t (:foreground "orange"))))
   :config
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -404,7 +432,7 @@ Main configuration
 (use-package org-agenda
   :after org
   :bind (("C-c a" . org-agenda))
-  ;; :hook (org-agenda-finalize . org-agenda-entry-text-mode)
+  :hook (org-agenda-finalize . org-agenda-entry-text-mode)
   :custom
   (org-agenda-tags-column 'auto)
   (org-agenda-window-setup 'only-window)
@@ -886,7 +914,7 @@ eg. *python main.py*"
 ** Winner
 Window Management
 #+begin_src emacs-lisp
-(use-package winner-mode
+(use-package winner
   :ensure nil
   :hook after-init
   :commands (winner-undo winnner-redo))
@@ -1607,7 +1635,7 @@ With ARG, revert back to normal iedit."
 
 ** JS
 #+begin_src emacs-lisp
-(use-package js-mode
+(use-package js
   :bind (:map js-mode-map
               (";" . easy-camelcase)
 
@@ -2076,7 +2104,7 @@ Stuff I've made for myself that are modes
   :hook (python-mode . boolcase-mode))
 #+end_src
 
-* End
+* COMMENT End
 #+begin_src emacs-lisp
 ;; Theme
 (setq nano-font-size 15)
