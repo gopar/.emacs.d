@@ -91,7 +91,8 @@
  '(package-selected-packages
    '(shell-maker ace-window helpful iedit consult-ag dashboard magit-todos org-edna org-pomodoro dockerfile-mode yasnippet virtualenvwrapper which-key typescript-mode visual-fill-column eshell-git-prompt corfu compact-docstrings string-inflection tree-sitter-langs dizzee expand-region marginalia projectile yaml-mode git-gutter rainbow-mode chatgpt-shell dumb-jump flycheck corral avy markdown-mode dash-at-point all-the-icons-dired neotree vertico-posframe ledger-mode hydra eshell-vterm highlight-indentation orderless fancy-compilation vue-mode consult-org-roam pdf-tools dall-e-shell all-the-icons-ibuffer no-littering cape code-compass move-text eshell-syntax-highlighting ibuffer-vc all-the-icons-completion org-present))
  '(safe-local-variable-values
-   '((eval setenv "DJANGO_SETTINGS_MODULE" "config.settings.dev")
+   '((eval setenv "DJANGO_SETTINGS_MODULE" "core.settings")
+     (eval setenv "DJANGO_SETTINGS_MODULE" "config.settings.dev")
      (eval venv-workon "env"))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
