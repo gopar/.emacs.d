@@ -87,13 +87,10 @@
       (null-device . "/dev/null"))
      (eshell-connection-default-profile
       (eshell-path-env-list))))
- '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
+ '(custom-safe-themes
+   '("dbade2e946597b9cda3e61978b5fcc14fa3afa2d3c4391d477bdaeff8f5638c5" default))
  '(package-selected-packages
-   '(shell-maker ace-window helpful iedit consult-ag dashboard magit-todos org-edna org-pomodoro dockerfile-mode yasnippet virtualenvwrapper which-key typescript-mode visual-fill-column eshell-git-prompt corfu compact-docstrings string-inflection tree-sitter-langs dizzee expand-region marginalia projectile yaml-mode git-gutter rainbow-mode chatgpt-shell dumb-jump flycheck corral avy markdown-mode dash-at-point all-the-icons-dired neotree vertico-posframe ledger-mode hydra eshell-vterm highlight-indentation orderless fancy-compilation vue-mode consult-org-roam pdf-tools dall-e-shell all-the-icons-ibuffer no-littering cape code-compass move-text eshell-syntax-highlighting ibuffer-vc all-the-icons-completion org-present))
- '(safe-local-variable-values
-   '((eval setenv "DJANGO_SETTINGS_MODULE" "core.settings")
-     (eval setenv "DJANGO_SETTINGS_MODULE" "config.settings.dev")
-     (eval venv-workon "env"))))
+   '(doom-modeline helpful iedit consult-ag magit-todos org-edna org-pomodoro dockerfile-mode yasnippet virtualenvwrapper which-key typescript-mode visual-fill-column eshell-git-prompt corfu compact-docstrings string-inflection tree-sitter-langs js-doc dizzee expand-region consult-org-roam dashboard projectile yaml-mode chatgpt-shell git-gutter rainbow-mode flycheck ace-window corral dash-at-point all-the-icons-dired code-compass neotree vertico-posframe dall-e-shell markdown-mode ledger-mode hydra eshell-vterm no-littering tao-theme highlight-indentation orderless fancy-compilation vue-mode eshell-syntax-highlighting pdf-tools marginalia dumb-jump all-the-icons-ibuffer move-text ibuffer-vc cape all-the-icons-completion org-present)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

@@ -9,6 +9,7 @@
                ":/bin/"
                ":/opt/homebrew/opt/openjdk/bin/"
                ":/Applications/Emacs.app/Contents/MacOS/"
+               ":/Applications/Firefox.app/Contents/MacOS/"
                ":/opt/homebrew/bin/"
                ))
       (PATH-ENV (getenv "PATH"))

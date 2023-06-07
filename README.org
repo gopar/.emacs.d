@@ -14,51 +14,6 @@ Literate Programming :)
   :ensure t)
 #+end_src
 
-* [[https://github.com/rougier/nano-emacs][Nano Start]]
-Nano documentation shows that nano should be split as:
-
-#+begin_example
-... nano start ...
-... load/define custom user stuff ....
-... finish loading rest of nano config ...
-#+end_example
-
-Not sure if it really matters but for now I'll follow that structure
-
-#+begin_src emacs-lisp
-;; Path to nano emacs modules (mandatory)
-(add-to-list 'load-path "/Users/gopar/personal/nano-emacs")
-
-;; Default layout (optional)
-(require 'nano-layout)
-
-;; --------------------------
-;; Theme
-(setq nano-font-size 15)
-(require 'nano-faces)
-(require 'nano-theme)
-(require 'nano-theme-dark)
-(require 'nano-theme-light)
-
-(nano-theme-set-dark)
-(call-interactively 'nano-refresh-theme)
-
-;; ;; Nano default settings (optional)
-(require 'nano-defaults)
-
-;; Nano session saving (optional)
-(require 'nano-session)
-
-;; Nano header & mode lines (optional)
-(require 'nano-modeline)
-
-;; Nano key bindings modification (optional)
-;; (require 'nano-bindings)
-
-;; Nano custom mode writier-mode
-(require 'nano-writer)
-#+end_src
-
 * Built-Ins
 Going to configure all the built in packages first
 And any third party lib that are related to it will go under them.
@@ -73,6 +28,8 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   :hook ((after-init . pending-delete-mode)
          (after-init . (lambda () (load-file custom-file)))
          (after-init . toggle-frame-maximized)
+         (after-init . (lambda () (scroll-bar-mode -1)))
+         (after-init . (lambda () (window-divider-mode -1)))
          (after-init . gopar/add-env-vars))
   :custom
   ;; flash the frame to represent a bell.
@@ -90,7 +47,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (read-buffer-completion-ignore-case t)
   (completion-cycle-threshold 3)
   (tab-always-indent 'complete)
-  (custom-file "~/.emacs.d/nano-ignoreme.el")
+  (custom-file "~/.emacs.d/ignoreme.el")
 
   :config
   (when (eq system-type 'darwin)
@@ -104,6 +61,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
                 indent-tabs-mode nil
                 fill-column 120
                 tab-width 4)
+  (fset 'yes-or-no-p 'y-or-n-p)
   (prefer-coding-system 'utf-8)
   ;; Uppercase is same as lowercase
   (define-coding-system-alias 'UTF-8 'utf-8)
@@ -113,6 +71,8 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (put 'erase-buffer 'disabled nil)
   ;; C-x n <key> useful stuff
   (put 'narrow-to-region 'disabled nil)
+  (tool-bar-mode -1)
+  (menu-bar-mode -1)
 
   :bind (("C-z" . nil)
          ("C-x C-z" . nil)
@@ -868,7 +828,7 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
 
 #+begin_src emacs-lisp
 (use-package blacken
-  :ensure nil
+  :ensure t
   :hook (python-mode . gopar/enable-blacken-if-found)
   :init
   (defun gopar/enable-blacken-if-found ()
@@ -1131,6 +1091,7 @@ Also includes displaying of them
          ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
          ("M-g m" . consult-mark)
          ("M-g k" . consult-global-mark)
+         ("C-z" . consult-theme)
          :map minibuffer-local-map
          ("M-s" . consult-history)                 ;; orig. next-matching-history-element
          ("M-r" . consult-history)
@@ -1138,6 +1099,7 @@ Also includes displaying of them
          ("b" . consult-project-buffer))
 
   :init
+  (setq consult-themes (remove 'light-blue (remove 'tao (custom-available-themes))))
   (setq consult-project-function (lambda (_) (projectile-project-root)))
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
@@ -1330,11 +1292,10 @@ Color the string of whatever color code they are holding
 (use-package highlight-indentation
   :ensure t
   :hook ((prog-mode . highlight-indentation-mode)
-         ;; Works with themes except with nano?
-         ;; (prog-mode . highlight-indentation-current-column-mode)
-         )
-  :config
-  (set-face-attribute 'highlight-indentation-face nil :background "black"))
+         (prog-mode . highlight-indentation-current-column-mode))
+  ;; :config
+  ;; (set-face-attribute 'highlight-indentation-face nil :background "black")
+  )
 #+end_src
 
 ** Move Text
@@ -1777,7 +1738,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
       (string-inflection-ruby-style-cycle)))))
 #+end_src
 
-** Type Break
+** COMMENT Type Break
 Automatically start a pomodoro session when I exit org-pomodoro since I have a tendency of just
 staying in emacs and losing track of time.
 
@@ -1986,7 +1947,7 @@ Also start type break mode after start up since I might just be dragging along
   (chatgpt-shell-model-versions '("gpt-3.5-turbo" "gpt-4" "gpt-4-0314"))
   )
 #+end_src
-*** Dall-E
+*** COMMENT Dall-E
 
 #+begin_src emacs-lisp
 (use-package dall-e-shell
@@ -2059,6 +2020,60 @@ Only being used with =org-present=
   (visual-fill-column-center-text t))
 #+end_src
 
+** [[https://github.com/seagle0128/doom-modeline/][Doom Modeline]]
+Better UI for Modeline.
+Need to install fonts first by doing this
+
+#+BEGIN_EXAMPLE
+M-x all-the-icons-install-fonts
+#+END_EXAMPLE
+
+
+#+BEGIN_SRC emacs-lisp
+(use-package doom-modeline
+  :ensure t
+  :init (doom-modeline-mode 1)
+  :config (column-number-mode 1)
+  :custom
+  (doom-modeline-height 30)
+  (doom-modeline-window-width-limit nil)
+  (doom-modeline-buffer-file-name-style 'truncate-with-project)
+  (doom-modeline-minor-modes nil)
+  (doom-modeline-enable-word-count nil)
+  (doom-modeline-buffer-encoding nil)
+  (doom-modeline-buffer-modification-icon t)
+  (doom-modeline-env-python-executable "python")
+  ;; needs display-time-mode to be one
+  (doom-modeline-time t)
+  (doom-modeline-vcs-max-length 50)
+  )
+#+END_SRC
+
+** Spacious padding mode
+adds padding around windows and frames
+
+#+begin_src emacs-lisp
+(use-package spacious-padding
+  :ensure t
+  :hook (after-init . spacious-padding-mode)
+  )
+#+end_src
+
+** Themes
+
+*** [[https://github.com/11111000000/tao-theme-emacs][Tao Theme]]
+My favorite theme
+
+#+BEGIN_SRC emacs-lisp
+(use-package tao-theme
+  :ensure t
+  :hook (after-init .  (lambda () (load-theme 'tao-yin t)))
+  :custom
+  (tao-theme-use-boxes t)
+  (tao-theme-use-height nil)
+  (tao-theme-use-sepia nil))
+#+END_SRC
+
 * 1st Party Modes
 Stuff I've made for myself that are modes
 
@@ -2104,30 +2119,9 @@ Stuff I've made for myself that are modes
   :hook (python-mode . boolcase-mode))
 #+end_src
 
-* COMMENT End
+* End
 #+begin_src emacs-lisp
-;; Theme
-(setq nano-font-size 15)
-(require 'nano-faces)
-(require 'nano-theme)
-(require 'nano-theme-dark)
-(require 'nano-theme-light)
-
-(nano-theme-set-dark)
-(call-interactively 'nano-refresh-theme)
-
-;; ;; Nano default settings (optional)
-(require 'nano-defaults)
-
-;; Nano session saving (optional)
-(require 'nano-session)
-
-;; Nano header & mode lines (optional)
-(require 'nano-modeline)
-
-;; Nano key bindings modification (optional)
-;; (require 'nano-bindings)
-
-;; Nano custom mode writier-mode
-(require 'nano-writer)
+(progn
+  (add-to-list 'default-frame-alist `(font . "Hack 15"))
+  (set-face-attribute 'default t :font "Hack 15"))
 #+end_src

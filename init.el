@@ -39,5 +39,5 @@
 (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
 (add-to-list 'default-frame-alist '(ns-appearance . dark))
 ;; Make it slightly transparent
-(set-frame-parameter (selected-frame) 'alpha '(97 . 100))
+;; (set-frame-parameter (selected-frame) 'alpha '(97 . 100))
 ;; (add-to-list 'default-frame-alist '(alpha . (90 . 90)))
