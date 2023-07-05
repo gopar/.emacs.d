@@ -1933,19 +1933,19 @@ Also start type break mode after start up since I might just be dragging along
 ** AI Stuff
 *** ChatGPT
 #+begin_src emacs-lisp
-(use-package chatgpt-shell
-  :ensure t
-  :bind (:map shell-maker-map
-              ("RET" . newline)
-              ("M-RET" . shell-maker-return))
-  :init
-  (setq shell-maker-history-path (concat user-emacs-directory "var/"))
-  :custom
-  (chatgpt-shell-openai-key
-   (auth-source-pick-first-password :host "api.openai.com"))
-  (chatgpt-shell-transmitted-context-length 5)
-  (chatgpt-shell-model-versions '("gpt-3.5-turbo" "gpt-4" "gpt-4-0314"))
-  )
+;; (use-package chatgpt-shell
+;;   :ensure t
+;;   :bind (:map shell-maker-map
+;;               ("RET" . newline)
+;;               ("M-RET" . shell-maker-return))
+;;   :init
+;;   (setq shell-maker-history-path (concat user-emacs-directory "var/"))
+;;   :custom
+;;   (chatgpt-shell-openai-key
+;;    (auth-source-pick-first-password :host "api.openai.com"))
+;;   (chatgpt-shell-transmitted-context-length 5)
+;;   (chatgpt-shell-model-versions '("gpt-3.5-turbo" "gpt-4" "gpt-4-0314"))
+;;   )
 #+end_src
 *** COMMENT Dall-E
 
@@ -1955,6 +1955,13 @@ Also start type break mode after start up since I might just be dragging along
   :custom
   (dall-e-shell-openai-key
       (auth-source-pick-first-password :host "api.openai.com")))
+#+end_src
+*** Auto Git Commit
+#+begin_src emacs-lisp
+(use-package gpt-commit
+  :ensure t
+  :custom
+  (gpt-commit-openai-key (auth-source-pick-first-password :host "api.openai.com")))
 #+end_src
 
 ** Presentation
@@ -2060,7 +2067,6 @@ adds padding around windows and frames
 #+end_src
 
 ** Themes
-
 *** [[https://github.com/11111000000/tao-theme-emacs][Tao Theme]]
 My favorite theme
 
