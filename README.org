@@ -793,17 +793,20 @@ Defer visual commands to veterm instead of shell
 #+end_src
 
 ** Python
+I get some weird auto completion in inferior python shell mode when I leave the default completion
+function. Lets just have in buffer completion
 #+begin_src emacs-lisp
 (use-package python
   :ensure nil
   :bind (:map python-mode-map
               ("C-c C-p" . nil)
               ("C-c C-z" . run-python))
-  :hook (python-mode . (lambda ()
+  :hook ((python-mode . (lambda ()
                          (setq-local forward-sexp-function nil)
                          (make-local-variable 'python-shell-virtualenv-root)
                          (setq completion-at-point '(cape-file cape-dabbrev python-completion-at-point))))
-
+         (inferior-python-mode . (lambda ()
+                                  (setq-local completion-at-point-functions '(t)))))
   :custom
   (python-shell-interpreter "python")
   (python-shell-interpreter-args "")
@@ -837,6 +840,7 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
     (when (executable-find "black")
       (blacken-mode))))
 #+end_src
+
 
 ** GUD (Debugger)
 #+begin_src emacs-lisp
@@ -1933,21 +1937,38 @@ Also start type break mode after start up since I might just be dragging along
 ** AI Stuff
 *** ChatGPT
 #+begin_src emacs-lisp
-;; (use-package chatgpt-shell
-;;   :ensure t
-;;   :bind (:map shell-maker-map
-;;               ("RET" . newline)
-;;               ("M-RET" . shell-maker-return))
-;;   :init
-;;   (setq shell-maker-history-path (concat user-emacs-directory "var/"))
-;;   :custom
-;;   (chatgpt-shell-openai-key
-;;    (auth-source-pick-first-password :host "api.openai.com"))
-;;   (chatgpt-shell-transmitted-context-length 5)
-;;   (chatgpt-shell-model-versions '("gpt-3.5-turbo" "gpt-4" "gpt-4-0314"))
-;;   )
+(use-package chatgpt-shell
+  :ensure t
+  :commands (chatgpt-shell--primary-buffer chatgpt-shell)
+  :init
+  (setq shell-maker-history-path (concat user-emacs-directory "var/"))
+  (defun gopar/chatgpt-shell ()
+    "Open a new dedicated window for chatgpt-shell."
+    (interactive)
+    (if (chatgpt-shell--primary-buffer)
+        (kill-buffer (chatgpt-shell--primary-buffer))
+
+      ;; Create a new window on the right side with size of 60
+      (split-window-horizontally (- (window-width) 60))
+      (other-window 1)
+      (switch-to-buffer (chatgpt-shell--primary-buffer))
+      (chatgpt-shell)
+      ;; Dedicate the window so it cannot be closed
+      (set-window-dedicated-p (selected-window) t)
+      (set-window-parameter (selected-window) 'no-delete-other-windows t)))
+
+  :bind ((:map chatgpt-shell-mode-map
+               ("RET" . newline)
+               ("M-RET" . shell-maker-submit))
+         (:map global-map
+               ("<f6>" . gopar/chatgpt-shell)))
+  :custom
+  (chatgpt-shell-openai-key
+   (auth-source-pick-first-password :host "api.openai.com"))
+  (chatgpt-shell-transmitted-context-length 5)
+  (chatgpt-shell-model-versions '("gpt-3.5-turbo-16k" "gpt-3.5-turbo" "gpt-4")))
 #+end_src
-*** COMMENT Dall-E
+*** Dall-E
 
 #+begin_src emacs-lisp
 (use-package dall-e-shell
@@ -1960,6 +1981,8 @@ Also start type break mode after start up since I might just be dragging along
 #+begin_src emacs-lisp
 (use-package gpt-commit
   :ensure t
+  :hook (git-commit-setup . gpt-commit-message)
+  :commands gpt-commit-message
   :custom
   (gpt-commit-openai-key (auth-source-pick-first-password :host "api.openai.com")))
 #+end_src
@@ -2130,4 +2153,20 @@ Stuff I've made for myself that are modes
 (progn
   (add-to-list 'default-frame-alist `(font . "Hack 15"))
   (set-face-attribute 'default t :font "Hack 15"))
+
+(defun open-chatgpt-shell-window ()
+  "Open a new window for chatgpt-shell."
+  (interactive)
+  (let ()
+    ;; Start chatgpt
+    (chatgpt-shell)
+    ;; Create a new window on the right side
+    (split-window-horizontally (- (window-width) 60))
+    ;; Switch to the new window
+    (other-window 1)
+    ;; Switch to chatgpt
+    (switch-to-buffer (chatgpt-shell--primary-buffer))
+    ;; Dedicate the window so it cannot be closed
+    (set-window-dedicated-p (selected-window) t)
+    (set-window-parameter (selected-window) 'no-delete-other-windows t)))
 #+end_src
