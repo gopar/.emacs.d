@@ -1017,7 +1017,11 @@ Also includes displaying of them
 
 ;; just for looks
 (use-package vertico-posframe
-  :ensure t)
+  :ensure t
+  :custom
+  (vertico-posframe-parameters
+   '((left-fringe . 8)
+     (right-fringe . 8))))
 
 (use-package dabbrev
   :custom
@@ -2129,16 +2133,21 @@ My favorite theme
   :ensure t
   :demand
   :hook
+  (after-init . centaur-tabs-mode)
   (dashboard-mode . centaur-tabs-local-mode)
   (term-mode . centaur-tabs-local-mode)
   (calendar-mode . centaur-tabs-local-mode)
   (org-agenda-mode . centaur-tabs-local-mode)
+  :init
+  (setq centaur-tabs-enable-key-bindings t)
   :custom
-  (centaur-tabs-mode t)
   (centaur-tabs-set-icons t)
   (centaur-tabs-set-modified-marker t)
+  (centaur-tabs-set-bar 'over)
   :config
-  (centaur-tabs-group-by-projectile-project))
+  (centaur-tabs-group-by-projectile-project)
+  ;; Don't show magit buffers as tabs
+  (add-to-list 'centaur-tabs-excluded-prefixes "magit"))
 #+end_src
 
 * 1st Party Modes
