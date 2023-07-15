@@ -2132,6 +2132,10 @@ My favorite theme
 (use-package centaur-tabs
   :ensure t
   :demand
+  :bind
+  (:map centaur-tabs-mode-map
+        ("C-S-<tab>" . centaur-tabs-backward)
+        ("C-<tab>" . centaur-tabs-forward))
   :hook
   (after-init . centaur-tabs-mode)
   (dashboard-mode . centaur-tabs-local-mode)
@@ -2144,6 +2148,7 @@ My favorite theme
   (centaur-tabs-set-icons t)
   (centaur-tabs-set-modified-marker t)
   (centaur-tabs-set-bar 'over)
+  (centaur-tabs-cycle-scope 'tabs)
   :config
   (centaur-tabs-group-by-projectile-project)
   ;; Don't show magit buffers as tabs
