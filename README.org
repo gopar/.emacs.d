@@ -1656,7 +1656,7 @@ With ARG, revert back to normal iedit."
          (org-mode . auto-fill-mode)))
 #+end_src
 
-** Neotree
+** COMMENT Neotree
 #+begin_src emacs-lisp
 (use-package neotree
   :ensure t
@@ -1668,6 +1668,17 @@ With ARG, revert back to normal iedit."
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
   (neo-show-hidden-files t))
+#+end_src
+
+** [[https://github.com/Alexander-Miller/treemacs][Treemacs]]
+Seems to be working now...
+
+#+begin_src emacs-lisp
+(use-package treemacs
+  :ensure t
+  :bind ("<f5>" . treemacs)
+  :hook
+  (treemacs-mode . treemacs-project-follow-mode))
 #+end_src
 
 ** Dizze
@@ -1771,10 +1782,10 @@ Also start type break mode after start up since I might just be dragging along
 ** PDF Tools
 #+begin_src emacs-lisp
 (use-package pdf-tools
-  :ensure
-  :hook (find-file . my-pdf-view-mode-hook)
+  :ensure t
+  :hook (find-file . gopar/my-pdf-view-mode-hook)
   :init
-  (defun my-pdf-view-mode-hook ()
+  (defun gopar/my-pdf-view-mode-hook ()
     "Enable `pdf-view-mode' for PDF files."
     (when (and buffer-file-name (string-suffix-p ".pdf" buffer-file-name))
       (pdf-view-mode))))
@@ -1802,7 +1813,7 @@ Also start type break mode after start up since I might just be dragging along
  Split: _v_ert _x_:horz
  Move Splitter(Vim): _J_ _K_ _H_ _L_
  Delete: _o_nly  _da_ce
- Move: _s_wap _a_ce _B_alance windows
+ Move: _j_ _k_ _h_ _l_ _s_wap _a_ce _B_alance windows
  Winner:  _u_ndo  _r_edo _b_uffer"
   ("h" windmove-left)
   ("j" windmove-down)
@@ -1935,7 +1946,7 @@ Also start type break mode after start up since I might just be dragging along
 #+end_src
 
 ** AI Stuff
-*** ChatGPT
+*** [[https://github.com/xenodium/chatgpt-shell][ChatGPT]]
 #+begin_src emacs-lisp
 (use-package chatgpt-shell
   :ensure t
@@ -1983,8 +1994,9 @@ Also start type break mode after start up since I might just be dragging along
   :ensure t
   :hook (git-commit-setup . gpt-commit-message)
   :commands gpt-commit-message
-  :custom
-  (gpt-commit-openai-key (auth-source-pick-first-password :host "api.openai.com")))
+  :init
+  ;; For some reason putting it in custom doesn't always work???
+  (setq gpt-commit-openai-key (auth-source-pick-first-password :host "api.openai.com")))
 #+end_src
 
 ** Presentation
@@ -2079,7 +2091,7 @@ M-x all-the-icons-install-fonts
   )
 #+END_SRC
 
-** Spacious padding mode
+** [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
 adds padding around windows and frames
 
 #+begin_src emacs-lisp
@@ -2096,12 +2108,38 @@ My favorite theme
 #+BEGIN_SRC emacs-lisp
 (use-package tao-theme
   :ensure t
-  :hook (after-init .  (lambda () (load-theme 'tao-yin t)))
+  ;; :hook (after-init .  (lambda () (load-theme 'tao-yin t)))
   :custom
   (tao-theme-use-boxes t)
   (tao-theme-use-height nil)
   (tao-theme-use-sepia nil))
 #+END_SRC
+*** [[https://github.com/idlip/haki][Haki]]
+
+#+begin_src emacs-lisp
+(use-package haki-theme
+  :ensure t
+  :hook (after-init .  (lambda () (load-theme 'haki t))))
+#+end_src
+
+** [[https://github.com/ema2159/centaur-tabs][Centaur Tabs]]
+
+#+begin_src emacs-lisp
+(use-package centaur-tabs
+  :ensure t
+  :demand
+  :hook
+  (dashboard-mode . centaur-tabs-local-mode)
+  (term-mode . centaur-tabs-local-mode)
+  (calendar-mode . centaur-tabs-local-mode)
+  (org-agenda-mode . centaur-tabs-local-mode)
+  :custom
+  (centaur-tabs-mode t)
+  (centaur-tabs-set-icons t)
+  (centaur-tabs-set-modified-marker t)
+  :config
+  (centaur-tabs-group-by-projectile-project))
+#+end_src
 
 * 1st Party Modes
 Stuff I've made for myself that are modes
@@ -2153,20 +2191,4 @@ Stuff I've made for myself that are modes
 (progn
   (add-to-list 'default-frame-alist `(font . "Hack 15"))
   (set-face-attribute 'default t :font "Hack 15"))
-
-(defun open-chatgpt-shell-window ()
-  "Open a new window for chatgpt-shell."
-  (interactive)
-  (let ()
-    ;; Start chatgpt
-    (chatgpt-shell)
-    ;; Create a new window on the right side
-    (split-window-horizontally (- (window-width) 60))
-    ;; Switch to the new window
-    (other-window 1)
-    ;; Switch to chatgpt
-    (switch-to-buffer (chatgpt-shell--primary-buffer))
-    ;; Dedicate the window so it cannot be closed
-    (set-window-dedicated-p (selected-window) t)
-    (set-window-parameter (selected-window) 'no-delete-other-windows t)))
 #+end_src
