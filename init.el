@@ -13,29 +13,12 @@
   (package-install 'use-package))
 
 (setq use-package-always-ensure nil)
+;; Have to set it up here, otherwise it won't take effect in org mode doc
+(setq inhibit-startup-echo-area-message "gopar")
 
-(if (string-prefix-p "29"  emacs-version)
-    ;; (load-file (concat user-emacs-directory "emacs29.el"))
-    (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
-  ;; Do the normal thing
-  ;; Have to set it up here, otherwise it won't take effect in org mode doc
-  (setq inhibit-startup-echo-area-message "gopar")
-  (org-babel-load-file (expand-file-name "~/.emacs.d/old_init_files/README.org"))
+(org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
 
-  (custom-set-variables
-   ;; custom-set-variables was added by Custom.
-   ;; If you edit it by hand, you could mess it up, so be careful.
-   ;; Your init file should contain only one such instance.
-   ;; If there is more than one, they won't work right.
-   '(package-selected-packages '(use-package)))
-  (custom-set-faces
-   ;; custom-set-faces was added by Custom.
-   ;; If you edit it by hand, you could mess it up, so be careful.
-   ;; Your init file should contain only one such instance.
-   ;; If there is more than one, they won't work right.
-   )
-  )
-
+;; Mac only
 (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
 (add-to-list 'default-frame-alist '(ns-appearance . dark))
 ;; Make it slightly transparent
