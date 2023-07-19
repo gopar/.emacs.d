@@ -2207,10 +2207,17 @@ Only difference from original function is that there is special treatment for es
   (centaur-tabs-set-bar 'over)
   (centaur-tabs-cycle-scope 'tabs)
   :config
-  ;; (centaur-tabs-group-by-projectile-project)
-  ;; Don't show magit buffers as tabs
+    ;; Don't show magit buffers as tabs
   (add-to-list 'centaur-tabs-excluded-prefixes "magit")
   (add-to-list 'centaur-tabs-excluded-prefixes "*chatgpt"))
+#+end_src
+
+** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
+#+begin_src emacs-lisp
+(use-package fill-function-arguments
+  :ensure t
+  :bind (:map prog-mode-map
+              ("M-q" . fill-function-arguments-dwim)))
 #+end_src
 
 * 1st Party Modes
