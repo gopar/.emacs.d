@@ -841,7 +841,6 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
       (blacken-mode))))
 #+end_src
 
-
 ** GUD (Debugger)
 #+begin_src emacs-lisp
 (use-package gud
@@ -2218,6 +2217,15 @@ Only difference from original function is that there is special treatment for es
   :ensure t
   :bind (:map prog-mode-map
               ("M-q" . fill-function-arguments-dwim)))
+#+end_src
+
+** [[https://github.com/roman/golden-ratio.el][Golden Ration]]
+
+Use `golden-ratio-toggle-widescreen` if splits are too wides
+#+begin_src emacs-lisp
+(use-package golden-ratio
+  :ensure t
+  :hook (after-init . golden-ratio-mode))
 #+end_src
 
 * 1st Party Modes
