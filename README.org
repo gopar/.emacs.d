@@ -26,7 +26,6 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   :ensure nil
   :defer
   :hook ((after-init . pending-delete-mode)
-         (after-init . (lambda () (load-file custom-file)))
          (after-init . toggle-frame-maximized)
          (after-init . (lambda () (scroll-bar-mode -1)))
          (after-init . (lambda () (window-divider-mode -1)))
@@ -50,6 +49,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (custom-file "~/.emacs.d/ignoreme.el")
 
   :config
+  (load custom-file)
   (when (eq system-type 'darwin)
     (setq mac-option-key-is-meta nil
           mac-command-key-is-meta t
@@ -392,11 +392,13 @@ Main configuration
 (use-package org-agenda
   :after org
   :bind (("C-c a" . org-agenda))
-  :hook (org-agenda-finalize . org-agenda-entry-text-mode)
+  ;; :hook (org-agenda-finalize . org-agenda-entry-text-mode)
   :custom
   (org-agenda-tags-column 'auto)
   (org-agenda-window-setup 'only-window)
   (org-agenda-restore-windows-after-quit t)
+  (org-agenda-log-mode-items '(closed clock state))
+  ;; (org-agenda-start-with-log-mode '(closed clock state))
   (org-agenda-files "~/.emacs.d/org/agenda-files.org")
   ;; (org-agenda-todo-ignore-scheduled 'future)
   ;; TODO entries that can't be marked as done b/c of children are shown as dimmed in agenda view
@@ -439,7 +441,11 @@ Main configuration
      ("g" "Goals: 12 Week Year"
       ((agenda "")
        (todo "IN-PROGRESS|WAITING"))
-      ((org-agenda-sorting-strategy '(habit-up priority-down category-up)) (org-agenda-tag-filter-preset '("+12WY"))))
+      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))
+       (org-agenda-tag-filter-preset '("+12WY"))
+       (org-agenda-start-with-log-mode '(closed clock state))
+       (org-agenda-archives-mode t)
+       ))
 
      ("r" "Weekly Review"
       ((agenda "")
@@ -1088,6 +1094,7 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :after projectile
+  :hook (after-init . (lambda () (load-theme (nth (random (length consult-themes)) consult-themes))))
   :bind (("C-s" . gopar/consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
@@ -1106,7 +1113,25 @@ Also includes displaying of them
          ("b" . consult-project-buffer))
 
   :init
-  (setq consult-themes (remove 'light-blue (remove 'tao (custom-available-themes))))
+  (defun remove-items (x y)
+    (setq y (cl-remove-if (lambda (item) (memq item x)) y))
+    y)
+
+  (setq gopar/white-themes '())
+  (setq gopar/black-themes '())
+  ;; Any themes that are incomplete/lacking
+  (setq gopar/themes-blacklisted '(
+                                   ;; doom-tomorrow-night
+                                   ;; doom-rougue
+                                   ;; doom-acario-light
+                                   ;; doom-acario-dark
+                                   ;; doom-manegarm
+                                   ;; doom-monokai-octagon
+                                   tao
+                                   light-blue
+                                   haki
+                                   ))
+  (setq consult-themes (remove-items gopar/themes-blacklisted (custom-available-themes)))
   (setq consult-project-function (lambda (_) (projectile-project-root)))
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
@@ -1702,6 +1727,8 @@ Seems to be working now...
 (use-package treemacs
   :ensure t
   :bind ("<f5>" . treemacs)
+  :custom
+  (treemacs-is-never-other-window t)
   :hook
   (treemacs-mode . treemacs-project-follow-mode))
 #+end_src
@@ -2133,20 +2160,35 @@ My favorite theme
 #+BEGIN_SRC emacs-lisp
 (use-package tao-theme
   :ensure t
-  ;; :hook (after-init .  (lambda () (load-theme 'tao-yin t)))
   :custom
   (tao-theme-use-boxes t)
   (tao-theme-use-height nil)
   (tao-theme-use-sepia nil))
 #+END_SRC
-*** [[https://github.com/idlip/haki][Haki]]
+*** [[https://github.com/motform/stimmung-themes][Stimmung]]
+#+begin_src emacs-lisp
+(use-package stimmung-themes
+  :ensure t)
+#+end_src
+*** [[https://github.com/doomemacs/themes][Doom Themes]]
+#+begin_src emacs-lisp
+(use-package doom-themes
+  :ensure t
+  :config
+  (doom-themes-org-config)
+  (doom-themes-visual-bell-config))
+#+end_src
+
+** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
-(use-package haki-theme
+(use-package solaire-mode
   :ensure t
-  :hook (after-init .  (lambda () (load-theme 'haki t))))
+  :hook (after-init . solaire-global-mode)
+  :config
+  (push '(treemacs-window-background-face . solaire-default-face) solaire-mode-remap-alist)
+  (push '(treemacs-hl-line-face . solaire-hl-line-face) solaire-mode-remap-alist))
 #+end_src
-*** Doom Themes
 
 ** [[https://github.com/ema2159/centaur-tabs][Centaur Tabs]]
 
