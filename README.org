@@ -790,7 +790,7 @@ Stolen from aweshell."
 #+end_src
 
 *** Eshell vterm
-Defer visual commands to veterm instead of shell
+Defer visual commands to vterm instead of shell
 #+begin_src emacs-lisp
 (use-package eshell-vterm
   :ensure
@@ -815,7 +815,7 @@ function. Lets just have in buffer completion
   :hook ((python-mode . (lambda ()
                          (setq-local forward-sexp-function nil)
                          (make-local-variable 'python-shell-virtualenv-root)
-                         (setq completion-at-point '(cape-file cape-dabbrev python-completion-at-point))))
+                         (setq-local completion-at-point-functions '( cape-file python-completion-at-point cape-dabbrev))))
          (inferior-python-mode . (lambda ()
                                   (setq-local completion-at-point-functions '(t)))))
   :custom
@@ -2009,6 +2009,7 @@ Also start type break mode after start up since I might just be dragging along
 (use-package chatgpt-shell
   :ensure t
   :commands (chatgpt-shell--primary-buffer chatgpt-shell)
+  :hook (chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
   :init
   (setq shell-maker-history-path (concat user-emacs-directory "var/"))
   (defun gopar/chatgpt-shell ()
@@ -2172,17 +2173,24 @@ My favorite theme
   (tao-theme-use-sepia nil))
 #+END_SRC
 *** [[https://github.com/motform/stimmung-themes][Stimmung]]
+Plain Dark/white theme
 #+begin_src emacs-lisp
 (use-package stimmung-themes
   :ensure t)
 #+end_src
 *** [[https://github.com/doomemacs/themes][Doom Themes]]
+Themes I like
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
   :config
   (doom-themes-org-config)
   (doom-themes-visual-bell-config))
+#+end_src
+*** [[https://github.com/idlip/haki][Haki]]
+A colorful theme that I actually like
+#+begin_src emacs-lisp
+(use-package haki-theme :ensure t)
 #+end_src
 
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]

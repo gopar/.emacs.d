@@ -7,11 +7,6 @@
 ;; (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
 (package-initialize)
 
-;; Bootstrap `use-package'
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-
 (setq use-package-always-ensure nil)
 ;; Have to set it up here, otherwise it won't take effect in org mode doc
 (setq inhibit-startup-echo-area-message "gopar")
