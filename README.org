@@ -835,7 +835,9 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
   :init
   (venv-initialize-eshell)
   (setq venv-location '("~/personal/arcade-traxx/traxx"
-                        "~/work/fiagents/env/")))
+                        "~/work/fiagents/env/"
+                        "~/work/archimedes/venv/"
+                        )))
 #+end_src
 
 *** Black
@@ -850,6 +852,27 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
     (interactive)
     (when (executable-find "black")
       (blacken-mode))))
+#+end_src
+
+*** [[https://github.com/statmobile/pydoc][Pydoc]]
+Required Jedi to work properly
+
+#+begin_src emacs-lisp
+(use-package pydoc
+  :ensure t
+  :bind (:map python-mode-map
+              ("C-c C-d" . gopar/pydoc-at-point))
+  :init
+  (defun gopar/pydoc-at-point ()
+    "Display pydoc in a dedicated window.
+Calling `gopar/pydoc-at-point' displays the pydoc in a new dedicated window.
+Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
+    (interactive)
+    (if (not (eq current-prefix-arg nil))
+        (when (get-buffer-window "*pydoc*")
+          (delete-window (get-buffer-window "*pydoc*")))
+      (pydoc-at-point)
+      (set-window-dedicated-p (get-buffer-window "*pydoc*") t))))
 #+end_src
 
 ** GUD (Debugger)
@@ -1099,7 +1122,8 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :after projectile
-  :hook (after-init . (lambda () (load-theme (nth (random (length consult-themes)) consult-themes))))
+  :hook (after-init . (lambda () (load-theme 'doom-shades-of-purple) ;; (load-theme (nth (random (length consult-themes)) consult-themes))
+                        ))
   :bind (("C-s" . gopar/consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
@@ -2221,6 +2245,7 @@ A colorful theme that I actually like
   (calendar-mode . centaur-tabs-local-mode)
   (org-agenda-mode . centaur-tabs-local-mode)
   (chatgpt-shell-mode . centaur-tabs-local-mode)
+  (pydoc-mode . centaur-tabs-local-mode)
   ;; (vterm-mode . centaur-tabs-local-mode)
   :init
   (defun gopar/centaur-tabs-projectile-buffer-groups ()
@@ -2264,6 +2289,7 @@ Only difference from original function is that there is special treatment for es
   :config
     ;; Don't show magit buffers as tabs
   (add-to-list 'centaur-tabs-excluded-prefixes "magit")
+  (add-to-list 'centaur-tabs-excluded-prefixes "*pydoc")
   (add-to-list 'centaur-tabs-excluded-prefixes "*chatgpt"))
 #+end_src
 
