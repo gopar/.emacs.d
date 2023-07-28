@@ -7,9 +7,9 @@
 ;; (setq gnutls-algorithm-priority "normal:-vers-tls1.3")
 (package-initialize)
 
-(setq use-package-always-ensure nil)
 ;; Have to set it up here, otherwise it won't take effect in org mode doc
 (setq inhibit-startup-echo-area-message "gopar")
+(setq use-package-always-ensure nil)
 
 (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
 

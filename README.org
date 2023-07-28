@@ -12,6 +12,9 @@ Literate Programming :)
 
 (use-package no-littering
   :ensure t)
+
+(use-package quelpa :ensure t)
+(use-package quelpa-use-package :ensure t)
 #+end_src
 
 * Built-Ins
@@ -1122,8 +1125,7 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :after projectile
-  :hook (after-init . (lambda () (load-theme 'doom-shades-of-purple) ;; (load-theme (nth (random (length consult-themes)) consult-themes))
-                        ))
+  :hook (after-init . (lambda () (load-theme (nth (random (length consult-themes)) consult-themes))))
   :bind (("C-s" . gopar/consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
@@ -1148,6 +1150,20 @@ Also includes displaying of them
 
   (setq gopar/white-themes '())
   (setq gopar/black-themes '())
+  (setq gopar/colorless-thems
+        '(
+          doom-plain-dark
+          doom-plain
+          stimmung-themes-light
+          stimmung-themes-dark
+          tao-yin
+          tao-yang
+          doom-meltbus
+          doom-homage-black
+          doom-homage-white
+          sketch-white
+          sketch-black
+          ))
   ;; Any themes that are incomplete/lacking
   (setq gopar/themes-blacklisted '(
                                    ;; doom-tomorrow-night
@@ -1158,7 +1174,6 @@ Also includes displaying of them
                                    ;; doom-monokai-octagon
                                    tao
                                    light-blue
-                                   haki
                                    ))
   (setq consult-themes (remove-items gopar/themes-blacklisted (custom-available-themes)))
   (setq consult-project-function (lambda (_) (projectile-project-root)))
@@ -1564,10 +1579,18 @@ With ARG, revert back to normal iedit."
   (dashboard-items '(
                      (vocabulary)
                      (recents . 5)
-                     (projects . 5)
+                     ;; (projects . 5)
                      (bookmarks . 5)
                      ;; (agenda . 5)
+                     (monthly-balance)
                      ))
+  (dashboard-item-generators '((monthly-balance . gopar/dashboard-ledger-monthly-balances)
+                              (vocabulary . gopar/dashboard-insert-vocabulary)
+                              (recents . dashboard-insert-recents)
+                              (bookmarks . dashboard-insert-bookmarks)
+                              (projects . dashboard-insert-projects)
+                              (agenda . dashboard-insert-agenda)
+                              (registers . dashboard-insert-registers)))
   :init
   (defun gopar/dashboard-insert-vocabulary (list-size)
     (dashboard-insert-heading "Word of the Day:"
@@ -1586,9 +1609,27 @@ With ARG, revert back to normal iedit."
         (setq random-line (nth (random (length lines)) lines))
         (setq random-line (string-join (split-string random-line) " ")))
       (insert "    " random-line)))
+
+  (defun gopar/dashboard-ledger-monthly-balances (list-size)
+    (interactive)
+    (dashboard-insert-heading "Monthly Balance:"
+                              nil
+                              (all-the-icons-faicon "money"
+                                                    :height 1.2
+                                                    :v-adjust 0.0
+                                                    :face 'dashboard-heading))
+    (insert "\n")
+    (let* ((categories '("Expenses:Food:Restaurants"
+                         "Expenses:Food:Groceries"
+                         "Expenses:Misc"))
+           (current-month (format-time-string "%Y/%m"))
+           (journal-file (expand-file-name "~/personal/finances/main.dat"))
+           (cmd (format "ledger bal --flat --monthly --period %s %s -f %s"
+                        current-month
+                        (mapconcat 'identity categories " ")
+                        journal-file)))
+      (insert (shell-command-to-string cmd))))
   :config
-  (add-to-list 'dashboard-item-generators  '(vocabulary . gopar/dashboard-insert-vocabulary))
-  (add-to-list 'dashboard-items '(vocabulary) t)
   (dashboard-setup-startup-hook))
 #+end_src
 
@@ -2185,6 +2226,7 @@ adds padding around windows and frames
 #+end_src
 
 ** Themes
+Most of these themes are black/white colorless themes
 *** [[https://github.com/11111000000/tao-theme-emacs][Tao Theme]]
 My favorite theme
 
@@ -2199,8 +2241,43 @@ My favorite theme
 *** [[https://github.com/motform/stimmung-themes][Stimmung]]
 Plain Dark/white theme
 #+begin_src emacs-lisp
-(use-package stimmung-themes
-  :ensure t)
+(use-package stimmung-themes :ensure t)
+#+end_src
+*** [[https://github.com/Jannis/emacs-constant-theme][Constant Theme]]
+#+begin_src emacs-lisp
+(use-package constant-theme :ensure t)
+#+end_src
+*** [[https://github.com/thblt/eziam-theme-emacs][Eziam Theme]]
+#+begin_src emacs-lisp
+(use-package eziam-themes :ensure t)
+#+end_src
+*** [[https://github.com/fxn/monochrome-theme.el][Monochrome]]
+#+begin_src emacs-lisp
+(use-package monochrome-theme :ensure t)
+#+end_src
+*** [[https://github.com/jaredgorski/nothing.el][Nothing]]
+#+begin_src emacs-lisp
+(use-package nothing-theme :ensure t)
+#+end_src
+*** [[https://github.com/cryon/almost-mono-themes][Almost Mono]]
+#+begin_src emacs-lisp
+(use-package almost-mono-themes :ensure t)
+#+end_src
+*** [[https://github.com/voloyev/sexy-monochrome-theme][Sexy Monochrome Theme]]
+#+begin_src emacs-lisp
+(use-package sexy-monochrome-theme :ensure t)
+#+end_src
+*** [[https://github.com/belak/emacs-grayscale-theme][GrayScale]]
+#+begin_src emacs-lisp
+(use-package grayscale-theme :ensure t)
+#+end_src
+*** [[https://github.com/dawranliou/sketch-themes][Sketch]]
+#+begin_src emacs-lisp
+(use-package sketch-themes :ensure t)
+#+end_src
+*** [[https://github.com/maio/eink-emacs][Eink]]
+#+begin_src emacs-lisp
+(use-package sketch-themes :ensure t)
 #+end_src
 *** [[https://github.com/doomemacs/themes][Doom Themes]]
 Themes I like
@@ -2290,6 +2367,7 @@ Only difference from original function is that there is special treatment for es
     ;; Don't show magit buffers as tabs
   (add-to-list 'centaur-tabs-excluded-prefixes "magit")
   (add-to-list 'centaur-tabs-excluded-prefixes "*pydoc")
+  (add-to-list 'centaur-tabs-excluded-prefixes "*dashboard")
   (add-to-list 'centaur-tabs-excluded-prefixes "*chatgpt"))
 #+end_src
 

@@ -1,0 +1,7 @@
+;;; Directory Local Variables
+;;; For more information see (info "(emacs) Directory Variables")
+
+((nil . ((eval . (venv-workon "env"))
+         (eval . (setenv "PYTHONPATH" "/Users/gopar/work/fiagents"))
+         (eval . (setq-local pydoc-command "python pydoc_django.py"))
+         (eval . (setenv "DJANGO_SETTINGS_MODULE" "core.settings")))))

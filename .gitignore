@@ -35,3 +35,4 @@ transient/
 eshell/history
 eshell/alias
 emacs29.el
+/quelpa/
