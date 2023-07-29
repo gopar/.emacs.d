@@ -991,6 +991,27 @@ The faces aren't showing up :/
               ("C-." . flyspell-auto-correct-word)))
 #+end_src
 
+** Dictionary
+Look up word at point using dict.org in readme/text/org-mode buffers
+
+#+begin_src emacs-lisp
+(use-package dictionary
+  :ensure nil
+  :bind (:map text-mode-map
+              ("M-." . dictionary-lookup-definition)
+         :map org-mode-map
+              ("M-." . dictionary-lookup-definition)
+         :map markdown-mode-map
+              ("M-." . dictionary-lookup-definition))
+  :init
+  (add-to-list 'display-buffer-alist
+               '("^\\*Dictionary\\*" display-buffer-in-side-window
+                 (side . left)
+                 (window-width . 50)))
+  :custom
+  (dictionary-server "dict.org"))
+#+end_src
+
 ** Minibuffer
 #+begin_src emacs-lisp
 ;; It may also be wise to raise gc-cons-threshold while the minibuffer is active,
