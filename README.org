@@ -36,6 +36,12 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
+  (use-short-answers t)
+  (confirm-nonexistent-file-or-buffer nil)
+  ;; Treat manual switching of buffers the same as programatic
+  (switch-to-buffer-obey-display-actions t)
+  (switch-to-buffer-in-dedicated-window nil)
+  (window-sides-slots '(1 0 3 1))
   ;; Sentences end with 1 space not 2
   (sentence-end-double-space nil)
   ;; make cursor the width of the character it is under
@@ -64,7 +70,8 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
                 indent-tabs-mode nil
                 fill-column 120
                 tab-width 4)
-  (fset 'yes-or-no-p 'y-or-n-p)
+  ;; Replaced in favor for `use-short-answers`
+  ;; (fset 'yes-or-no-p 'y-or-n-p)
   (prefer-coding-system 'utf-8)
   ;; Uppercase is same as lowercase
   (define-coding-system-alias 'UTF-8 'utf-8)
@@ -103,6 +110,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
     (interactive)
     (kill-new (buffer-file-name))
     (message "Copied to file name kill ring"))
+
   (defun gopar/easy-underscore (arg)
     "Convert all inputs of semicolon to an underscore.
 If given ARG, then it will insert an acutal semicolon."
@@ -219,18 +227,24 @@ next potential sentence end"
       (while (re-search-forward gopar-ansi-escape-re end t)
         (replace-match ""))))
 
-  (defun gopar/add-env-vars ()
-  "Setup environment variables that I will need."
-  (load-file "~/.emacs.d/etc/eshell/set_env.el")
-  (setq-default eshell-path-env (getenv "PATH"))
+  (defun gopar/toggle-window-dedication ()
+    "Toggles window dedication in the selected window."
+    (interactive)
+    (set-window-dedicated-p (selected-window)
+                            (not (window-dedicated-p (selected-window)))))
 
-  (setq exec-path (append exec-path
-                          `("/usr/local/bin"
-                            "/usr/bin"
-                            "/usr/sbin"
-                            "/sbin"
-                            "/bin")
-                          (split-string (getenv "PATH") ":")))))
+  (defun gopar/add-env-vars ()
+    "Setup environment variables that I will need."
+    (load-file "~/.emacs.d/etc/eshell/set_env.el")
+    (setq-default eshell-path-env (getenv "PATH"))
+
+    (setq exec-path (append exec-path
+                            `("/usr/local/bin"
+                              "/usr/bin"
+                              "/usr/sbin"
+                              "/sbin"
+                              "/bin")
+                            (split-string (getenv "PATH") ":")))))
 #+end_src
 
 ** Org Mode
@@ -866,16 +880,26 @@ Required Jedi to work properly
   :bind (:map python-mode-map
               ("C-c C-d" . gopar/pydoc-at-point))
   :init
+  (add-to-list 'display-buffer-alist
+            '("^\\*pydoc" display-buffer-in-side-window
+              (slot . 1)
+              (side . right)
+              (window-parameters . ((no-delete-other-windows . t)))
+              (dedicated . t)
+              ;; (window-width . 80)
+              ))
+
   (defun gopar/pydoc-at-point ()
     "Display pydoc in a dedicated window.
 Calling `gopar/pydoc-at-point' displays the pydoc in a new dedicated window.
 Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
     (interactive)
-    (if (not (eq current-prefix-arg nil))
-        (when (get-buffer-window "*pydoc*")
-          (delete-window (get-buffer-window "*pydoc*")))
-      (pydoc-at-point)
-      (set-window-dedicated-p (get-buffer-window "*pydoc*") t))))
+    (let ((default-directory (file-name-directory (buffer-file-name))))
+      (if (not (eq current-prefix-arg nil))
+          (when (get-buffer-window "*pydoc*")
+            (delete-window (get-buffer-window "*pydoc*")))
+        (pydoc-at-point)
+        (set-window-dedicated-p (get-buffer-window "*pydoc*") t)))))
 #+end_src
 
 ** GUD (Debugger)
@@ -895,6 +919,10 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
   (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
   :init
+  (add-to-list 'display-buffer-alist
+     '("\\*compilation\\*" display-buffer-no-window
+        (allow-no-window . t)))
+
   (defun gopar/compilation-buffer-name-function (arg)
     "Rename buffer to whatever command was used.
 eg. *python main.py*"
@@ -918,6 +946,13 @@ Window Management
   :ensure nil
   :hook after-init
   :commands (winner-undo winnner-redo))
+#+end_src
+
+** Executeable
+#+begin_src emacs-lisp
+(use-package executable
+  :ensure nil
+  :hook (after-save . executable-make-buffer-file-executable-if-script-p))
 #+end_src
 
 ** Spelling
@@ -1007,6 +1042,14 @@ The faces aren't showing up :/
   :ensure
   :load t
   :commands projectile-project-root
+  :init
+  (add-to-list 'display-buffer-alist
+               `("^test[-_]" (
+                              display-buffer-in-previous-window
+                              display-buffer-reuse-window
+                              display-buffer-in-direction)
+                 (direction . right)
+                 (reusable-frames . visible)))
   :bind-keymap
   ("C-c p" . projectile-command-map)
 
@@ -1108,6 +1151,17 @@ Also includes displaying of them
   ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
   ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
+  (defun corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
+    (unless (or (bound-and-true-p mct--active)
+                (bound-and-true-p vertico--input)
+                (eq (current-local-map) read-passwd-map))
+      ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
+      (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
+                  corfu-popupinfo-delay nil)
+      (corfu-mode 1)))
+
+  (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1)
   :bind ("C-c SPC" . cape-dabbrev)
   )
 
@@ -1876,7 +1930,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
       (string-inflection-ruby-style-cycle)))))
 #+end_src
 
-** COMMENT Type Break
+** Type Break
 Automatically start a pomodoro session when I exit org-pomodoro since I have a tendency of just
 staying in emacs and losing track of time.
 
@@ -1890,7 +1944,7 @@ Also start type break mode after start up since I might just be dragging along
          (after-init . type-break-mode))
   :custom
   ;; Setting interval of that of a pomodoro session
-  (type-break-interval (* 15 60))
+  (type-break-interval (* 25 60))
   (type-break-keystroke-threshold '(nil . 2625))
   )
 #+end_src
@@ -1998,7 +2052,10 @@ Also start type break mode after start up since I might just be dragging along
   :ensure t)
 #+end_src
 
-** [[https://github.com/stanaka/dash-at-point][Dash at Point]]
+** COMMENT [[https://github.com/stanaka/dash-at-point][Dash at Point]]
+Commented since devdocs seems to do the trick also, dash-docs seems to be the better option for
+viewing inside of emacs. Unfortunately, its broken right now and there seems to be no active
+maintainers on the project.
 #+begin_src emacs-lisp
 (use-package dash-at-point
   :ensure
@@ -2058,6 +2115,27 @@ Also start type break mode after start up since I might just be dragging along
      (yaml-mode . "chef,ansible"))))
 #+end_src
 
+** [[https://github.com/astoff/devdocs.el][Devdocs]]
+#+begin_src emacs-lisp
+(use-package devdocs
+  :ensure t
+  :defer
+  :init
+  (add-to-list 'display-buffer-alist
+               '("\\*devdocs\\*"
+                 display-buffer-in-side-window
+                 (side . right)
+                 (slot . 3)
+                 (window-parameters . ((no-delete-other-windows . t)))
+                 (dedicated . t)
+                 ;; (window-width . 100)
+                 ))
+  :bind ("C-c M-d" . devdocs-lookup)
+  :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("django~4.2" "django_rest_framework"))))
+         (vue-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))
+         (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))))
+#+end_src
+
 ** Flycheck
 #+begin_src emacs-lisp
 (use-package flycheck
@@ -2077,26 +2155,19 @@ Also start type break mode after start up since I might just be dragging along
   :hook (chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
   :init
   (setq shell-maker-history-path (concat user-emacs-directory "var/"))
-  (defun gopar/chatgpt-shell ()
-    "Open a new dedicated window for chatgpt-shell."
-    (interactive)
-    (if (chatgpt-shell--primary-buffer)
-        (kill-buffer (chatgpt-shell--primary-buffer))
-
-      ;; Create a new window on the right side with size of 60
-      (split-window-horizontally (- (window-width) 60))
-      (other-window 1)
-      (switch-to-buffer (chatgpt-shell--primary-buffer))
-      (chatgpt-shell)
-      ;; Dedicate the window so it cannot be closed
-      (set-window-dedicated-p (selected-window) t)
-      (set-window-parameter (selected-window) 'no-delete-other-windows t)))
+  (add-to-list 'display-buffer-alist
+               '("\\*chatgpt\\*"
+                 display-buffer-in-side-window
+                 (side . right)
+                 (slot . 0)
+                 (window-parameters . ((no-delete-other-windows . t)))
+                 (dedicated . t)
+                 ;; (window-width . 60)
+                 ))
 
   :bind ((:map chatgpt-shell-mode-map
                ("RET" . newline)
-               ("M-RET" . shell-maker-submit))
-         (:map global-map
-               ("<f6>" . gopar/chatgpt-shell)))
+               ("M-RET" . shell-maker-submit)))
   :custom
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
@@ -2323,6 +2394,7 @@ A colorful theme that I actually like
   (org-agenda-mode . centaur-tabs-local-mode)
   (chatgpt-shell-mode . centaur-tabs-local-mode)
   (pydoc-mode . centaur-tabs-local-mode)
+  (devdocs-mode . centaur-tabs-local-mode)
   ;; (vterm-mode . centaur-tabs-local-mode)
   :init
   (defun gopar/centaur-tabs-projectile-buffer-groups ()
@@ -2338,7 +2410,8 @@ Only difference from original function is that there is special treatment for es
                       (projectile-project-root)
                     (error nil))
                   (or (string-prefix-p "*eshell" (buffer-name))
-                      (string-prefix-p "*vterm" (buffer-name)))) (list (projectile-project-name)))
+                      (string-prefix-p "*vterm" (buffer-name))
+                      (string-prefix-p "*compilation" (buffer-name)))) (list (projectile-project-name)))
 
             ((or (get-buffer-process (current-buffer)) (memq major-mode '(comint-mode compilation-mode))) '("Term"))
             ((string-equal "*" (substring (buffer-name) 0 1)) '("Misc"))
@@ -2368,6 +2441,7 @@ Only difference from original function is that there is special treatment for es
   (add-to-list 'centaur-tabs-excluded-prefixes "magit")
   (add-to-list 'centaur-tabs-excluded-prefixes "*pydoc")
   (add-to-list 'centaur-tabs-excluded-prefixes "*dashboard")
+  (add-to-list 'centaur-tabs-excluded-prefixes "*devdocs")
   (add-to-list 'centaur-tabs-excluded-prefixes "*chatgpt"))
 #+end_src
 
