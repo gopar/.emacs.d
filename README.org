@@ -836,6 +836,7 @@ function. Lets just have in buffer completion
          (inferior-python-mode . (lambda ()
                                   (setq-local completion-at-point-functions '(t)))))
   :custom
+  (python-shell-dedicated 'project)
   (python-shell-interpreter "python")
   (python-shell-interpreter-args "")
   (python-forward-sexp-function nil)
@@ -1035,6 +1036,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
          :map org-mode-map
               ("M-." . dictionary-lookup-definition)
          :map markdown-mode-map
+              ("M-." . dictionary-lookup-definition)
+         :map chatgpt-shell-mode-map
               ("M-." . dictionary-lookup-definition))
   :init
   (add-to-list 'display-buffer-alist
@@ -1645,7 +1648,14 @@ With ARG, revert back to normal iedit."
   :ensure nil
   :hook (after-init . show-paren-mode)
   :custom
-  (show-paren-style 'mixed))
+  (show-paren-style 'mixed)
+  (show-paren-context-when-offscreen t))
+#+end_src
+
+** Battery
+#+begin_src emacs-lisp
+(use-package battery :ensure nil
+  :hook (after-init . display-battery-mode))
 #+end_src
 
 ** Yasnippet
@@ -2179,7 +2189,14 @@ maintainers on the project.
                  (dedicated . t)
                  ;; (window-width . 100)
                  ))
-  :bind ("C-c M-d" . devdocs-lookup)
+
+  (defun gopar/devdocs-lookup (&optional ask-docs)
+    "Light wrapper around `devdocs-lookup` which pre-populates the function input with thing at point"
+    (interactive "P")
+    (let ((query (thing-at-point 'symbol t)))
+      (devdocs-lookup ask-docs query)))
+
+  :bind ("C-c M-d" . gopar/devdocs-lookup)
   :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("django~4.2" "django_rest_framework"))))
          (vue-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))
          (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))))
