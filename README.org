@@ -948,6 +948,39 @@ Window Management
   :commands (winner-undo winnner-redo))
 #+end_src
 
+** Window
+
+#+begin_src emacs-lisp
+(use-package window
+  :ensure nil
+  ;; :init
+   ;; (defun gopar/is-landscape-mode (buffer alist)
+   ;;   (message "landscape")
+   ;;   (> (frame-native-width) (frame-native-height)))
+
+   ;; (defun gopar/is-portrait-mode (buffer alist)
+   ;;   (message "portrait")
+   ;;   (> (frame-native-height) (frame-native-width)))
+
+   ;; (add-to-list 'display-buffer-alist
+   ;;             '("^test[-_]" (
+   ;;                            display-buffer-in-previous-window
+   ;;                            display-buffer-reuse-window
+   ;;                            display-buffer-in-direction)
+   ;;               ((direction . bottom)
+   ;;               (reusable-frames . visible)
+   ;;               (gopar/is-portrait-mode . t))))
+   ;; (add-to-list 'display-buffer-alist
+   ;;             '("^test[-_]" (
+   ;;                            display-buffer-in-previous-window
+   ;;                            display-buffer-reuse-window
+   ;;                            display-buffer-in-direction)
+   ;;               ((direction . right)
+   ;;               (reusable-frames . visible)
+   ;;               (gopar/is-landscape-mode . t))))
+  )
+#+end_src
+
 ** Executeable
 #+begin_src emacs-lisp
 (use-package executable
@@ -1063,14 +1096,6 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :ensure
   :load t
   :commands projectile-project-root
-  :init
-  (add-to-list 'display-buffer-alist
-               `("^test[-_]" (
-                              display-buffer-in-previous-window
-                              display-buffer-reuse-window
-                              display-buffer-in-direction)
-                 (direction . right)
-                 (reusable-frames . visible)))
   :bind-keymap
   ("C-c p" . projectile-command-map)
 
@@ -1965,9 +1990,12 @@ Also start type break mode after start up since I might just be dragging along
          (after-init . type-break-mode))
   :custom
   ;; Setting interval of that of a pomodoro session
-  (type-break-interval (* 25 60))
-  (type-break-keystroke-threshold '(nil . 2625))
-  )
+  (type-break-interval (* 25 60)) ;; 25 mins
+  (type-break-good-rest-interval (* 9 60)) ;; 9 mins
+  ;; Might remove this?
+  (type-break-good-break-interval (* 5 60)) ;; 5 mins
+  (type-break-query-mode t)
+  (type-break-keystroke-threshold '(nil . 2625)))
 #+end_src
 
 ** Compact Docstring
