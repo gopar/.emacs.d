@@ -41,7 +41,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   ;; Treat manual switching of buffers the same as programatic
   (switch-to-buffer-obey-display-actions t)
   (switch-to-buffer-in-dedicated-window nil)
-  (window-sides-slots '(1 0 3 1))
+  (window-sides-slots '(3 0 3 1))
   ;; Sentences end with 1 space not 2
   (sentence-end-double-space nil)
   ;; make cursor the width of the character it is under
@@ -665,7 +665,7 @@ Also not built in but putting it here
   :load-path "lisp/org"
   :custom
   (org-annotate-file-add-search t)
-  :bind (:map python-mode-map ("C-c C-s" . gopar/org-annotate-file))
+  :bind (:map prog-mode-map ("C-c C-s" . gopar/org-annotate-file))
   :init
   (defun gopar/org-annotate-file (&optional arg)
     "Annotate current line.
@@ -828,13 +828,23 @@ function. Lets just have in buffer completion
   :ensure nil
   :bind (:map python-mode-map
               ("C-c C-p" . nil)
-              ("C-c C-z" . run-python))
+              ("C-c C-z" . gopar/run-python))
   :hook ((python-mode . (lambda ()
-                         (setq-local forward-sexp-function nil)
-                         (make-local-variable 'python-shell-virtualenv-root)
-                         (setq-local completion-at-point-functions '( cape-file python-completion-at-point cape-dabbrev))))
+                          (setq-local forward-sexp-function nil)
+                          (make-local-variable 'python-shell-virtualenv-root)
+                          (setq-local completion-at-point-functions '( cape-file python-completion-at-point cape-dabbrev))))
          (inferior-python-mode . (lambda ()
-                                  (setq-local completion-at-point-functions '(t)))))
+                                   (setq-local completion-at-point-functions '(t)))))
+
+  :init
+  (defun gopar/run-python ()
+    "Wrapper function for `run-python` that checks if the current project is a Django project."
+    (interactive)
+    (let* ((manage-directory (locate-dominating-file default-directory "manage.py"))
+           (default-directory (or manage-directory default-directory)))
+      (if manage-directory
+          (run-python "python manage.py shell" python-shell-dedicated 0)
+        (run-python nil python-shell-dedicated 0))))
   :custom
   (python-shell-dedicated 'project)
   (python-shell-interpreter "python")
@@ -1251,32 +1261,38 @@ Also includes displaying of them
     (setq y (cl-remove-if (lambda (item) (memq item x)) y))
     y)
 
+  (setq gopar/color-themes '(
+                             doom-monokai-spectrum
+                             ))
   (setq gopar/white-themes '())
   (setq gopar/black-themes '())
   (setq gopar/colorless-thems
         '(
-          doom-plain-dark
-          doom-plain
-          stimmung-themes-light
-          stimmung-themes-dark
-          tao-yin
-          tao-yang
-          doom-meltbus
-          doom-homage-black
           doom-homage-white
-          sketch-white
+          doom-plain
+          doom-plain-dark
           sketch-black
+          sketch-white
+          stimmung-themes-dark
+          stimmung-themes-light
+          tao-yang
+          tao-yin
           ))
-  ;; Any themes that are incomplete/lacking
+  ;; Any themes that are incomplete/lacking don't work with centaur tabs/solair mode
   (setq gopar/themes-blacklisted '(
                                    ;; doom-tomorrow-night
-                                   ;; doom-rougue
-                                   ;; doom-acario-light
-                                   ;; doom-acario-dark
-                                   ;; doom-manegarm
-                                   ;; doom-monokai-octagon
-                                   tao
+                                   ayu-dark
+                                   ayu-light
+                                   doom-acario-dark
+                                   doom-acario-light
+                                   doom-homage-black
+                                   doom-lantern
+                                   doom-manegarm
+                                   doom-meltbus
+                                   doom-rougue
                                    light-blue
+                                   manoj-black
+                                   tao
                                    ))
   (setq consult-themes (remove-items gopar/themes-blacklisted (custom-available-themes)))
   (setq consult-project-function (lambda (_) (projectile-project-root)))
@@ -1786,6 +1802,10 @@ With ARG, revert back to normal iedit."
          ("RET" . gopar/jump-to-defintion-and-kill-all-other-windows)
          ("<C-return>" . occur-mode-goto-occurrence))
   :init
+  (add-to-list 'display-buffer-alist
+               '("^\\*Occur\\*" display-buffer-in-side-window
+                 (side . left)))
+
   (defun gopar/occur-definitions ()
     "Show all the function/method/class definitions for the current language."
     (interactive)
@@ -2245,9 +2265,14 @@ maintainers on the project.
 #+begin_src emacs-lisp
 (use-package dall-e-shell
   :ensure t
+  :bind ((:map dall-e-shell-mode-map
+               ("RET" . newline)
+               ("M-RET" . shell-maker-submit)))
   :custom
   (dall-e-shell-openai-key
-      (auth-source-pick-first-password :host "api.openai.com")))
+      (auth-source-pick-first-password :host "api.openai.com"))
+  (dall-e-shell-image-size "1024x1024")
+  (dall-e-shell-image-output-directory "~/Downloads/dall_e_output/"))
 #+end_src
 *** Auto Git Commit
 #+begin_src emacs-lisp
@@ -2477,6 +2502,7 @@ Only difference from original function is that there is special treatment for es
                     (error nil))
                   (or (string-prefix-p "*eshell" (buffer-name))
                       (string-prefix-p "*vterm" (buffer-name))
+                      (string-prefix-p "*Python" (buffer-name))
                       (string-prefix-p "*compilation" (buffer-name)))) (list (projectile-project-name)))
 
             ((or (get-buffer-process (current-buffer)) (memq major-mode '(comint-mode compilation-mode))) '("Term"))
