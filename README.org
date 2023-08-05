@@ -844,7 +844,7 @@ function. Lets just have in buffer completion
            (default-directory (or manage-directory default-directory)))
       (if manage-directory
           (run-python "python manage.py shell" python-shell-dedicated 0)
-        (run-python nil python-shell-dedicated 0))))
+        (run-python (python-shell-calculate-command) python-shell-dedicated 0))))
   :custom
   (python-shell-dedicated 'project)
   (python-shell-interpreter "python")
@@ -1093,6 +1093,48 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :config
   (put 'browse-url-handlers 'safe-local-variable (lambda (x) t)))
 #+end_src
+
+** Eww
+#+begin_src emacs-lisp
+(use-package eww
+  :defer t
+  :init
+  (add-hook 'eww-after-render-hook #'shrface-mode)
+  ;; (add-hook 'eww-mode-hook 'ewnium-mode)
+  :config
+  (require 'shrface))
+
+#+end_src
+
+** Ewnium
+#+begin_src emacs-lisp
+(use-package ewnium
+  :ensure nil
+  :load-path "lisp/eww"
+  :hook (eww-mode . ewnium-mode))
+#+end_src
+
+** SHR
+
+#+begin_src emacs-lisp
+(use-package shrface
+  :defer t
+  :config
+  (shrface-basic)
+  (shrface-trial)
+  (shrface-default-keybindings) ; setup default keybindings
+  (setq shrface-href-versatile t))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package shr-tag-pre-highlight
+  :ensure t
+  :after shr
+  :config
+  (add-to-list 'shr-external-rendering-functions
+               '(pre . shr-tag-pre-highlight)))
+#+end_src
+
 
 ** Prog Mode
 #+begin_src emacs-lisp
@@ -1803,8 +1845,10 @@ With ARG, revert back to normal iedit."
          ("<C-return>" . occur-mode-goto-occurrence))
   :init
   (add-to-list 'display-buffer-alist
-               '("^\\*Occur\\*" display-buffer-in-side-window
-                 (side . left)))
+               '("^\\*Occur\\*"
+                 display-buffer-in-side-window
+                 (side . left)
+                 (window-width . 60)))
 
   (defun gopar/occur-definitions ()
     "Show all the function/method/class definitions for the current language."
@@ -2022,10 +2066,11 @@ Also start type break mode after start up since I might just be dragging along
   ;; Setting interval of that of a pomodoro session
   (type-break-interval (* 25 60)) ;; 25 mins
   (type-break-good-rest-interval (* 9 60)) ;; 9 mins
-  ;; Might remove this?
   (type-break-good-break-interval (* 5 60)) ;; 5 mins
   (type-break-query-mode t)
-  (type-break-keystroke-threshold '(nil . 2625)))
+  (type-break-keystroke-threshold '(nil . 2625))
+  (type-break-demo-boring-stats t)
+  (type-break-demo-functions '(type-break-demo-boring)))
 #+end_src
 
 ** Compact Docstring
@@ -2217,7 +2262,7 @@ maintainers on the project.
       (devdocs-lookup ask-docs query)))
 
   :bind ("C-c M-d" . gopar/devdocs-lookup)
-  :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("django~4.2" "django_rest_framework"))))
+  :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("django~4.2" "django_rest_framework" "python~3.10"))))
          (vue-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))
          (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))))
 #+end_src
@@ -2453,7 +2498,11 @@ Themes I like
 *** [[https://github.com/idlip/haki][Haki]]
 A colorful theme that I actually like
 #+begin_src emacs-lisp
-(use-package haki-theme :ensure t)
+(use-package haki-theme
+  :ensure t
+  ;; :custom
+  ;; (haki-region "#c71585")
+  )
 #+end_src
 
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
@@ -2503,6 +2552,7 @@ Only difference from original function is that there is special treatment for es
                   (or (string-prefix-p "*eshell" (buffer-name))
                       (string-prefix-p "*vterm" (buffer-name))
                       (string-prefix-p "*Python" (buffer-name))
+                      (string-prefix-p "*eww*" (buffer-name))
                       (string-prefix-p "*compilation" (buffer-name)))) (list (projectile-project-name)))
 
             ((or (get-buffer-process (current-buffer)) (memq major-mode '(comint-mode compilation-mode))) '("Term"))
@@ -2547,11 +2597,15 @@ Only difference from original function is that there is special treatment for es
 
 ** [[https://github.com/roman/golden-ratio.el][Golden Ration]]
 
-Use `golden-ratio-toggle-widescreen` if splits are too wides
+Use `golden-ratio-toggle-widescreen` if splits are too wide
+
+NOTE: Seems like its no longer actively maintained :/
 #+begin_src emacs-lisp
 (use-package golden-ratio
   :ensure t
-  :hook (after-init . golden-ratio-mode))
+  :hook (after-init . golden-ratio-mode)
+  :custom
+  (golden-ratio-exclude-modes '(occur-mode)))
 #+end_src
 
 * 1st Party Modes

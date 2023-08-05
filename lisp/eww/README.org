@@ -3,7 +3,7 @@ Snippets for EWW that mimic Vimium browser plugin
 They need to be updated
 
 #+BEGIN_SRC emacs-lisp
-(defun gopar/open-eww-with-recent-kill-ring (&optional arg)
+(defun ewnium-open-eww-with-recent-kill-ring (&optional arg)
   "Open current EWW with most recent item in kill ring.
 If prefix arg is passed, then open in new EWW buffer."
   (interactive "P")
@@ -15,7 +15,7 @@ If prefix arg is passed, then open in new EWW buffer."
         (eww (current-kill 0)))
     (eww (current-kill 0))))
 
-(defun gopar/eww--rename-eww-buffer ()
+(defun ewnium--rename-eww-buffer ()
   "Rename `eww-mode' buffer so sites open in new page.
 Stolen from `http://ergoemacs.org/emacs/emacs_eww_web_browser.html'
 Version 2017-11-10"
@@ -25,7 +25,7 @@ Version 2017-11-10"
           (rename-buffer (concat "eww " title ) t)
         (rename-buffer "eww" t)))))
 
-(defun gopar/eww--go-up-url-heirarchy ()
+(defun ewnium--go-up-url-heirarchy ()
   "Go up the URL heirarchy."
   (interactive)
   (let* ((url (url-generic-parse-url (eww-current-url)))
@@ -45,7 +45,7 @@ Version 2017-11-10"
                    (url-fullness url)))
     (eww-browse-url (url-recreate-url new-url))))
 
-(defun gopar/eww--go-to-root-url-heirarchy ()
+(defun ewnium--go-to-root-url-heirarchy ()
   "Go to root of current URL heirarchy"
   (interactive)
   (let* ((url (url-generic-parse-url (eww-current-url)))
@@ -62,7 +62,7 @@ Version 2017-11-10"
                    (url-fullness url)))
     (eww-browse-url (url-recreate-url new-url))))
 
-(defun gopar/eww--get-list-of-buffers ()
+(defun ewnium--get-list-of-buffers ()
   "Return a list of plist.
 Each plist contains a :buffer, :title, :url and :type.
 
@@ -85,7 +85,7 @@ Always set to 'buffer."
                 buffers-info))))
     buffers-info))
 
-(defun gopar/eww--get-list-of-bookmarks ()
+(defun ewnium--get-list-of-bookmarks ()
   "Return a list of plists.
 Each plist contains a :title, :url and :type.
 
@@ -107,7 +107,7 @@ Always set to 'bookmark."
               bookmarks-info))
       bookmarks-info)))
 
-(defun gopar/eww--get-list-of-history ()
+(defun ewnium--get-list-of-history ()
   "Return a list of plists.
 Each plist contains a title, :url and :type.
 
@@ -128,82 +128,71 @@ Always set to 'history."
                   history-list)))))
     history-list))
 
-(defun gopar/eww--prep-choices-for-helm (history bookmarks buffers)
-  "Return data thats preped for helm to consume.
-
-If HISTORY is non-nil then include history data.
-
-If BOOKMARKS is non-nil then include bookmark data.
-
-If BUFFERS is non-nil then include BUFFERS data."
-  ;; Hmm this allows duplciates since we have a bookmarked url in our history b/c
-  ;; we previously visited it, but this isn't a big deal. It's only me using this.
+(defun ewnium--get-list-of-history-bookmarks-and-buffers (history bookmarks buffers)
+  "Return a list of plists"
   (let (options)
     (when history
-      (dolist (entry (gopar/eww--get-list-of-history))
+      (dolist (entry (ewnium--get-list-of-history))
         (push entry options)))
     (when bookmarks
-      (dolist (entry (gopar/eww--get-list-of-bookmarks))
+      (dolist (entry (ewnium--get-list-of-bookmarks))
         (push entry options)))
     (when buffers
-      (dolist (entry (gopar/eww--get-list-of-buffers))
+      (dolist (entry (ewnium--get-list-of-buffers))
         (push entry options)))
-    (setq options (mapcar (lambda (item)
-                            (let* ((title (plist-get item :title))
-                                   (url (plist-get item :url))
-                                   (type (plist-get item :type))
-                                   (buffer (plist-get item :buffer)))
-                              (list (format "%s - %s"
-                                            (propertize (s-truncate 40 title) 'face 'shrface-links-title-face)
-                                            (propertize (s-truncate 40 url) 'face 'shrface-links-url-face))
-                                    url type buffer)))
-                          options))
     options))
 
-(defun gopar/eww-open-url-or-bookmark-or-history (&optional arg)
+(defun ewnium-open-url-or-bookmark-or-history (&optional arg)
   "Show prompt to either open a new query, bookmark or history.
 Passing ARG as non-nil, means open in new eww buffer."
   (interactive "P")
-  (let (chosen chosen-type)
-    (setq chosen (helm-comp-read "URL/Bookmark/History: "
-                                 (gopar/eww--prep-choices-for-helm t t t)
-                                 :header-name (lambda (name) (concat "[[" name "]]"))))
-    ;; We get a string when we want a new search query
-    ;; And not any of the options we displayed
-    (if (stringp chosen)
-        (setq chosen-type 'string)
-      (setq chosen-type (nth 1 chosen)))
+  (let (options titles choesn chosen-type chosen-buffer target-plist)
+    (setq options (ewnium--get-list-of-history-bookmarks-and-buffers t t t))
+    (setq titles (mapcar (lambda (plist) (plist-get plist :title)) options))
+    (setq chosen (completing-read "URL/Book mark/History: " titles))
+    (setq target-plist (car (seq-filter (lambda (plist) (equal (plist-get plist :title) chosen)) options)))
+    (setq chosen (or (plist-get target-plist :url) chosen)
+          chosen-type (plist-get target-plist :type)
+          chosen-buffer (plist-get target-plist :buffer))
     (cond
      ((eq chosen-type 'buffer)
-      (switch-to-buffer (nth 2 chosen)))
+      (switch-to-buffer chosen-buffer))
      ((eq chosen-type 'bookmark)
-      (eww (nth 0 chosen) (if arg 4 nil)))
+      (eww chosen (if arg 4 nil)))
      ((eq chosen-type 'history)
-      (eww (nth 0 chosen) (if arg 4 nil)))
+      (eww chosen (if arg 4 nil)))
      ;; When it's a string
      (t
       (eww chosen (if arg 4 nil))))))
 
-(defun gopar/eww-open-bookmark (&optional arg)
+(defun ewnium-open-bookmark (&optional arg)
   "Show prompt to open a bookmark.
 Providing a prefix will open in new eww buffer."
   (interactive "P")
-  (let (chosen)
-    (setq chosen (helm-comp-read "Bookmark: " (gopar/eww--prep-choices-for-helm nil t nil)))
-    (if (not (listp chosen))
+  (let ()
+    (setq options (ewnium--get-list-of-history-bookmarks-and-buffers nil t nil))
+    (setq titles (mapcar (lambda (plist) (plist-get plist :title)) options))
+    (setq chosen (completing-read "Book-mark: " titles))
+    (setq target-plist (car (seq-filter (lambda (plist) (equal (plist-get plist :title) chosen)) options)))
+    (setq chosen (plist-get target-plist :url))
+    (if (not chosen)
         (message "No Bookmark chosen.")
-      (eww (nth 0 chosen) (if arg 4 nil)))))
+      (eww chosen (if arg 4 nil)))))
 
-(defun gopar/eww-list-buffers ()
+(defun ewnium-open-buffers ()
   "Show a prompt of all EWW buffers to switch to."
   (interactive)
   (let (chosen)
-    (setq chosen (helm-comp-read "EWW Buffer: " (gopar/eww--prep-choices-for-helm nil nil t)))
-    (if (not (listp chosen))
-        (message "No Bookmark chosen.")
-      (switch-to-buffer (nth 2 chosen)))))
+    (setq options (ewnium--get-list-of-history-bookmarks-and-buffers t nil nil))
+    (setq titles (mapcar (lambda (plist) (plist-get plist :title)) options))
+    (setq chosen (completing-read "EWW Buffer: " titles))
+    (setq target-plist (car (seq-filter (lambda (plist) (equal (plist-get plist :title) chosen)) options)))
+    (setq chosen (plist-get target-plist :buffer))
+    (if (not chosen)
+        (message "No Buffer chosen.")
+      (switch-to-buffer chosen))))
 
-(defun gopar/eww-edit-current-url (&optional arg)
+(defun ewnium-edit-current-url (&optional arg)
   (interactive)
   (let* ((url (eww-copy-page-url))
          (uris (eww-suggested-uris)))
@@ -211,7 +200,7 @@ Providing a prefix will open in new eww buffer."
     (setq url (eww--dwim-expand-url url))
     (eww url (if arg 4 nil))))
 
-(defun gopar/eww-next-buffer (&optional arg)
+(defun ewnium-next-buffer (&optional arg)
   "Go to the next/previous EWW buffer in line.
 
 If ARG is non-bil then go back one buffer, otherwise
@@ -245,7 +234,7 @@ zebra.com
                            (nth (1- index) buffers))))
 
     (let* ((buffer-plist nil)
-           (buffers (gopar/eww--get-list-of-buffers))
+           (buffers (ewnium--get-list-of-buffers))
            ;; Sort them by URL
            (buffers (cl-sort buffers 'string< :key '(lambda (x) (plist-get x :url))))
            (index (cl-position (current-buffer) buffers :key '(lambda (x) (plist-get x :buffer)))))
@@ -254,16 +243,16 @@ zebra.com
         (setq buffer-plist (if arg (prev-buffer buffers index) (next-buffer buffers index)))
         (switch-to-buffer (plist-get buffer-plist :buffer))))))
 
-(defun gopar/eww-previous-buffer ()
+(defun ewnium-previous-buffer ()
   "Go to the next/previous EWW buffer in line."
   (interactive)
-  (gopar/eww-next-buffer t))
+  (ewnium-next-buffer t))
 
-(defun gopar/eww-not-implemented ()
+(defun ewnium-not-implemented ()
   (interactive)
   (message "Not Implemented :("))
 
-(defun gopar/eww-advice-filter-args (args)
+(defun ewnium-advice-filter-args (args)
   "When using a search engine, sometimes the redirects don't work.
 To work around this, we'll grab the url that we're targetting so that it doesn't
 go through the search engine"
@@ -294,18 +283,18 @@ So here I try to mimic those keybindings, but there are a few things to be aware
   :init
   (setq eww-goto-map (let ((map (make-sparse-keymap)))
                        (define-key map "g" 'beginning-of-buffer)
-                       (define-key map "u" 'gopar/eww--go-up-url-heirarchy)
-                       (define-key map "U" 'gopar/eww--go-to-root-url-heirarchy)
+                       (define-key map "u" 'ewnium--go-up-url-heirarchy)
+                       (define-key map "U" 'ewnium--go-to-root-url-heirarchy)
                        (define-key map "s" 'eww-view-source)
-                       (define-key map "e" 'gopar/eww-edit-current-url)
-                       (define-key map "E" '(lambda () (interactive) (gopar/eww-edit-current-url)))
+                       (define-key map "e" 'ewnium-edit-current-url)
+                       (define-key map "E" '(lambda () (interactive) (ewnium-edit-current-url)))
                        (define-key map "i" '(lambda () (interactive) (gopar/avy-property-jump 'eww-form :prop-pred (lambda (val prop-val) (string= "text" (plist-get prop-val :type))))))
                        map))
   (setq eww-y-map (let ((map (make-sparse-keymap)))
                     (define-key map "y" 'eww-copy-page-url)
                     (define-key map "f" 'shr-maybe-probe-and-copy-url) ;; shold prob replace with ivy link selection
                     ;; Duplicate current buffer
-                    (define-key map "t" 'gopar/eww-not-implemented)
+                    (define-key map "t" 'ewnium-not-implemented)
                     map))
   (setq eww-open-bracket-map (let ((map (make-sparse-keymap)))
                                (define-key map "[" 'eww-previous-url)
@@ -321,7 +310,7 @@ So here I try to mimic those keybindings, but there are a few things to be aware
   :config
   (require 'shrface)
   :hook ((eww-after-render . shrface-mode)
-         (eww-after-render . gopar/eww--rename-eww-buffer)
+         (eww-after-render . ewnium--rename-eww-buffer)
          (eww-after-render . visual-line-mode))
   :bind (:map eww-mode-map
               ;; ("." . hydra-eww/body)
@@ -333,8 +322,8 @@ So here I try to mimic those keybindings, but there are a few things to be aware
               ("<tab>" . shrface-outline-cycle)
               ("S-<tab>" . shrface-outline-cycle-buffer)
               ("C-t" . shrface-toggle-bullets)
-              ("C-i" . shrface-links-helm)
-              ("C-o" . shrface-headline-helm)
+              ("C-i" . shrface-links-consult)
+              ("C-o" . shrface-headline-consult)
               ("a" . shr-show-alt-text)
               ("z" . shr-zoom-image)
               ("i" . shr-next-link)
@@ -351,8 +340,8 @@ So here I try to mimic those keybindings, but there are a few things to be aware
               ("d" . View-scroll-half-page-forward)
               ("u" . View-scroll-half-page-backward)
               ("r" . eww-reload)
-              ("p" . gopar/open-eww-with-recent-kill-ring)
-              ("P" . (lambda () (interactive) (gopar/open-eww-with-recent-kill-ring t)))
+              ("p" . ewnium-open-eww-with-recent-kill-ring)
+              ("P" . (lambda () (interactive) (ewnium-open-eww-with-recent-kill-ring t)))
               ;; I can make a custom avy action function but meh, too lazy
               ("f" . (lambda () (interactive)
                        (gopar/avy-property-jump 'shr-url
@@ -363,11 +352,9 @@ So here I try to mimic those keybindings, but there are a few things to be aware
               ;;;;;;;;;;;;;;
               ;; Vomnibar
               ;;;;;;;;;;;;;;
-              ("o" . gopar/eww-open-url-or-bookmark-or-history)
-              ("O" . (lambda () (interactive) (gopar/eww-open-url-or-bookmark-or-history t)))
-              ("b" . gopar/eww-open-bookmark)
-              ("B" . (lambda () (interactive) (gopar/eww-open-bookmark t)))
-              ("T" . gopar/eww-list-buffers)
+              ("o" . ewnium-open-url-or-bookmark-or-history)
+              ("b" . ewnium-open-bookmark)
+              ("T" . ewnium-open-buffers)
               ;;;;;;;;;;;;;;
               ;; Navigating history
               ;;;;;;;;;;;;;;
@@ -376,8 +363,8 @@ So here I try to mimic those keybindings, but there are a few things to be aware
               ;;;;;;;;;;;;;;
               ;; Manipulating Buffers
               ;;;;;;;;;;;;;;
-              ("J" . gopar/eww-previous-buffer)
-              ("K" . gopar/eww-next-buffer)
+              ("J" . ewnium-previous-buffer)
+              ("K" . ewnium-next-buffer)
               ;;;;;;;;;;;;;;
               ;; Prefix keymaps
               ;;;;;;;;;;;;;;
@@ -385,11 +372,13 @@ So here I try to mimic those keybindings, but there are a few things to be aware
               ("y" . eww-y-map)
               ("[" . eww-open-bracket-map)
               ("]" . eww-close-bracket-map)
-              :map shr-map
-              ("." . hydra-eww/body)
+              :map shrface-mode-map
+              ("C-t" . shrface-toggle-bullets)
+              ("C-i" . shrface-links-consult)
+              ("C-o" . shrface-headline-consult)
+              ;; ("." . hydra-eww/body)
               ("i" . shr-next-link)
-              ("I" . shr-previous-link)
-              ("C-i" . shrface-links-helm))
+              ("I" . shr-previous-link))
 
   ;; :hydra (hydra-eww (:hint nil)
   ;;                     "
@@ -412,12 +401,12 @@ So here I try to mimic those keybindings, but there are a few things to be aware
   ;;                     ("r" eww-reload nil)
   ;;                     ("yy" eww-copy-page-url nil)
   ;;                     ("yf" (get-text-property (point) 'shr-url) nil)
-  ;;                     ("p" gopar/open-eww-with-recent-kill-ring nil)
-  ;;                     ("P" (gopar/open-eww-with-recent-kill-ring t) nil)
+  ;;                     ("p" ewnium-open-eww-with-recent-kill-ring nil)
+  ;;                     ("P" (ewnium-open-eww-with-recent-kill-ring t) nil)
   ;;                     ("[" eww-next-url nil)
   ;;                     ("]" eww-previous-url nil)
-  ;;                     ("gu" gopar/eww--go-up-url-heirarchy)
-  ;;                     ("gU" gopar/eww--go-to-root-url-heirarchy)
+  ;;                     ("gu" ewnium--go-up-url-heirarchy)
+  ;;                     ("gU" ewnium--go-to-root-url-heirarchy)
   ;;                     ("o" gopar/open-url-or-bookmark-or-history)
   ;;                     ("O" (gopar/open-url-or-bookmark-or-history t)))
   )
