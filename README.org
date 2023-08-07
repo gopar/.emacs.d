@@ -992,6 +992,17 @@ Window Management
   )
 #+end_src
 
+** [[/Applications/Emacs.app/Contents/Resources/lisp/midnight.el.gz][Midnight]]
+#+begin_src emacs-lisp
+(use-package midnight
+  :ensure nil
+  :hook (after-init . midnight-mode)
+  :custom
+  (clean-buffer-list-delay-general 0)
+  (clean-buffer-list-delay-special (* 60 60)) ; one hour
+  (clean-buffer-list-kill-regexps '("\\`\\*Man " "\\`\\*helpful")))
+#+end_src
+
 ** Executeable
 #+begin_src emacs-lisp
 (use-package executable
@@ -1118,6 +1129,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 
 #+begin_src emacs-lisp
 (use-package shrface
+  :ensure t
   :defer t
   :config
   (shrface-basic)
@@ -1134,7 +1146,6 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (add-to-list 'shr-external-rendering-functions
                '(pre . shr-tag-pre-highlight)))
 #+end_src
-
 
 ** Prog Mode
 #+begin_src emacs-lisp
@@ -1796,6 +1807,7 @@ With ARG, revert back to normal iedit."
                         current-month
                         (mapconcat 'identity categories " ")
                         journal-file)))
+
       (insert (shell-command-to-string cmd))))
   :config
   (dashboard-setup-startup-hook))
@@ -2062,6 +2074,33 @@ Also start type break mode after start up since I might just be dragging along
          (org-pomodoro-break-finished . type-break-mode)
          (org-pomodoro-started . (lambda () (type-break-mode -1)))
          (after-init . type-break-mode))
+  :init
+  (defun type-break-demo-agenda ()
+    "Display the Org Agenda in read-only mode. Cease the demo as soon as a key is pressed."
+    (let ((buffer-name "*Typing Break Org Agenda*")
+          lines)
+      (condition-case ()
+          (progn
+            (org-agenda-list)
+            (setq buffer-name (buffer-name))
+            ;; Set the buffer to read-only
+            (with-current-buffer buffer-name
+              (read-only-mode 1))
+            ;; Message to be displayed at the bottom
+            (let ((msg (if type-break-terse-messages
+                           ""
+                         "Press any key to resume from typing break")))
+              ;; Loop until key is pressed
+              (while (not (input-pending-p))
+                (sit-for 60))
+              ;; Clean up after key is pressed
+              (read-event)
+              (type-break-catch-up-event)
+              (kill-buffer buffer-name)))
+        (quit
+         (and (get-buffer buffer-name)
+              (kill-buffer buffer-name))))))
+
   :custom
   ;; Setting interval of that of a pomodoro session
   (type-break-interval (* 25 60)) ;; 25 mins
@@ -2070,7 +2109,7 @@ Also start type break mode after start up since I might just be dragging along
   (type-break-query-mode t)
   (type-break-keystroke-threshold '(nil . 2625))
   (type-break-demo-boring-stats t)
-  (type-break-demo-functions '(type-break-demo-boring)))
+  (type-break-demo-functions '(type-break-demo-agenda)))
 #+end_src
 
 ** Compact Docstring
@@ -2578,6 +2617,7 @@ Only difference from original function is that there is special treatment for es
   (centaur-tabs-set-modified-marker t)
   (centaur-tabs-set-bar 'over)
   (centaur-tabs-cycle-scope 'tabs)
+  (centaur-tabs-label-fixed-length 10)
   :config
     ;; Don't show magit buffers as tabs
   (add-to-list 'centaur-tabs-excluded-prefixes "magit")
