@@ -878,8 +878,9 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
   (defun gopar/enable-blacken-if-found ()
     "Format the current buffer using the 'blacken' program, if available."
     (interactive)
-    (when (executable-find "black")
-      (blacken-mode))))
+    (if (executable-find "black")
+        (blacken-mode)
+      (message "Black not found. Not enabling `blacken-mode`"))))
 #+end_src
 
 *** [[https://github.com/statmobile/pydoc][Pydoc]]
@@ -1291,7 +1292,7 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :after projectile
-  :hook (after-init . (lambda () (load-theme (nth (random (length consult-themes)) consult-themes))))
+  :hook (after-init . (lambda () (load-theme 'tao-yin)))
   :bind (("C-s" . gopar/consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
@@ -1696,6 +1697,8 @@ With ARG, revert back to normal iedit."
 (use-package git-commit
   :after magit
   :hook (git-commit-setup . gopar/auto-insert-jira-ticket-in-commit-msg)
+  :custom
+  (git-commit-summary-max-length 80)
   :init
   (defun gopar/auto-insert-jira-ticket-in-commit-msg ()
     (let ((has-ticket-title (string-match "^[A-Z]+-[0-9]+" (magit-get-current-branch)))
@@ -2342,7 +2345,7 @@ maintainers on the project.
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
   (chatgpt-shell-transmitted-context-length 5)
-  (chatgpt-shell-model-versions '("gpt-3.5-turbo-16k" "gpt-3.5-turbo" "gpt-4")))
+  (chatgpt-shell-model-versions '( "gpt-4" "gpt-4-32k" "gpt-3.5-turbo-16k" "gpt-3.5-turbo")))
 #+end_src
 *** Dall-E
 
@@ -2681,7 +2684,7 @@ Stuff I've made for myself that are modes
 
       ;; disable all themes change to a friendlier theme
       (mapcar 'disable-theme custom-enabled-themes)
-      (load-theme 'manoj-dark)
+      (load-theme 'doom-shades-of-purple)
       (neotree-show)
       (setq gopar-pair-programming t))))
 #+end_src
