@@ -1092,6 +1092,34 @@ Look up word at point using dict.org in readme/text/org-mode buffers
      1 nil (lambda () (setq gc-cons-threshold 1600000)))))
 #+end_src
 
+** [[/Applications/Emacs.app/Contents/Resources/lisp/time.el.gz][Time]]
+#+begin_src emacs-lisp
+(use-package time
+  :ensure nil
+  :hook (after-init . display-time-mode)
+  :custom
+  (world-clock-time-format "%A %d %B %r %Z")
+  (display-time-default-load-average nil)
+  (zoneinfo-style-world-list
+  '(("America/Los_Angeles" "Seattle")
+    ("America/New_York" "New York")
+    ("Europe/London" "London")
+    ("Europe/Paris" "Paris")
+    ("Europe/Madrid" "Madrid")
+    ("Asia/Calcutta" "Bangalore")
+    ("Asia/Tokyo" "Tokyo"))))
+#+end_src
+
+** [[/Applications/Emacs.app/Contents/Resources/lisp/proced.el.gz][Proced]]
+#+begin_src emacs-lisp
+(use-package proced
+  :ensure nil
+  :defer t
+  :custom
+  (proced-enable-color-flag t)
+  (proced-tree-flag t))
+#+end_src
+
 ** Browse URL
 #+begin_src emacs-lisp
 (use-package browse-url
@@ -1724,7 +1752,7 @@ With ARG, revert back to normal iedit."
   (show-paren-context-when-offscreen t))
 #+end_src
 
-** Battery
+** [[/Applications/Emacs.app/Contents/Resources/lisp/battery.el.gz][Battery]]
 #+begin_src emacs-lisp
 (use-package battery :ensure nil
   :hook (after-init . display-battery-mode))
