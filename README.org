@@ -1018,7 +1018,7 @@ Window Management
   :hook (after-init . midnight-mode)
   :custom
   (clean-buffer-list-delay-general 0)
-  (clean-buffer-list-delay-special 10) ; last ten minutes
+  (clean-buffer-list-delay-special 0)
   (clean-buffer-list-kill-regexps '("\\`\\*Man " "\\`\\*helpful" "\\`\\magit")))
 #+end_src
 
