@@ -50,3 +50,5 @@
 ;; With theme being an option from `vivid themes'
 ;; https://github.com/sharkdp/vivid
 ;; (setenv "LS_COLORS" "")
+
+(setenv "WORKON_HOME" (expand-file-name "~/.virtualenvs/"))

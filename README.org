@@ -796,13 +796,22 @@ Stolen from aweshell."
   :after eshell
   :ensure t)
 
-(use-package powerline-with-venv
+;; (use-package powerline-with-venv
+;;   :ensure nil
+;;   :after eshell-git-prompt
+;;   :load-path "lisp/themes/powerline-with-venv"
+;;   :config
+;;   (add-to-list 'eshell-git-prompt-themes
+;;                '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
+;;   (eshell-git-prompt-use-theme 'powerline-plus))
+
+(use-package powerline-with-pyvenv
   :ensure nil
   :after eshell-git-prompt
   :load-path "lisp/themes/powerline-with-venv"
   :config
   (add-to-list 'eshell-git-prompt-themes
-               '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
+               '(powerline-plus eshell-git-prompt-powerline-pyvenv eshell-git-prompt-powerline-regexp))
   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
@@ -914,6 +923,19 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
         (set-window-dedicated-p (get-buffer-window "*pydoc*") t)))))
 #+end_src
 
+*** Pyvenv
+#+begin_src emacs-lisp
+(use-package pyvenv
+  :ensure t
+  :hook ((after-init . pyvenv-mode)
+         (eshell-mode . pyvenv-tracking-mode))
+  ;; :init
+  ;; (make-variable-buffer-local 'pyvenv-virtual-env)
+  ;; (make-variable-buffer-local 'pyvenv-virtual-env-name)
+  ;; (make-variable-buffer-local 'pyvenv-virtual-env-path-directories)
+  )
+#+end_src
+
 ** GUD (Debugger)
 #+begin_src emacs-lisp
 (use-package gud
@@ -931,10 +953,6 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
   (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
   :init
-  (add-to-list 'display-buffer-alist
-     '("\\*compilation\\*" display-buffer-no-window
-        (allow-no-window . t)))
-
   (defun gopar/compilation-buffer-name-function (arg)
     "Rename buffer to whatever command was used.
 eg. *python main.py*"
@@ -1000,8 +1018,8 @@ Window Management
   :hook (after-init . midnight-mode)
   :custom
   (clean-buffer-list-delay-general 0)
-  (clean-buffer-list-delay-special (* 60 60)) ; one hour
-  (clean-buffer-list-kill-regexps '("\\`\\*Man " "\\`\\*helpful")))
+  (clean-buffer-list-delay-special 10) ; last ten minutes
+  (clean-buffer-list-kill-regexps '("\\`\\*Man " "\\`\\*helpful" "\\`\\magit")))
 #+end_src
 
 ** Executeable
@@ -1099,6 +1117,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :hook (after-init . display-time-mode)
   :custom
   (world-clock-time-format "%A %d %B %r %Z")
+  (display-time-day-and-date t)
   (display-time-default-load-average nil)
   (zoneinfo-style-world-list
   '(("America/Los_Angeles" "Seattle")
@@ -1200,6 +1219,20 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (projectile-per-project-compilation-buffer t)
   :config
   (projectile-global-mode))
+#+end_src
+
+** Save Place
+#+begin_src emacs-lisp
+(use-package saveplace
+  :ensure nil
+  :hook (after-init . save-place-mode))
+#+end_src
+
+** Save History
+#+begin_src emacs-lisp
+(use-package savehist
+  :ensure nil
+  :hook (after-init . savehist-mode))
 #+end_src
 
 ** Code Completion
@@ -1305,10 +1338,6 @@ Also includes displaying of them
   (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1)
   :bind ("C-c SPC" . cape-dabbrev)
   )
-
-(use-package savehist
-  :init
-  (savehist-mode))
 
 (use-package orderless
   :ensure t
@@ -1464,14 +1493,18 @@ Should be built in but as of =29.0.90= i have to install it via melpa
          (tree-sitter-after-on . tree-sitter-hl-mode)))
 #+end_src
 
-** Vue
+** Web Mode
 #+begin_src emacs-lisp
-(use-package vue-mode
-  :ensure
-  :defer
-  :bind (:map vue-mode-map
-              (";" . easy-camelcase))
-  :mode "\\.vue\\'")
+(use-package web-mode
+  :ensure t
+  :init
+  (setq-default web-mode-code-indent-offset 2)
+  :hook (web-mode . (lambda () (highlight-indentation-mode -1)))
+  :custom
+  (web-mode-script-padding 0)
+  (web-mode-enable-current-element-highlight t)
+  (web-mode-enable-current-column-highlight t)
+  :mode ("\\.vue\\'" . web-mode))
 #+end_src
 
 ** TypeScript
@@ -1573,6 +1606,14 @@ Color the string of whatever color code they are holding
   ;; :config
   ;; (set-face-attribute 'highlight-indentation-face nil :background "black")
   )
+#+end_src
+
+** Highlight TODO
+#+begin_src emacs-lisp
+(use-package hl-todo
+  :ensure t
+  :defer t
+  :hook (prog-mode . hl-todo-mode))
 #+end_src
 
 ** Move Text
@@ -1713,13 +1754,6 @@ With ARG, revert back to normal iedit."
                    number-of-commits
                  1)))
       (magit-reset-soft (format "HEAD^%d" num)))))
-
-(use-package magit-todos
-  :ensure
-  :defer
-  :hook (magit-mode . magit-todos-mode)
-  :custom
-  (magit-todos-exclude-globs '(".git/" "*.yasnippet")))
 
 ;; Part of magit
 (use-package git-commit
@@ -1968,6 +2002,19 @@ With ARG, revert back to normal iedit."
     (advice-add command :after #'pulse-line)))
 #+end_src
 
+** Mouse Scroll
+For my mouse that also has left - right mouse scroll
+#+begin_src emacs-lisp
+(use-package mwheel :ensure nil
+  :init
+  (defun scroll-left-one () (interactive) (scroll-left 2))
+  (defun scroll-right-one () (interactive) (scroll-right 2))
+
+  (global-set-key (kbd "<wheel-right>") 'scroll-left-one)
+  (global-set-key (kbd "<wheel-left>") 'scroll-right-one)
+  )
+#+end_src
+
 ** Whitespace
 #+begin_src emacs-lisp
 (use-package whitespace
@@ -2091,6 +2138,25 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
 
      (t
       (string-inflection-ruby-style-cycle)))))
+#+end_src
+
+** String Edit
+#+begin_src emacs-lisp
+(use-package string-edit
+  :ensure nil
+  :init
+  (defun gopar/replace-str-at-point (new-str)
+    (let ((bounds (bounds-of-thing-at-point 'string)))
+      (when bounds
+        (delete-region (car bounds) (cdr bounds))
+        (insert new-str))))
+
+  (defun gopar/edit-string-at-point ()
+    (interactive)
+    (let ((string (thing-at-point 'string t)))
+      (string-edit "String at point:" string 'gopar/replace-str-at-point :abort-callback (lambda ()
+                     (exit-recursive-edit)
+                     (error "Aborted edit"))))))
 #+end_src
 
 ** Type Break
@@ -2353,6 +2419,7 @@ maintainers on the project.
 (use-package chatgpt-shell
   :ensure t
   :commands (chatgpt-shell--primary-buffer chatgpt-shell)
+  :bind ("C-x m" . chatgpt-shell)
   :hook (chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
   :init
   (setq shell-maker-history-path (concat user-emacs-directory "var/"))
@@ -2482,7 +2549,7 @@ M-x all-the-icons-install-fonts
   (doom-modeline-window-width-limit nil)
   (doom-modeline-buffer-file-name-style 'truncate-with-project)
   (doom-modeline-minor-modes nil)
-  (doom-modeline-enable-word-count nil)
+  (doom-modeline-enable-word-count t)
   (doom-modeline-buffer-encoding nil)
   (doom-modeline-buffer-modification-icon t)
   (doom-modeline-env-python-executable "python")
@@ -2655,7 +2722,9 @@ Only difference from original function is that there is special treatment for es
   (add-to-list 'centaur-tabs-excluded-prefixes "*pydoc")
   (add-to-list 'centaur-tabs-excluded-prefixes "*dashboard")
   (add-to-list 'centaur-tabs-excluded-prefixes "*devdocs")
-  (add-to-list 'centaur-tabs-excluded-prefixes "*chatgpt"))
+  (add-to-list 'centaur-tabs-excluded-prefixes "*chatgpt")
+  (add-to-list 'centaur-tabs-excluded-prefixes "type-break.el")
+  )
 #+end_src
 
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
@@ -2724,6 +2793,18 @@ Stuff I've made for myself that are modes
   :hook (python-mode . boolcase-mode))
 #+end_src
 
+** YouTube
+Functions that are handy for setting up recording in youtube
+
+#+begin_src emacs-lisp
+(defun gopar/youtube-setup-emacs-goodies-series ()
+  (interactive)
+  (delete-other-windows)
+  (display-time-mode -1)
+  (consult-theme 'doom-shades-of-purple)
+  (let ((dashboard-items '((vocabulary) (recents . 5) (bookmarks . 5))))
+    (dashboard-open)))
+#+end_src
 * End
 #+begin_src emacs-lisp
 (progn
