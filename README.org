@@ -7,6 +7,8 @@ Literate Programming :)
 * Recommended Packages/Snippets to Have As Early as Possible
 #+begin_src emacs-lisp
 ;; Recommended to have this at the top
+(setq treesit-extra-load-path `(,(concat user-emacs-directory "var/tree-sitter-dist/")
+                                ,(concat user-emacs-directory "tree-sitter")))
 (setq load-prefer-newer t)
 (setq gc-cons-percentage .6)
 
@@ -55,6 +57,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (read-buffer-completion-ignore-case t)
   (completion-cycle-threshold 3)
   (tab-always-indent 'complete)
+  (scroll-conservatively 100)
   (custom-file "~/.emacs.d/ignoreme.el")
 
   :config
@@ -243,7 +246,9 @@ next potential sentence end"
                               "/usr/bin"
                               "/usr/sbin"
                               "/sbin"
-                              "/bin")
+                              "/bin"
+                              "/Users/gopar/.nvm/versions/node/v16.14.2/bin/"
+                              )
                             (split-string (getenv "PATH") ":")))))
 #+end_src
 
@@ -684,7 +689,8 @@ When called with a prefix aurgument, it will open annotations file."
 (use-package eshell
   :ensure nil
   :hook ((eshell-directory-change . gopar/sync-dir-in-buffer-name)
-         (eshell-mode . gopar/eshell-setup-keybinding))
+         (eshell-mode . gopar/eshell-setup-keybinding)
+         (eshell-mode . (lambda () (setq-local completion-at-point-functions '(cape-file cape-history)))))
   :custom
   (eshell-buffer-maximum-lines 10000)
   (eshell-scroll-to-bottom-on-input t)
@@ -707,7 +713,8 @@ When called with a prefix aurgument, it will open annotations file."
     "Do not save empty lines, commands that start with a space or 'l'/'ls'"
     (and
      (not (string-prefix-p "ls" input))
-     (not (string= "l" input))
+     (not (or (string-prefix-p "l " input) (string-equal "l" input)))
+     (not (string-prefix-p "cd" input))
      (eshell-input-filter-default input)
      (eshell-input-filter-initial-space input)))
 
@@ -796,23 +803,23 @@ Stolen from aweshell."
   :after eshell
   :ensure t)
 
-;; (use-package powerline-with-venv
-;;   :ensure nil
-;;   :after eshell-git-prompt
-;;   :load-path "lisp/themes/powerline-with-venv"
-;;   :config
-;;   (add-to-list 'eshell-git-prompt-themes
-;;                '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
-;;   (eshell-git-prompt-use-theme 'powerline-plus))
-
-(use-package powerline-with-pyvenv
+(use-package powerline-with-venv
   :ensure nil
   :after eshell-git-prompt
   :load-path "lisp/themes/powerline-with-venv"
   :config
   (add-to-list 'eshell-git-prompt-themes
-               '(powerline-plus eshell-git-prompt-powerline-pyvenv eshell-git-prompt-powerline-regexp))
+               '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
   (eshell-git-prompt-use-theme 'powerline-plus))
+
+;; (use-package powerline-with-pyvenv
+;;   :ensure nil
+;;   :after eshell-git-prompt
+;;   :load-path "lisp/themes/powerline-with-venv"
+;;   :config
+;;   (add-to-list 'eshell-git-prompt-themes
+;;                '(powerline-plus eshell-git-prompt-powerline-pyvenv eshell-git-prompt-powerline-regexp))
+;;   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
 *** Eshell vterm
@@ -841,7 +848,7 @@ function. Lets just have in buffer completion
   :hook ((python-mode . (lambda ()
                           (setq-local forward-sexp-function nil)
                           (make-local-variable 'python-shell-virtualenv-root)
-                          (setq-local completion-at-point-functions '( cape-file python-completion-at-point cape-dabbrev))))
+                          (setq-local completion-at-point-functions '(cape-file python-completion-at-point cape-dabbrev))))
          (inferior-python-mode . (lambda ()
                                    (setq-local completion-at-point-functions '(t)))))
 
@@ -870,11 +877,7 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
 (use-package virtualenvwrapper
   :ensure t
   :init
-  (venv-initialize-eshell)
-  (setq venv-location '("~/personal/arcade-traxx/traxx"
-                        "~/work/fiagents/env/"
-                        "~/work/archimedes/venv/"
-                        )))
+  (venv-initialize-eshell))
 #+end_src
 
 *** Black
@@ -924,16 +927,11 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
 #+end_src
 
 *** Pyvenv
+I'm keeping this function around since it's convineint to be able to create venvs from
+`pyvenv-create` and then do `venv-workon` in dir locals.
 #+begin_src emacs-lisp
 (use-package pyvenv
-  :ensure t
-  :hook ((after-init . pyvenv-mode)
-         (eshell-mode . pyvenv-tracking-mode))
-  ;; :init
-  ;; (make-variable-buffer-local 'pyvenv-virtual-env)
-  ;; (make-variable-buffer-local 'pyvenv-virtual-env-name)
-  ;; (make-variable-buffer-local 'pyvenv-virtual-env-path-directories)
-  )
+  :ensure t)
 #+end_src
 
 ** GUD (Debugger)
@@ -949,15 +947,27 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
 (use-package compile
   :ensure nil
   :custom
-  (compilation-scroll-output t)
+  ;; (compilation-scroll-output t)
+  (compilation-scroll-output 'first-error)
   (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
   :init
+  (defun my-compilation-mode-p (buffer)
+    "Return non-nil if BUFFER is in `compilation-mode'."
+    (with-current-buffer buffer
+      (derived-mode-p 'compilation-mode)))
+
+  ;; (add-to-list 'display-buffer-alist
+;;                `(my-compilation-mode-p . ((display-buffer-reuse-window display-buffer-at-bottom)
+;;                                           (window-height . 0.25)
+;;                                           (window . root))))
+
   (defun gopar/compilation-buffer-name-function (arg)
     "Rename buffer to whatever command was used.
 eg. *python main.py*"
     (concat "*" compile-command "*"
-            (if (projectile-project-p) (concat "<" (projectile-project-name) ">") ""))))
+            (if (projectile-project-p) (concat "<" (projectile-project-name) ">") "")))
+  )
 #+end_src
 
 *** Fancy Compile
@@ -966,7 +976,9 @@ eg. *python main.py*"
   :ensure t
   :defer 3
   :config
-  (fancy-compilation-mode))
+  (fancy-compilation-mode)
+  :custom
+  (fancy-compilation-scroll-output 'first-error))
 #+end_src
 
 ** Winner
@@ -1214,11 +1226,31 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   ("C-c p" . projectile-command-map)
 
   :custom
-  ;; (projectile-ignored-projects '("~/.emacs.d/") "Never acknowledge these projects")
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
   (projectile-per-project-compilation-buffer t)
   :config
   (projectile-global-mode))
+#+end_src
+
+** TODO Bug Reference
+Need to configure this
+
+Will probably need to extract to a private file since it'll hold
+domain/github info on things I work on
+#+begin_src emacs-lisp
+(use-package bug-reference :ensure nil :defer)
+#+end_src
+
+** Repeat Mode
+Allows repeating via `C-x z` (pressing z multiple times keeps repeating)
+or by pressing last keybinding of previous command
+#+begin_src emacs-lisp
+(use-package repeat
+  :ensure nil
+  :hook (after-init . repeat-mode)
+  :custom
+  (repeat-too-dangerous '(kill-this-buffer))
+  (repeat-exit-timeout 5))
 #+end_src
 
 ** Save Place
@@ -1282,8 +1314,7 @@ Also includes displaying of them
   (dabbrev-check-all-buffers nil)
   (dabbrev-check-other-buffers t)
   (dabbrev-friend-buffer-function 'dabbrev--same-major-mode-p)
-  (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'"))
-  )
+  (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
 
 (use-package corfu
   :ensure t
@@ -1481,18 +1512,6 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   )
 #+end_src
 
-** Tree Sitter
-Should be built in but as of =29.0.90= i have to install it via melpa
-#+begin_src emacs-lisp
-(use-package tree-sitter-langs
-  :ensure t)
-
-(use-package tree-sitter
-  :ensure t
-  :hook ((prog-mode . global-tree-sitter-mode)
-         (tree-sitter-after-on . tree-sitter-hl-mode)))
-#+end_src
-
 ** Web Mode
 #+begin_src emacs-lisp
 (use-package web-mode
@@ -1504,6 +1523,9 @@ Should be built in but as of =29.0.90= i have to install it via melpa
   (web-mode-script-padding 0)
   (web-mode-enable-current-element-highlight t)
   (web-mode-enable-current-column-highlight t)
+  (web-mode-markup-indent-offset 2)
+  (web-mode-css-indent-offset 2)
+  (web-mode-sql-indent-offset 2)
   :mode ("\\.vue\\'" . web-mode))
 #+end_src
 
@@ -1517,6 +1539,19 @@ Should be built in but as of =29.0.90= i have to install it via melpa
   (typescript-indent-level 2))
 #+end_src
 
+** Nodejs Repl
+
+#+begin_src emacs-lisp
+(use-package nodejs-repl
+  :ensure t
+  :bind (:map typescript-mode-map
+              ("C-c C-z" . nodejs-repl)
+         (:map js-mode-map
+               ("C-c C-z" . nodejs-repl))
+         (:map web-mode-map
+               ("C-c C-z" . nodejs-repl))))
+#+end_src
+
 ** Markdown
 #+begin_src emacs-lisp
 (use-package markdown-mode
@@ -1527,6 +1562,13 @@ Should be built in but as of =29.0.90= i have to install it via melpa
 #+begin_src emacs-lisp
 (use-package dockerfile-mode
   :ensure t)
+#+end_src
+** [[https://github.com/Silex/docker.el][Docker]]
+#+begin_src emacs-lisp
+(use-package docker
+  :ensure t
+  :defer
+  :bind ("C-c d" . docker))
 #+end_src
 
 ** GNU Ledger
@@ -2005,14 +2047,12 @@ With ARG, revert back to normal iedit."
 ** Mouse Scroll
 For my mouse that also has left - right mouse scroll
 #+begin_src emacs-lisp
-(use-package mwheel :ensure nil
-  :init
-  (defun scroll-left-one () (interactive) (scroll-left 2))
-  (defun scroll-right-one () (interactive) (scroll-right 2))
-
-  (global-set-key (kbd "<wheel-right>") 'scroll-left-one)
-  (global-set-key (kbd "<wheel-left>") 'scroll-right-one)
-  )
+(use-package mwheel
+  :ensure nil
+  :custom
+  (mouse-wheel-tilt-scroll t)
+  (mouse-wheel-scroll-amount-horizontal 2)
+  (mouse-wheel-flip-direction t))
 #+end_src
 
 ** Whitespace
@@ -2141,6 +2181,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
 #+end_src
 
 ** String Edit
+Only available in 29 or higher
 #+begin_src emacs-lisp
 (use-package string-edit
   :ensure nil
@@ -2156,7 +2197,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
     (let ((string (thing-at-point 'string t)))
       (string-edit "String at point:" string 'gopar/replace-str-at-point :abort-callback (lambda ()
                      (exit-recursive-edit)
-                     (error "Aborted edit"))))))
+                     (message "Aborted edit"))))))
 #+end_src
 
 ** Type Break
@@ -2399,7 +2440,7 @@ maintainers on the project.
 
   :bind ("C-c M-d" . gopar/devdocs-lookup)
   :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("django~4.2" "django_rest_framework" "python~3.10"))))
-         (vue-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))
+         (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest" "tailwindcss"))))
          (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))))
 #+end_src
 
@@ -2440,7 +2481,7 @@ maintainers on the project.
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
   (chatgpt-shell-transmitted-context-length 5)
-  (chatgpt-shell-model-versions '( "gpt-4" "gpt-4-32k" "gpt-3.5-turbo-16k" "gpt-3.5-turbo")))
+  (chatgpt-shell-model-versions '("gpt-3.5-turbo-16k" "gpt-3.5-turbo" "gpt-4" "gpt-4-32k")))
 #+end_src
 *** Dall-E
 
@@ -2653,7 +2694,7 @@ A colorful theme that I actually like
   (push '(treemacs-hl-line-face . solaire-hl-line-face) solaire-mode-remap-alist))
 #+end_src
 
-** [[https://github.com/ema2159/centaur-tabs][Centaur Tabs]]
+** COMMENT [[https://github.com/ema2159/centaur-tabs][Centaur Tabs]]
 
 #+begin_src emacs-lisp
 (use-package centaur-tabs
@@ -2672,6 +2713,7 @@ A colorful theme that I actually like
   (chatgpt-shell-mode . centaur-tabs-local-mode)
   (pydoc-mode . centaur-tabs-local-mode)
   (devdocs-mode . centaur-tabs-local-mode)
+  (compilation-mode . centaur-tabs-local-mode)
   ;; (vterm-mode . centaur-tabs-local-mode)
   :init
   (defun gopar/centaur-tabs-projectile-buffer-groups ()
@@ -2690,7 +2732,8 @@ Only difference from original function is that there is special treatment for es
                       (string-prefix-p "*vterm" (buffer-name))
                       (string-prefix-p "*Python" (buffer-name))
                       (string-prefix-p "*eww*" (buffer-name))
-                      (string-prefix-p "*compilation" (buffer-name)))) (list (projectile-project-name)))
+                      ;; (string-prefix-p "*compilation" (buffer-name))
+                      )) (list (projectile-project-name)))
 
             ((or (get-buffer-process (current-buffer)) (memq major-mode '(comint-mode compilation-mode))) '("Term"))
             ((string-equal "*" (substring (buffer-name) 0 1)) '("Misc"))
@@ -2804,7 +2847,16 @@ Functions that are handy for setting up recording in youtube
   (consult-theme 'doom-shades-of-purple)
   (let ((dashboard-items '((vocabulary) (recents . 5) (bookmarks . 5))))
     (dashboard-open)))
+
+(defun gopar/youtube-setup-python-series ()
+  (interactive)
+  (delete-other-windows)
+  (display-time-mode -1)
+  (consult-theme 'doom-nord-aurora)
+  (let ((dashboard-items '((vocabulary) (recents . 5) (bookmarks . 5))))
+    (dashboard-open)))
 #+end_src
+
 * End
 #+begin_src emacs-lisp
 (progn
