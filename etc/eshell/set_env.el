@@ -11,6 +11,7 @@
                ":/Applications/Emacs.app/Contents/MacOS/"
                ":/Applications/Firefox.app/Contents/MacOS/"
                ":/opt/homebrew/bin/"
+               ":/Users/gopar/.nvm/versions/node/v16.14.2/bin/"
                ))
       (PATH-ENV (getenv "PATH"))
       (non-existing-paths '()))
