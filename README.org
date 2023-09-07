@@ -848,7 +848,7 @@ function. Lets just have in buffer completion
   :hook ((python-mode . (lambda ()
                           (setq-local forward-sexp-function nil)
                           (make-local-variable 'python-shell-virtualenv-root)
-                          (setq-local completion-at-point-functions '(cape-file python-completion-at-point cape-dabbrev))))
+                          (setq-local completion-at-point-functions '(cape-file python-completion-at-point cape-dabbrev cape-keyword cape-line ))))
          (inferior-python-mode . (lambda ()
                                    (setq-local completion-at-point-functions '(t)))))
 
@@ -932,6 +932,18 @@ I'm keeping this function around since it's convineint to be able to create venv
 #+begin_src emacs-lisp
 (use-package pyvenv
   :ensure t)
+#+end_src
+
+** Kotlin
+#+begin_src emacs-lisp
+(use-package kotlin-mode :ensure t)
+#+end_src
+
+** Flycheck Kotlin
+#+begin_src emacs-lisp
+(use-package flycheck-kotlin
+  :ensure t
+  :hook (kotlin-mode . (lambda () (flycheck-mode 1) (flycheck-kotlin-setup))))
 #+end_src
 
 ** GUD (Debugger)
@@ -2350,7 +2362,9 @@ Also start type break mode after start up since I might just be dragging along
 ** Vterm
 #+begin_src emacs-lisp
 (use-package vterm
-  :ensure t)
+  :ensure t
+  :custom
+  (vterm-max-scrollback 100000))
 #+end_src
 
 ** COMMENT [[https://github.com/stanaka/dash-at-point][Dash at Point]]
@@ -2440,8 +2454,8 @@ maintainers on the project.
 
   :bind ("C-c M-d" . gopar/devdocs-lookup)
   :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("django~4.2" "django_rest_framework" "python~3.10"))))
-         (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest" "tailwindcss"))))
-         (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest"))))))
+         (web-mode . (lambda () (setq-local devdocs-current-docs        '("vue~3" "vue_router~4" "javascript" "typescript" "vitest" "moment" "tailwindcss" "html"))))
+         (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest" "moment"))))))
 #+end_src
 
 ** Flycheck
@@ -2481,7 +2495,7 @@ maintainers on the project.
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
   (chatgpt-shell-transmitted-context-length 5)
-  (chatgpt-shell-model-versions '("gpt-3.5-turbo-16k" "gpt-3.5-turbo" "gpt-4" "gpt-4-32k")))
+  (chatgpt-shell-model-versions '("gpt-4" "gpt-3.5-turbo-16k" "gpt-3.5-turbo"  "gpt-4-32k")))
 #+end_src
 *** Dall-E
 
