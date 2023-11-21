@@ -12,6 +12,7 @@
                ":/Applications/Firefox.app/Contents/MacOS/"
                ":/opt/homebrew/bin/"
                ":/Users/gopar/.nvm/versions/node/v16.14.2/bin/"
+               ":/Library/TeX/texbin/"
                ))
       (PATH-ENV (getenv "PATH"))
       (non-existing-paths '()))
