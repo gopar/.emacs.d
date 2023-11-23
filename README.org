@@ -402,8 +402,8 @@ Main configuration
   (org-clock-persist t)
   ;; If idle for more than 15 mins, resolve by asking what to do with clock
   (org-clock-idle-time 15)
-  ;; Set clock in frame title, instead of mode line
-  (org-clock-clocked-in-display 'frame-title)
+  ;; Don't show current clocked in task
+  (org-clock-clocked-in-display nil)
   ;; Show more clocking history
   (org-clock-history-length 10)
   ;; Include running time in clock reports
@@ -983,6 +983,16 @@ I'm keeping this function around since it's convineint to be able to create venv
   :ensure t)
 #+end_src
 
+*** Jedi
+Only use this for eldoc documentation. Works most of the time.
+#+begin_src emacs-lisp
+(use-package jedi
+  :ensure t
+  :hook (python-mode . jedi-mode)
+  :custom
+  (jedi:tooltip-method nil))
+#+end_src
+
 ** Kotlin
 #+begin_src emacs-lisp
 (use-package kotlin-mode :ensure t)
@@ -1008,7 +1018,6 @@ I'm keeping this function around since it's convineint to be able to create venv
 (use-package compile
   :ensure nil
   :custom
-  ;; (compilation-scroll-output t)
   (compilation-scroll-output 'first-error)
   ;; (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
@@ -1018,6 +1027,18 @@ I'm keeping this function around since it's convineint to be able to create venv
 eg. *python main.py*"
     (concat "*" compile-command "*"
             (if (projectile-project-p) (concat "<" (projectile-project-name) ">") "")))
+
+  ; from enberg on #emacs
+(add-hook 'compilation-finish-functions
+  (lambda (buf str)
+    (if (null (string-match ".*exited abnormally.*" str))
+        ;;no errors, make the compilation window go away in a few seconds
+        (progn
+          (run-at-time
+           "2 sec" nil 'delete-windows-on
+           (get-buffer-create "*compilation*"))
+          (message "No Compilation Errors!")))))
+
   )
 #+end_src
 
@@ -1047,6 +1068,9 @@ For TDD development
   (recompile-on-save-advice compile))
 
 #+end_src
+
+*** COMMENT [[https://github.com/EricCrosson/bury-successful-compilation/][Bury Successful Compilation]]
+
 
 ** Winner
 Window Management
@@ -1584,6 +1608,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   :ensure t
   :init
   (setq-default web-mode-code-indent-offset 2)
+  (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
   :hook (web-mode . (lambda () (highlight-indentation-mode -1)))
   :custom
   (web-mode-script-padding 0)
@@ -1592,8 +1617,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   (web-mode-markup-indent-offset 2)
   (web-mode-css-indent-offset 2)
   (web-mode-sql-indent-offset 2)
-  (web-mode-engines-alist '(("django"    . "\\.html\\'")))
-  :mode (("\\.vue\\'" . web-mode)
+   :mode (("\\.vue\\'" . web-mode)
          ("\\.html\\'" . web-mode)))
 #+end_src
 
@@ -1944,9 +1968,16 @@ With ARG, revert back to normal iedit."
   :hook ((prog-mode . yas-minor-mode)
          (org-mode . yas-minor-mode)
          (fundamental-mode . yas-minor-mode)
+         (text-mode . yas-minor-mode)
          (after-init . yas-reload-all))
   :bind (:map yas-minor-mode-map
               ("C-c C-SPC" . yas-insert-snippet)))
+#+end_src
+
+*** Actual Snippets
+#+begin_src emacs-lisp
+(use-package yasnippet-snippets
+  :ensure t)
 #+end_src
 
 ** [[https://github.com/emacs-dashboard/emacs-dashboard/][Dashboard]]
