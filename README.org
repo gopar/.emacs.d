@@ -696,20 +696,20 @@ When called with a prefix aurgument, it will open annotations file."
   "Insert a new daily log entry with the current date."
   (interactive)
   (goto-char (point-max))
-  (org-meta-return)
+  (org-insert-heading-respect-content)
   (insert (format-time-string "[%Y-%m-%d %a]") "\n")
   (insert "- Accomplishments:\n")
-  (insert "- Task 1\n")
-  (insert "- Task 2\n")
+  (insert "  - Task 1\n")
+  (insert "  - Task 2\n")
   (insert "- Challenges:\n")
-  (insert "- Issue 1\n")
-  (insert "- Issue 2\n")
+  (insert "  - Issue 1\n")
+  (insert "  - Issue 2\n")
   (insert "- Learnings:\n")
-  (insert "- Insight 1\n")
-  (insert "- Insight 2\n")
+  (insert "  - Insight 1\n")
+  (insert "  - Insight 2\n")
   (insert "- Plans for Tomorrow:\n")
-  (insert "- Task 1\n")
-  (insert "- Task 2\n"))
+  (insert "  - Task 1\n")
+  (insert "  - Task 2\n"))
 #+end_src
 
 ** Eshell
@@ -887,7 +887,7 @@ function. Lets just have in buffer completion
     (let* ((manage-directory (locate-dominating-file default-directory "manage.py"))
            (default-directory (or manage-directory default-directory)))
       (if manage-directory
-          (run-python (format "python %smanage.py shell" manage-directory) python-shell-dedicated 0)
+          (run-python (format "python manage.py shell_plus" manage-directory) python-shell-dedicated 0)
         (run-python (python-shell-calculate-command) python-shell-dedicated 0))))
   :custom
   (python-shell-dedicated 'project)
@@ -908,7 +908,15 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
   (venv-initialize-eshell))
 #+end_src
 
-*** Black
+*** Pyvenv
+I'm keeping this function around since it's convineint to be able to create venvs from
+`pyvenv-create` and then do `venv-workon` in dir locals.
+#+begin_src emacs-lisp
+(use-package pyvenv
+  :ensure t)
+#+end_src
+
+*** COMMENT Black
 
 #+begin_src emacs-lisp
 (use-package blacken
@@ -923,7 +931,7 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
       (message "Black not found. Not enabling `blacken-mode`"))))
 #+end_src
 
-*** Isort
+*** COMMENT Isort
 #+begin_src emacs-lisp
 (use-package python-isort
   :ensure t
@@ -935,6 +943,13 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
     (if (executable-find "isort")
         (python-isort-on-save-mode)
       (message "isort not found. Not enabling `isort-mode`"))))
+#+end_src
+
+*** [[https://github.com/scop/emacs-ruff-format][Ruff]]
+#+begin_src emacs-lisp
+(use-package ruff-format
+  :ensure t
+  :hook (python-mode . ruff-format-on-save-mode))
 #+end_src
 
 *** [[https://github.com/anachronic/importmagic.el][importmagic]]
@@ -975,14 +990,6 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
         (set-window-dedicated-p (get-buffer-window "*pydoc*") t)))))
 #+end_src
 
-*** Pyvenv
-I'm keeping this function around since it's convineint to be able to create venvs from
-`pyvenv-create` and then do `venv-workon` in dir locals.
-#+begin_src emacs-lisp
-(use-package pyvenv
-  :ensure t)
-#+end_src
-
 *** Jedi
 Only use this for eldoc documentation. Works most of the time.
 #+begin_src emacs-lisp
@@ -1019,30 +1026,25 @@ Only use this for eldoc documentation. Works most of the time.
   :ensure nil
   :custom
   (compilation-scroll-output 'first-error)
-  ;; (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
+  (compilation-always-kill t)
+  (compilation-max-output-line-length nil)
   :hook (compilation-mode . hl-line-mode)
   :init
-  (defun gopar/compilation-buffer-name-function (arg)
-    "Rename buffer to whatever command was used.
-eg. *python main.py*"
-    (concat "*" compile-command "*"
-            (if (projectile-project-p) (concat "<" (projectile-project-name) ">") "")))
-
   ; from enberg on #emacs
-(add-hook 'compilation-finish-functions
-  (lambda (buf str)
-    (if (null (string-match ".*exited abnormally.*" str))
-        ;;no errors, make the compilation window go away in a few seconds
-        (progn
-          (run-at-time
-           "2 sec" nil 'delete-windows-on
-           (get-buffer-create "*compilation*"))
-          (message "No Compilation Errors!")))))
+  (add-hook 'compilation-finish-functions
+            (lambda (buf str)
+              (if (null (string-match ".*exited abnormally.*" str))
+                  ;;no errors, make the compilation window go away in a few seconds
+                  (progn
+                    (run-at-time
+                     "1 sec" nil 'delete-windows-on
+                     (get-buffer-create "*compilation*"))
+                    (message "No Compilation Errors!")))))
 
   )
 #+end_src
 
-*** Fancy Compile
+*** [[https://codeberg.org/ideasman42/emacs-fancy-compilation][Fancy Compile]]
 #+begin_src emacs-lisp
 (use-package fancy-compilation
   :ensure t
@@ -1053,7 +1055,7 @@ eg. *python main.py*"
   (fancy-compilation-scroll-output 'first-error))
 #+end_src
 
-*** Recompile on Save
+*** [[https://github.com/maio/recompile-on-save.el][Recompile on Save]]
 For TDD development
 #+begin_src emacs-lisp
 (use-package recompile-on-save
@@ -1070,7 +1072,6 @@ For TDD development
 #+end_src
 
 *** COMMENT [[https://github.com/EricCrosson/bury-successful-compilation/][Bury Successful Compilation]]
-
 
 ** Winner
 Window Management
@@ -1388,6 +1389,7 @@ Also includes displaying of them
         '((consult-line (:not posframe))
           (gopar/consult-line (:not posframe))
           (consult-ag (:not posframe))
+          (consult-grep (:not posframe))
           (t posframe))))
 
 ;; just for looks
@@ -1471,7 +1473,7 @@ Also includes displaying of them
   :ensure
   :after projectile
   :hook (after-init . (lambda () (load-theme 'tao-yin)))
-  :bind (("C-s" . gopar/consult-line)
+  :bind (("C-s" . consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
          ("C-x r b" . consult-bookmark)
@@ -1493,23 +1495,6 @@ Also includes displaying of them
     (setq y (cl-remove-if (lambda (item) (memq item x)) y))
     y)
 
-  (setq gopar/color-themes '(
-                             doom-monokai-spectrum
-                             ))
-  (setq gopar/white-themes '())
-  (setq gopar/black-themes '())
-  (setq gopar/colorless-thems
-        '(
-          doom-homage-white
-          doom-plain
-          doom-plain-dark
-          sketch-black
-          sketch-white
-          stimmung-themes-dark
-          stimmung-themes-light
-          tao-yang
-          tao-yin
-          ))
   ;; Any themes that are incomplete/lacking don't work with centaur tabs/solair mode
   (setq gopar/themes-blacklisted '(
                                    ;; doom-tomorrow-night
@@ -1547,7 +1532,11 @@ If used with a prefix, it will search all buffers as well."
 (use-package consult-ag
   :ensure
   :bind (:map projectile-command-map
-              ("s s" . consult-ag)))
+              ("s s" . consult-ag)
+              ("s g" . consult-grep)))
+
+(use-package wgrep-ag
+  :ensure t)
 
 (use-package consult-org-roam
   :ensure t
@@ -1575,6 +1564,13 @@ If used with a prefix, it will search all buffers as well."
   ;; Must be in the :init section of use-package such that the mode gets
   ;; enabled right away. Note that this forces loading the package.
   (marginalia-mode))
+
+(use-package embark
+  :ensure t
+  :bind (("C-." . embark-act)))
+
+(use-package embark-consult
+  :ensure t)
 #+end_src
 
 ** Code Compass
@@ -1606,10 +1602,28 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 #+begin_src emacs-lisp
 (use-package web-mode
   :ensure t
+  :bind (:map web-mode-map ("M-." . gopar/html-jump-to-template-def))
   :init
   (setq-default web-mode-code-indent-offset 2)
   (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
-  :hook (web-mode . (lambda () (highlight-indentation-mode -1)))
+
+  (defun gopar/html-jump-to-template-def ()
+    "When in web-mode, we can use this function to jump to template definition"
+    (interactive)
+    (require 'cl-lib)
+    (let (path string-at-point)
+      (setq string-at-point (thing-at-point 'filename t))
+      (setq path (cl-find-if (lambda (x) (string-match-p string-at-point x)) (projectile-project-files (projectile-project-root))))
+
+      (if path
+        (progn
+          (xref--push-markers)
+          (find-file (format "%s%s" (projectile-project-root) path)))
+        (message "No Template File Found"))))
+
+  :hook (web-mode . (lambda ()
+                      (highlight-indentation-mode -1)
+                      (electric-pair-local-mode -1)))
   :custom
   (web-mode-script-padding 0)
   (web-mode-enable-current-element-highlight t)
@@ -1617,7 +1631,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   (web-mode-markup-indent-offset 2)
   (web-mode-css-indent-offset 2)
   (web-mode-sql-indent-offset 2)
-   :mode (("\\.vue\\'" . web-mode)
+  :mode (("\\.vue\\'" . web-mode)
          ("\\.html\\'" . web-mode)))
 #+end_src
 
@@ -1773,11 +1787,12 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package iedit
   :ensure t
-  :bind (("C-c o" . gopar/iedit-dwim))
+  :bind (("C-c o" . iedit-mode))
   :custom
-  ;; Perhaps bind this to something? Handy how it hooks up to even search!
   (iedit-toggle-key-default nil)
   :init
+
+  ;; Not working correctly?
   (defun gopar/iedit-dwim (arg)
     "Starts iedit but uses \\[narrow-to-defun] to limit its scope.
 With ARG, revert back to normal iedit."
@@ -2089,6 +2104,8 @@ With ARG, revert back to normal iedit."
 #+begin_src emacs-lisp
 (use-package replace
   :ensure nil
+  :custom
+  (list-matching-lines-default-context-lines 2)
   :bind (("C-c C-o" . gopar/occur-definitions)
          :map occur-mode-map
          ("RET" . gopar/jump-to-defintion-and-kill-all-other-windows)
@@ -2581,10 +2598,42 @@ maintainers on the project.
 #+begin_src emacs-lisp
 (use-package flycheck
   :ensure
-  :hook (python-mode . flycheck-mode)
+  :hook ((python-mode . flycheck-mode)
+         (python-mode . (lambda () (interactive) (add-to-list 'flycheck-checkers 'python-ruff))))
   :bind (:map flycheck-mode-map
               ("C-c C-n" . flycheck-next-error)
               ("C-c C-p" . flycheck-previous-error))
+  :config
+  (flycheck-def-config-file-var flycheck-python-ruff-config python-ruff
+                                '("pyproject.toml" "ruff.toml" ".ruff.toml"))
+
+  (flycheck-define-checker python-ruff
+    "A Python syntax and style checker using the ruff.
+To override the path to the ruff executable, set
+`flycheck-python-ruff-executable'.
+
+See URL `https://beta.ruff.rs/docs/'."
+    :command ("ruff"
+              "check"
+              (config-file "--config" flycheck-python-ruff-config)
+              "--output-format=text"
+              "--stdin-filename" source-original
+              "-")
+    :standard-input t
+    :error-filter (lambda (errors)
+                    (let ((errors (flycheck-sanitize-errors errors)))
+                      (seq-map #'flycheck-flake8-fix-error-level errors)))
+    :error-patterns
+    ((warning line-start
+              (file-name) ":" line ":" (optional column ":") " "
+              (id (one-or-more (any alpha)) (one-or-more digit)) " "
+              (message (one-or-more not-newline))
+              line-end))
+    :modes (python-mode python-ts-mode)
+    :next-checkers ((warning . python-mypy)))
+
+
+
   :custom
   (flycheck-flake8rc '(".flake8" "setup.cfg" "tox.ini" "pyproject.toml")))
 #+end_src
@@ -2924,6 +2973,16 @@ NOTE: Seems like its no longer actively maintained :/
   :hook (after-init . golden-ratio-mode)
   :custom
   (golden-ratio-exclude-modes '(occur-mode)))
+#+end_src
+
+** Khoj AI
+#+begin_src emacs-lisp
+(use-package khoj
+  :ensure t
+  ;; :pin melpa-stable
+  ;; :bind ("C-c s" . 'khoj)
+  :config
+  (setq khoj-org-directories `(,(f-join user-emacs-directory "org/private/org-roam"))))
 #+end_src
 
 * 1st Party Modes
