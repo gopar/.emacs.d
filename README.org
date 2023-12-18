@@ -58,6 +58,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (read-buffer-completion-ignore-case t)
   (completion-cycle-threshold 3)
   (tab-always-indent 'complete)
+  (use-dialog-box nil) ; Lets be consistent and use minibuffer for everyting
   (scroll-conservatively 100)
   (custom-file "~/.emacs.d/ignoreme.el")
 
@@ -467,8 +468,8 @@ Main configuration
       ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
 
      ("i" "In-Progress Tasks"
-      ((agenda "" ((org-agenda-skip-function '(zin/org-agenda-skip-tag "work"))))
-       (todo "IN-PROGRESS|WAITING"))
+      ((todo "IN-PROGRESS|WAITING")
+       (agenda ""))
       ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
 
      ("g" "Goals: 12 Week Year"
@@ -486,28 +487,13 @@ Main configuration
       ((org-agenda-sorting-strategy '(habit-up category-up priority-down ))
        (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org")))))
   :init
-  (defun zin/org-agenda-skip-tag (tag &optional others)
-    "Skip all entries that correspond to TAG.
-
-If OTHERS is true, skip all entries that do not correspond to TAG."
-    (let ((next-headline (save-excursion (or (outline-next-heading) (point-max))))
-          (current-headline (or (and (org-at-heading-p)
-                                     (point))
-                                (save-excursion (org-back-to-heading)))))
-      (if others
-          (if (not (member tag (org-get-tags-at current-headline)))
-              next-headline
-            nil)
-        (if (member tag (org-get-tags-at current-headline))
-            next-headline
-          nil))))
-
   ;; Originally from here: https://stackoverflow.com/a/59001859/2178312
   (defun gopar/get-schedule-or-deadline-if-available ()
     (let ((scheduled (org-get-scheduled-time (point)))
           (deadline (org-get-deadline-time (point))))
       (if (not (or scheduled deadline))
-          (format " ")
+          (format "🗓️ ")
+          ;; (format " ")
         "   "))))
 
 #+end_src
@@ -864,7 +850,18 @@ Defer visual commands to vterm instead of shell
   (defalias 'eshell/v 'eshell-exec-visual))
 #+end_src
 
+*** Eshell Banner
+#+begin_src emacs-lisp
+(use-package eshell-info-banner
+  :ensure t
+  :defer t
+  :hook (eshell-banner-load . eshell-info-banner-update-banner))
+#+end_src
+
 ** Python
+Run on every fresh virtualenv install
+=pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest=
+
 I get some weird auto completion in inferior python shell mode when I leave the default completion
 function. Lets just have in buffer completion
 #+begin_src emacs-lisp
@@ -916,35 +913,6 @@ I'm keeping this function around since it's convineint to be able to create venv
   :ensure t)
 #+end_src
 
-*** COMMENT Black
-
-#+begin_src emacs-lisp
-(use-package blacken
-  :ensure t
-  :hook (python-mode . gopar/enable-blacken-if-found)
-  :init
-  (defun gopar/enable-blacken-if-found ()
-    "Format the current buffer using the 'blacken' program, if available."
-    (interactive)
-    (if (executable-find "black")
-        (blacken-mode)
-      (message "Black not found. Not enabling `blacken-mode`"))))
-#+end_src
-
-*** COMMENT Isort
-#+begin_src emacs-lisp
-(use-package python-isort
-  :ensure t
-  :hook (python-mode . gopar/enable-isort-if-found)
-  :init
-  (defun gopar/enable-isort-if-found ()
-    "Format the current buffer using the `isort' program, if available."
-    (interactive)
-    (if (executable-find "isort")
-        (python-isort-on-save-mode)
-      (message "isort not found. Not enabling `isort-mode`"))))
-#+end_src
-
 *** [[https://github.com/scop/emacs-ruff-format][Ruff]]
 #+begin_src emacs-lisp
 (use-package ruff-format
@@ -992,12 +960,34 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
 
 *** Jedi
 Only use this for eldoc documentation. Works most of the time.
+Requires =pip install jedi epc= in all virtualenvs
 #+begin_src emacs-lisp
 (use-package jedi
   :ensure t
   :hook (python-mode . jedi-mode)
   :custom
   (jedi:tooltip-method nil))
+#+end_src
+
+*** [[https://github.com/AdamNiederer/cov][Cov]]
+#+begin_src emacs-lisp
+(use-package cov
+  :ensure t
+  :hook (python-mode . gopar/cov-mode)
+  :init
+  (setq cov-coverage-mode t)
+
+  (defun gopar/cov-mode ()
+    "Enable cov-mode if there is a coverate.json at project root"
+    (interactive)
+    (let* ((coverage-exists (locate-dominating-file (buffer-file-name) "coverage.json")))
+      (when coverage-exists
+        (cov-mode))))
+:config
+;; I want this to be colorless
+;; (custom-set-faces
+;;  '(cov-coverage-run-face ((t :inherit default))))
+)
 #+end_src
 
 ** Kotlin
@@ -1358,6 +1348,19 @@ or by pressing last keybinding of previous command
   :hook (after-init . savehist-mode))
 #+end_src
 
+** Grep
+#+begin_src emacs-lisp
+(use-package grep
+  :ensure nil
+  :custom
+  (grep-find-ignored-directories (append grep-find-ignored-directories '(".mypy_cache" ".pytest_cache" "htmlcov"))))
+#+end_src
+
+** wgrep
+#+begin_src emacs-lisp
+(use-package wgrep-ag :ensure t)
+#+end_src
+
 ** Code Completion
 A collection of packages that act as 'smart' completion in which really are not :)
 Also includes displaying of them
@@ -1390,6 +1393,7 @@ Also includes displaying of them
           (gopar/consult-line (:not posframe))
           (consult-ag (:not posframe))
           (consult-grep (:not posframe))
+          (xref-find-definitions (:not posframe))
           (t posframe))))
 
 ;; just for looks
@@ -1472,7 +1476,6 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :after projectile
-  :hook (after-init . (lambda () (load-theme 'tao-yin)))
   :bind (("C-s" . consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
@@ -1488,7 +1491,9 @@ Also includes displaying of them
          ("M-s" . consult-history)                 ;; orig. next-matching-history-element
          ("M-r" . consult-history)
          :map projectile-command-map
-         ("b" . consult-project-buffer))
+         ("b" . consult-project-buffer)
+         :map prog-mode-map
+         ("M-g o" . consult-imenu))
 
   :init
   (defun remove-items (x y)
@@ -2105,7 +2110,7 @@ With ARG, revert back to normal iedit."
 (use-package replace
   :ensure nil
   :custom
-  (list-matching-lines-default-context-lines 2)
+  (list-matching-lines-default-context-lines 0)
   :bind (("C-c C-o" . gopar/occur-definitions)
          :map occur-mode-map
          ("RET" . gopar/jump-to-defintion-and-kill-all-other-windows)
@@ -2589,9 +2594,23 @@ maintainers on the project.
       (devdocs-lookup ask-docs query)))
 
   :bind ("C-c M-d" . gopar/devdocs-lookup)
-  :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("django~4.2" "django_rest_framework" "python~3.10"))))
-         (web-mode . (lambda () (setq-local devdocs-current-docs        '("vue~3" "vue_router~4" "javascript" "typescript" "vitest" "moment" "tailwindcss" "html"))))
-         (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3" "vue_router~4" "javascript" "typescript" "vitest" "moment"))))))
+  :hook ((python-mode . (lambda () (setq-local devdocs-current-docs
+                                      '("django~4.2" "django_rest_framework" "python~3.11"))))
+         (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
+                                                                   "vue_router~4"
+                                                                   "javascript"
+                                                                   "typescript"
+                                                                   "vitest"
+                                                                   "moment"
+                                                                   "tailwindcss"
+                                                                   "html"
+                                                                   "css"))))
+         (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
+                                                                          "vue_router~4"
+                                                                          "javascript"
+                                                                          "typescript"
+                                                                          "vitest"
+                                                                          "moment"))))))
 #+end_src
 
 ** Flycheck
@@ -2643,8 +2662,9 @@ See URL `https://beta.ruff.rs/docs/'."
 #+begin_src emacs-lisp
 (use-package chatgpt-shell
   :ensure t
-  :commands (chatgpt-shell--primary-buffer chatgpt-shell)
-  :bind ("C-x m" . chatgpt-shell)
+  :commands (chatgpt-shell--primary-buffer chatgpt-shell chatgpt-shell-prompt-compose)
+  :bind (("C-x m" . chatgpt-shell)
+         ("C-c C-e" . chatgpt-shell-prompt-compose))
   :hook (chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
   :init
   (setq shell-maker-history-path (concat user-emacs-directory "var/"))
@@ -2681,6 +2701,16 @@ See URL `https://beta.ruff.rs/docs/'."
   (dall-e-shell-image-size "1024x1024")
   (dall-e-shell-image-output-directory "~/Downloads/dall_e_output/"))
 #+end_src
+*** COMMENT Khoj AI
+#+begin_src emacs-lisp
+(use-package khoj
+  :ensure t
+  ;; :pin melpa-stable
+  ;; :bind ("C-c s" . 'khoj)
+  :config
+  (setq khoj-org-directories `(,(f-join user-emacs-directory "org/private/org-roam"))))
+#+end_src
+
 *** COMMENT Auto Git Commit
 #+begin_src emacs-lisp
 (use-package gpt-commit
@@ -2805,7 +2835,31 @@ My favorite theme
   :custom
   (tao-theme-use-boxes t)
   (tao-theme-use-height nil)
-  (tao-theme-use-sepia nil))
+  (tao-theme-use-sepia nil)
+  :init
+  (defvar after-load-theme-hook nil
+    "Hook run after a color theme is loaded using `load-theme'.")
+  (defadvice load-theme (after run-after-load-theme-hook activate)
+    "Run `after-load-theme-hook'."
+    (run-hooks 'after-load-theme-hook))
+
+  (defun update-doom-modeline-battery-faces ()
+  "Customize battery faces for tao-yin and tao-yang themes."
+  (cond
+   ((member 'tao-yin custom-enabled-themes)
+    ;; Customizations for tao-yin theme
+    (custom-set-faces
+     '(doom-modeline-battery-warning ((t (:foreground "black" :background "orange"))))
+     '(doom-modeline-battery-critical ((t (:foreground "black" :background "red"))))
+     ))
+   ((member 'tao-yang custom-enabled-themes)
+    ;; Customizations for tao-yang theme
+    (custom-set-faces
+     '(doom-modeline-battery-warning ((t (:foreground "black" :background "orange"))))
+     '(doom-modeline-battery-critical ((t (:foreground "black" :background "red"))))
+     ))))
+
+  (add-hook 'after-load-theme-hook 'update-doom-modeline-battery-faces))
 #+END_SRC
 *** [[https://github.com/motform/stimmung-themes][Stimmung]]
 Plain Dark/white theme
@@ -2972,17 +3026,25 @@ NOTE: Seems like its no longer actively maintained :/
   :ensure t
   :hook (after-init . golden-ratio-mode)
   :custom
-  (golden-ratio-exclude-modes '(occur-mode)))
+  (golden-ratio-exclude-modes '(occur-mode))
+  )
 #+end_src
 
-** Khoj AI
+** [[https://github.com/jhgorrell/ssh-config-mode-el][SSH config Mode]]
 #+begin_src emacs-lisp
-(use-package khoj
+(use-package ssh-config-mode
+  :ensure t)
+#+end_src
+
+** [[https://github.com/LionyxML/auto-dark-emacs][Auto Dark]]
+Sync theme to light/dark based on system settings
+#+begin_src emacs-lisp
+(use-package auto-dark
   :ensure t
-  ;; :pin melpa-stable
-  ;; :bind ("C-c s" . 'khoj)
-  :config
-  (setq khoj-org-directories `(,(f-join user-emacs-directory "org/private/org-roam"))))
+  :hook (after-init . auto-dark-mode)
+  :init
+  (setq auto-dark-dark-theme 'tao-yin)
+  (setq auto-dark-light-theme 'doom-shades-of-purple))
 #+end_src
 
 * 1st Party Modes
