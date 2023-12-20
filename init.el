@@ -9,10 +9,11 @@
 (package-initialize)
 
 ;; Have to set it up here, otherwise it won't take effect in org mode doc
-(setq inhibit-startup-echo-area-message "gopar")
+(setq inhibit-startup-echo-area-message user-login-name)
 (setq use-package-always-ensure nil)
 
-(org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+;; (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+(load (locate-user-emacs-file "README.el"))
 
 ;; Mac only
 (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))

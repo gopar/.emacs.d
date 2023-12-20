@@ -1,4 +1,5 @@
 #+TITLE: Emacs Configuration
+#+PROPERTY: header-args :tangle README.el
 
 * Emacs Configuration
 My Emacs config as an org document.
@@ -1598,33 +1599,33 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   (dumb-jump-selector 'completing-read)
   (dumb-jump-default-project "~/work")
   :init
+  (defun gopar-filename/xref-filename-backend ()
+    "Xref backend for jumping to HTML template definitions."
+    (when (and (thing-at-point 'filename t) (string-suffix-p "html" (thing-at-point 'filename t)))
+      'gopar-filename))
+
+  (cl-defmethod xref-backend-identifier-at-point ((_backend (eql gopar-filename)))
+    (thing-at-point 'filename t))
+
+  (cl-defmethod xref-backend-definitions ((_backend (eql gopar-filename)) identifier)
+    (let ((path (cl-find-if (lambda (x) (string-match-p identifier x))
+                            (projectile-project-files (projectile-project-root)))))
+      (print identifier)
+      (print path)
+      (when path
+        (list (xref-make identifier (xref-make-file-location (format "%s%s" (projectile-project-root) path) 1 0))))))
+
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
-  ;; (setq xref-show-definitions-function #'xref-show-definitions-completing-read)
-  )
+  (add-hook 'xref-backend-functions #'gopar-filename/xref-filename-backend))
 #+end_src
 
 ** Web Mode
 #+begin_src emacs-lisp
 (use-package web-mode
   :ensure t
-  :bind (:map web-mode-map ("M-." . gopar/html-jump-to-template-def))
   :init
   (setq-default web-mode-code-indent-offset 2)
   (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
-
-  (defun gopar/html-jump-to-template-def ()
-    "When in web-mode, we can use this function to jump to template definition"
-    (interactive)
-    (require 'cl-lib)
-    (let (path string-at-point)
-      (setq string-at-point (thing-at-point 'filename t))
-      (setq path (cl-find-if (lambda (x) (string-match-p string-at-point x)) (projectile-project-files (projectile-project-root))))
-
-      (if path
-        (progn
-          (xref--push-markers)
-          (find-file (format "%s%s" (projectile-project-root) path)))
-        (message "No Template File Found"))))
 
   :hook (web-mode . (lambda ()
                       (highlight-indentation-mode -1)
@@ -1904,7 +1905,8 @@ With ARG, revert back to normal iedit."
   (setq webjump-sites
         '(("DuckDuckGo" . [simple-query "www.duckduckgo.com" "www.duckduckgo.com/?q=" ""])
           ("Google" . [simple-query "www.google.com" "www.google.com/search?q=" ""])
-          ("YouTube" . [simple-query "www.youtube.com/feed/subscriptions" "www.youtube.com/results?search_query=" ""]))))
+          ("YouTube" . [simple-query "www.youtube.com/feed/subscriptions" "www.youtube.com/results?search_query=" ""])
+          ("CCBV" . [simple-query "https://ccbv.co.uk/" "https://ccbv.co.uk/" ""]))))
 #+end_src
 
 ** RFC Browsing
@@ -2071,7 +2073,7 @@ With ARG, revert back to normal iedit."
   (dashboard-setup-startup-hook))
 #+end_src
 
-** Display Fill Column
+** COMMENT Display Fill Column
 #+begin_src emacs-lisp
 (use-package display-fill-column-indicator
   :ensure nil
