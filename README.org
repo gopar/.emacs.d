@@ -983,23 +983,19 @@ Requires =pip install jedi epc= in all virtualenvs
     (interactive)
     (let* ((coverage-exists (locate-dominating-file (buffer-file-name) "coverage.json")))
       (when coverage-exists
-        (cov-mode))))
-:config
-;; I want this to be colorless
-;; (custom-set-faces
-;;  '(cov-coverage-run-face ((t :inherit default))))
-)
+        (cov-mode)))))
 #+end_src
 
 ** Kotlin
 #+begin_src emacs-lisp
-(use-package kotlin-mode :ensure t)
+(use-package kotlin-mode :ensure t :defer)
 #+end_src
 
 ** Flycheck Kotlin
 #+begin_src emacs-lisp
 (use-package flycheck-kotlin
   :ensure t
+  :defer
   :hook (kotlin-mode . (lambda () (flycheck-mode 1) (flycheck-kotlin-setup))))
 #+end_src
 
@@ -1353,13 +1349,14 @@ or by pressing last keybinding of previous command
 #+begin_src emacs-lisp
 (use-package grep
   :ensure nil
+  :defer
   :custom
   (grep-find-ignored-directories (append grep-find-ignored-directories '(".mypy_cache" ".pytest_cache" "htmlcov"))))
 #+end_src
 
 ** wgrep
 #+begin_src emacs-lisp
-(use-package wgrep-ag :ensure t)
+(use-package wgrep-ag :ensure t :defer)
 #+end_src
 
 ** Code Completion
@@ -1601,7 +1598,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   :init
   (defun gopar-filename/xref-filename-backend ()
     "Xref backend for jumping to HTML template definitions."
-    (when (and (thing-at-point 'filename t) (string-suffix-p "html" (thing-at-point 'filename t)))
+    (when (and (thing-at-point 'filename t) (string-suffix-p ".html" (thing-at-point 'filename t)))
       'gopar-filename))
 
   (cl-defmethod xref-backend-identifier-at-point ((_backend (eql gopar-filename)))
@@ -1610,8 +1607,6 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   (cl-defmethod xref-backend-definitions ((_backend (eql gopar-filename)) identifier)
     (let ((path (cl-find-if (lambda (x) (string-match-p identifier x))
                             (projectile-project-files (projectile-project-root)))))
-      (print identifier)
-      (print path)
       (when path
         (list (xref-make identifier (xref-make-file-location (format "%s%s" (projectile-project-root) path) 1 0))))))
 
@@ -2676,9 +2671,7 @@ See URL `https://beta.ruff.rs/docs/'."
                  (side . right)
                  (slot . 0)
                  (window-parameters . ((no-delete-other-windows . t)))
-                 (dedicated . t)
-                 ;; (window-width . 60)
-                 ))
+                 (dedicated . t)))
 
   :bind (:map chatgpt-shell-mode-map
                (("RET" . newline)
@@ -3028,14 +3021,15 @@ NOTE: Seems like its no longer actively maintained :/
   :ensure t
   :hook (after-init . golden-ratio-mode)
   :custom
-  (golden-ratio-exclude-modes '(occur-mode))
-  )
+  (golden-ratio-exclude-modes '(occur-mode)))
 #+end_src
 
 ** [[https://github.com/jhgorrell/ssh-config-mode-el][SSH config Mode]]
 #+begin_src emacs-lisp
 (use-package ssh-config-mode
-  :ensure t)
+  :ensure t
+  :defer
+  )
 #+end_src
 
 ** [[https://github.com/LionyxML/auto-dark-emacs][Auto Dark]]
@@ -3047,6 +3041,16 @@ Sync theme to light/dark based on system settings
   :init
   (setq auto-dark-dark-theme 'adwaita-dark)
   (setq auto-dark-light-theme 'doom-shades-of-purple))
+#+end_src
+
+** [[https://github.com/hlissner/emacs-hide-mode-line][Hide Mode Line]]
+#+begin_src emacs-lisp
+(use-package hide-mode-line
+  :ensure t
+  :defer
+  :hook ((eshell-mode . hide-mode-line-mode)
+         (vterm-mode . hide-mode-line-mode)
+         (treemacs-mode . hide-mode-line-mode)))
 #+end_src
 
 * 1st Party Modes
