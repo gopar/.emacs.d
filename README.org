@@ -925,6 +925,8 @@ I'm keeping this function around since it's convineint to be able to create venv
 #+begin_src emacs-lisp
 (use-package importmagic
   :ensure t
+  :custom
+  (importmagic-be-quiet t)
   :hook (python-mode . importmagic-mode))
 #+end_src
 
@@ -3051,6 +3053,22 @@ Sync theme to light/dark based on system settings
   :hook ((eshell-mode . hide-mode-line-mode)
          (vterm-mode . hide-mode-line-mode)
          (treemacs-mode . hide-mode-line-mode)))
+#+end_src
+
+** Blamer
+#+begin_src emacs-lisp
+(use-package blamer
+  :ensure t
+  :hook (after-init . global-blamer-mode)
+  :custom
+  (blamer-idle-time 0.5)
+  ;; (blamer-min-offset 70)
+  ;; :custom-face
+  ;; (blamer-face ((t :foreground "#7a88cf"
+  ;;                   :background nil
+  ;;                   :height 140
+  ;;                   :italic t)))
+  )
 #+end_src
 
 * 1st Party Modes
