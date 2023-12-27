@@ -918,7 +918,13 @@ I'm keeping this function around since it's convineint to be able to create venv
 #+begin_src emacs-lisp
 (use-package ruff-format
   :ensure t
-  :hook (python-mode . ruff-format-on-save-mode))
+  :hook (python-mode . gopar/enable-ruff-if-found)
+  :init
+  (defun gopar/enable-ruff-if-found ()
+    "Format the current buffer using the 'ruff` program, if available."
+    (interactive)
+    (if (executable-find "ruff")
+        (ruff-format-on-save-mode))))
 #+end_src
 
 *** [[https://github.com/anachronic/importmagic.el][importmagic]]
@@ -927,8 +933,14 @@ I'm keeping this function around since it's convineint to be able to create venv
   :ensure t
   :custom
   (importmagic-be-quiet t)
-  :hook (python-mode . importmagic-mode))
-#+end_src
+  :hook (python-mode . gopar/enable-importmagic-if-found)
+  :init
+  (defun gopar/enable-importmagic-if-found ()
+    "Format the current buffer using the 'importmagic` program, if available."
+    (interactive)
+    (if (zerop (shell-command "python -c 'import importmagic'"))
+        (importmagic-mode))))
+#+END_src
 
 *** [[https://github.com/statmobile/pydoc][Pydoc]]
 Required Jedi to work properly
@@ -967,9 +979,15 @@ Requires =pip install jedi epc= in all virtualenvs
 #+begin_src emacs-lisp
 (use-package jedi
   :ensure t
-  :hook (python-mode . jedi-mode)
+  :hook (python-mode . gopar/enable-jedi-if-found)
   :custom
-  (jedi:tooltip-method nil))
+  (jedi:tooltip-method nil)
+  :init
+  (defun gopar/enable-jedi-if-found ()
+    "Format the current buffer using the jedi program, if available."
+    (interactive)
+    (if (zerop (shell-command "python -c 'import jedi'"))
+        (jedi-mode))))
 #+end_src
 
 *** [[https://github.com/AdamNiederer/cov][Cov]]
@@ -1368,6 +1386,7 @@ Also includes displaying of them
 #+begin_src emacs-lisp
 (use-package vertico
   :ensure t
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
   :init
   (vertico-mode)
 
@@ -2081,7 +2100,15 @@ With ARG, revert back to normal iedit."
 #+begin_src emacs-lisp
 (use-package dired
   :ensure nil
+  :hook ((dired-mode . dired-hide-details-mode)
+         (dired-mode . hl-line-mode))
   :custom
+  (dired-do-revert-buffer t)
+  (dired-auto-revert-buffer t)
+  (delete-by-moving-to-trash t)
+  (dired-mouse-drag-files t)
+  (dired-dwim-target t)
+  ;; (dired-guess-shell-alist-user)
   (dired-listing-switches "-alhoF --group-directories-first"))
 
 (use-package all-the-icons-dired
@@ -2612,6 +2639,11 @@ maintainers on the project.
                                                                           "moment"))))))
 #+end_src
 
+** Link Hint
+#+begin_src emacs-lisp
+(use-package link-hint :ensure t :defer)
+#+end_src
+
 ** Flycheck
 #+begin_src emacs-lisp
 (use-package flycheck
@@ -3071,6 +3103,37 @@ Sync theme to light/dark based on system settings
   )
 #+end_src
 
+** Sqlite
+Built in sqlite viewer in emacs
+Additional goodies can be found here: https://xenodium.com/further-sqlite-mode-extensions/
+
+#+begin_src emacs-lisp
+(use-package sqlite-mode
+  :ensure nil
+  :defer
+  :bind (:map sqlite-mode-map
+              ("n" . next-line)
+              ("p" . previous-line)))
+#+end_src
+
+** Keycast
+Display keystors in mode line.
+Useful for when making videos
+#+begin_src emacs-lisp
+(use-package keycast
+  :defer
+  :custom
+  (keycast-mode-line-format "%k%c%R ")
+  (keycast-substitute-alist
+   '((keycast-log-erase-buffer nil nil)
+     (transient-update         nil nil)
+     (self-insert-command "." "Typing…")
+     (org-self-insert-command "." "Typing…")
+     (mwheel-scroll nil nil)
+     (mouse-movement-p nil nil)
+     (mouse-event-p nil nil))))
+#+end_src
+
 * 1st Party Modes
 Stuff I've made for myself that are modes
 
@@ -3123,6 +3186,7 @@ Functions that are handy for setting up recording in youtube
   (delete-other-windows)
   (display-time-mode -1)
   (type-break-mode -1)
+  (keycast-header-line-mode)
   (let ((dashboard-items '((vocabulary) (recents . 5) (bookmarks . 5))))
     (dashboard-open)))
 
