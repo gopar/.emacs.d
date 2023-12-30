@@ -870,6 +870,7 @@ function. Lets just have in buffer completion
   :ensure nil
   :bind (:map python-mode-map
               ("C-c C-p" . nil)
+              ("C-c C-e" . nil)
               ("C-c C-z" . gopar/run-python))
   :hook ((python-mode . (lambda ()
                           (setq-local forward-sexp-function nil)
@@ -2109,7 +2110,7 @@ With ARG, revert back to normal iedit."
   (dired-mouse-drag-files t)
   (dired-dwim-target t)
   ;; (dired-guess-shell-alist-user)
-  (dired-listing-switches "-alhoF --group-directories-first"))
+  (dired-listing-switches "-AlhoF --group-directories-first"))
 
 (use-package all-the-icons-dired
   :ensure t
@@ -2129,6 +2130,18 @@ With ARG, revert back to normal iedit."
   (require-final-newline t)
   :config
   (add-to-list 'auto-mode-alist '("Pipfile" . conf-toml-mode)))
+#+end_src
+
+** Dired Subtree
+#+begin_src emacs-lisp
+(use-package dired-subtree
+  :ensure t
+  :after dired
+  :bind (:map dired-mode-map
+              ("<tab>" . dired-subtree-toggle)
+              ("<C-tab>" . dired-subtree-cycle)
+              ("<backtab>" . dired-subtree-remove) ;; Shift + Tab
+              ))
 #+end_src
 
 ** Replace
@@ -3087,7 +3100,8 @@ Sync theme to light/dark based on system settings
          (treemacs-mode . hide-mode-line-mode)))
 #+end_src
 
-** Blamer
+** COMMENT Blamer
+Show git blame in file. Find it more noisy than anything else
 #+begin_src emacs-lisp
 (use-package blamer
   :ensure t
@@ -3114,6 +3128,16 @@ Additional goodies can be found here: https://xenodium.com/further-sqlite-mode-e
   :bind (:map sqlite-mode-map
               ("n" . next-line)
               ("p" . previous-line)))
+#+end_src
+
+** SQL Mode
+Shells for db's
+#+begin_src emacs-lisp
+(use-package sql
+  :ensure nil
+  :defer
+  :custom
+  (sql-sqlite-options '("-header" "-box")))
 #+end_src
 
 ** Keycast
