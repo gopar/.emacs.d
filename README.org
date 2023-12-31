@@ -1079,8 +1079,6 @@ For TDD development
   (recompile-on-save-advice compile))
 #+end_src
 
-*** COMMENT [[https://github.com/EricCrosson/bury-successful-compilation/][Bury Successful Compilation]]
-
 ** Winner
 Window Management
 #+begin_src emacs-lisp
@@ -2091,6 +2089,7 @@ With ARG, revert back to normal iedit."
 #+end_src
 
 ** COMMENT Display Fill Column
+Collides with compact-docstrings
 #+begin_src emacs-lisp
 (use-package display-fill-column-indicator
   :ensure nil
@@ -2271,20 +2270,6 @@ For my mouse that also has left - right mouse scroll
          (fundamental-mode . delete-selection-mode)
          (fundamental-mode . auto-fill-mode)
          (org-mode . auto-fill-mode)))
-#+end_src
-
-** COMMENT Neotree
-#+begin_src emacs-lisp
-(use-package neotree
-  :ensure t
-  :bind ("<f5>" . neotree-toggle)
-  :custom
-  (neo-theme 'icons)
-  (neo-smart-open t)
-  (neo-autorefresh t)
-  ;; takes too long to update on first try
-  ;; (neo-vc-integration '(face char))
-  (neo-show-hidden-files t))
 #+end_src
 
 ** [[https://github.com/Alexander-Miller/treemacs][Treemacs]]
@@ -2680,27 +2665,6 @@ See URL `https://beta.ruff.rs/docs/'."
   (dall-e-shell-image-size "1024x1024")
   (dall-e-shell-image-output-directory "~/Downloads/dall_e_output/"))
 #+end_src
-*** COMMENT Khoj AI
-#+begin_src emacs-lisp
-(use-package khoj
-  :ensure t
-  ;; :pin melpa-stable
-  ;; :bind ("C-c s" . 'khoj)
-  :config
-  (setq khoj-org-directories `(,(f-join user-emacs-directory "org/private/org-roam"))))
-#+end_src
-
-*** COMMENT Auto Git Commit
-#+begin_src emacs-lisp
-(use-package gpt-commit
-  :ensure t
-  :hook (git-commit-setup . gpt-commit-message)
-  :commands gpt-commit-message
-  :init
-  ;; For some reason putting it in custom doesn't always work???
-  (setq gpt-commit-openai-key (auth-source-pick-first-password :host "api.openai.com")))
-#+end_src
-
 ** Presentation
 #+begin_src emacs-lisp
 (use-package org-present
@@ -2875,7 +2839,6 @@ Themes I like
   (doom-themes-visual-bell-config))
 #+end_src
 
-
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
@@ -2885,82 +2848,6 @@ Themes I like
   :config
   (push '(treemacs-window-background-face . solaire-default-face) solaire-mode-remap-alist)
   (push '(treemacs-hl-line-face . solaire-hl-line-face) solaire-mode-remap-alist))
-#+end_src
-
-** COMMENT [[https://github.com/ema2159/centaur-tabs][Centaur Tabs]]
-
-#+begin_src emacs-lisp
-(use-package centaur-tabs
-  :ensure t
-  :demand
-  :bind
-  (:map centaur-tabs-mode-map
-        ("C-S-<tab>" . centaur-tabs-backward)
-        ("C-<tab>" . centaur-tabs-forward))
-  :hook
-  (after-init . centaur-tabs-mode)
-  (dashboard-mode . centaur-tabs-local-mode)
-  (term-mode . centaur-tabs-local-mode)
-  (calendar-mode . centaur-tabs-local-mode)
-  (org-agenda-mode . centaur-tabs-local-mode)
-  (chatgpt-shell-mode . centaur-tabs-local-mode)
-  (pydoc-mode . centaur-tabs-local-mode)
-  (devdocs-mode . centaur-tabs-local-mode)
-  (compilation-mode . centaur-tabs-local-mode)
-  ;; (vterm-mode . centaur-tabs-local-mode)
-  :init
-  (defun gopar/centaur-tabs-projectile-buffer-groups ()
-    "Return the list of group names BUFFER belongs to.
-Only difference from original function is that there is special treatment for eshell/vterm."
-    (if centaur-tabs-projectile-buffer-group-calc
-        (symbol-value 'centaur-tabs-projectile-buffer-group-calc)
-      (set (make-local-variable 'centaur-tabs-projectile-buffer-group-calc)
-
-           (cond
-            ;; Special treatment for eshell and vterm
-            ((and (condition-case _err
-                      (projectile-project-root)
-                    (error nil))
-                  (or (string-prefix-p "*eshell" (buffer-name))
-                      (string-prefix-p "*vterm" (buffer-name))
-                      (string-prefix-p "*Python" (buffer-name))
-                      (string-prefix-p "*eww*" (buffer-name))
-                      ;; (string-prefix-p "*compilation" (buffer-name))
-                      )) (list (projectile-project-name)))
-
-            ((or (get-buffer-process (current-buffer)) (memq major-mode '(comint-mode compilation-mode))) '("Term"))
-            ((string-equal "*" (substring (buffer-name) 0 1)) '("Misc"))
-            ((condition-case _err
-                 (projectile-project-root)
-               (error nil)) (list (projectile-project-name)))
-            ((memq major-mode '(emacs-lisp-mode python-mode emacs-lisp-mode c-mode
-                                                c++-mode javascript-mode js-mode
-                                                js2-mode makefile-mode
-                                                lua-mode vala-mode)) '("Coding"))
-            ((memq major-mode '(nxhtml-mode html-mode
-                                            mhtml-mode css-mode)) '("HTML"))
-            ((memq major-mode '(org-mode calendar-mode diary-mode)) '("Org"))
-            ((memq major-mode '(dired-mode)) '("Dir"))
-            (t '("Other"))))
-      (symbol-value 'centaur-tabs-projectile-buffer-group-calc)))
-
-  (setq centaur-tabs-enable-key-bindings t
-        centaur-tabs-buffer-groups-function 'gopar/centaur-tabs-projectile-buffer-groups)
-  :custom
-  (centaur-tabs-set-icons t)
-  (centaur-tabs-set-modified-marker t)
-  (centaur-tabs-set-bar 'over)
-  (centaur-tabs-cycle-scope 'tabs)
-  (centaur-tabs-label-fixed-length 10)
-  :config
-    ;; Don't show magit buffers as tabs
-  (add-to-list 'centaur-tabs-excluded-prefixes "magit")
-  (add-to-list 'centaur-tabs-excluded-prefixes "*pydoc")
-  (add-to-list 'centaur-tabs-excluded-prefixes "*dashboard")
-  (add-to-list 'centaur-tabs-excluded-prefixes "*devdocs")
-  (add-to-list 'centaur-tabs-excluded-prefixes "*chatgpt")
-  (add-to-list 'centaur-tabs-excluded-prefixes "type-break.el")
-  )
 #+end_src
 
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
@@ -3011,23 +2898,6 @@ Sync theme to light/dark based on system settings
   :hook ((eshell-mode . hide-mode-line-mode)
          (vterm-mode . hide-mode-line-mode)
          (treemacs-mode . hide-mode-line-mode)))
-#+end_src
-
-** COMMENT Blamer
-Show git blame in file. Find it more noisy than anything else
-#+begin_src emacs-lisp
-(use-package blamer
-  :ensure t
-  :hook (after-init . global-blamer-mode)
-  :custom
-  (blamer-idle-time 1.0)
-  ;; (blamer-min-offset 70)
-  ;; :custom-face
-  ;; (blamer-face ((t :foreground "#7a88cf"
-  ;;                   :background nil
-  ;;                   :height 140
-  ;;                   :italic t)))
-  )
 #+end_src
 
 ** Sqlite
