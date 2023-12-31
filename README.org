@@ -2147,6 +2147,7 @@ Collides with compact-docstrings
 #+begin_src emacs-lisp
 (use-package replace
   :ensure nil
+  :hook (occur-mode . (lambda () (setq-local window-size-fixed 'width)))
   :custom
   (list-matching-lines-default-context-lines 0)
   :bind (("C-c C-o" . gopar/occur-definitions)
@@ -2158,7 +2159,7 @@ Collides with compact-docstrings
                '("^\\*Occur\\*"
                  display-buffer-in-side-window
                  (side . left)
-                 (window-width . 60)))
+                 (window-width . 40)))
 
   (defun gopar/occur-definitions ()
     "Show all the function/method/class definitions for the current language."
@@ -2875,8 +2876,7 @@ NOTE: Seems like its no longer actively maintained :/
 #+begin_src emacs-lisp
 (use-package ssh-config-mode
   :ensure t
-  :defer
-  )
+  :defer)
 #+end_src
 
 ** [[https://github.com/LionyxML/auto-dark-emacs][Auto Dark]]
@@ -2886,7 +2886,7 @@ Sync theme to light/dark based on system settings
   :ensure t
   :hook (after-init . auto-dark-mode)
   :init
-  (setq auto-dark-dark-theme 'adwaita-dark)
+  (setq auto-dark-dark-theme 'tao-yin)
   (setq auto-dark-light-theme 'doom-shades-of-purple))
 #+end_src
 
@@ -2897,6 +2897,7 @@ Sync theme to light/dark based on system settings
   :defer
   :hook ((eshell-mode . hide-mode-line-mode)
          (vterm-mode . hide-mode-line-mode)
+         (occur-mode . hide-mode-line-mode)
          (treemacs-mode . hide-mode-line-mode)))
 #+end_src
 
