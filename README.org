@@ -263,6 +263,7 @@ Main configuration
 (use-package org
   :custom
   (fill-column 100)
+  (org-agenda-include-diary t)
   ;; Where the org files live
   (org-directory "~/.emacs.d/org/")
   ;; Where archives should go
@@ -675,6 +676,24 @@ When called with a prefix aurgument, it will open annotations file."
       (if arg
           (find-file org-annotate-file-storage-file)
         (org-annotate-file)))))
+#+end_src
+
+*** Org Modern
+#+begin_src emacs-lisp
+(use-package org-modern
+  :ensure t
+  :defer
+  :hook ((org-mode . org-modern-mode)
+         (org-agenda-finalize . org-modern-agenda)))
+#+end_src
+
+*** Org Modern Indent
+#+begin_src emacs-lisp
+(use-package org-modern-indent
+  :ensure nil                           ; quelpa installs it
+  :hook (org-mode . org-modern-indent)
+  :quelpa (org-modern-indent :fetcher github :repo "jdtsmith/org-modern-indent")
+  )
 #+end_src
 
 *** Org Misc
