@@ -486,22 +486,22 @@ Main configuration
        (todo "WAITING|IN-PROGRESS")
        (tags-todo "inbox|break")
        (todo "NEXT"))
-      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
+      ((org-agenda-sorting-strategy '(time-up habit-up priority-down category-up))))
 
      ("w" "Agenda and break|inbox tasks"
       ((agenda "" ((org-agenda-span 1)))
        (tags-todo "inbox|break"))
-      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
+      ((org-agenda-sorting-strategy '(time-up habit-up priority-down category-up))))
 
      ("i" "In-Progress Tasks"
       ((todo "IN-PROGRESS|WAITING")
        (agenda ""))
-      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))))
+      ((org-agenda-sorting-strategy '(time-up habit-up priority-down category-up))))
 
      ("g" "Goals: 12 Week Year"
       ((agenda "")
        (todo "IN-PROGRESS|WAITING"))
-      ((org-agenda-sorting-strategy '(habit-up priority-down category-up))
+      ((org-agenda-sorting-strategy '(time-up habit-up priority-down category-up))
        (org-agenda-tag-filter-preset '("+12WY"))
        (org-agenda-start-with-log-mode '(closed clock state))
        (org-agenda-archives-mode t)
@@ -510,7 +510,7 @@ Main configuration
      ("r" "Weekly Review"
       ((agenda "")
        (todo))
-      ((org-agenda-sorting-strategy '(habit-up category-up priority-down ))
+      ((org-agenda-sorting-strategy '(time-up habit-up category-up priority-down ))
        (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org")))))
   :init
   ;; Originally from here: https://stackoverflow.com/a/59001859/2178312
