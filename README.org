@@ -691,9 +691,8 @@ When called with a prefix aurgument, it will open annotations file."
 #+begin_src emacs-lisp
 (use-package org-modern-indent
   :ensure nil                           ; quelpa installs it
-  :hook (org-mode . org-modern-indent)
-  :quelpa (org-modern-indent :fetcher github :repo "jdtsmith/org-modern-indent")
-  )
+  :hook (org-mode . org-modern-indent-mode)
+  :quelpa (org-modern-indent :fetcher github :repo "jdtsmith/org-modern-indent"))
 #+end_src
 
 *** Org Misc
