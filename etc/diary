@@ -1,0 +1,32 @@
+%%(and (diary-cyclic 7 1 6 2024)) 09:00-09:30 📓 12 Week Year Review
+
+%%(and (diary-cyclic 7 1 3 2024)) 18:00-18:40 GTD Focus
+%%(and (diary-cyclic 7 1 7 2024)) 16:15-16:55 GTD Focus
+
+%%(and (diary-cyclic 7 1 5 2024)) 15:00-17:50 YT Recording/Editing
+
+%%(and (diary-cyclic 7 1 7 2024)) 10:45-13:35 Church
+
+%%(and (diary-cyclic 7 1 5 2024)) 18:00-18:20 Finances
+%%(and (diary-cyclic 7 1 5 2024)) 18:30-18:55 Bachata
+
+%%(and (memq (calendar-day-of-week date) '(2 5)) (diary-cyclic 1 1 2 2024)) 11:00-12:20 Chiropractor
+
+%%(and (diary-cyclic 7 1 2 2024)) 15:30-17:20 Blog Writing
+
+%%(and (diary-cyclic 7 1 2 2024)) 17:30-18:35 YT: Video Planning
+
+%%(and (diary-cyclic 7 1 3 2024)) 17:00-18:50 Research Ideas (YT & Blog)
+
+%%(and (diary-cyclic 7 1 4 2024)) 17:00-18:50 Gym & Rock Climbing
+%%(and (diary-cyclic 7 1 7 2024)) 14:00-15:50 Gym & Rock Climbing
+%%(and (diary-cyclic 7 1 6 2024)) 10:00-12:50 Gym & Rock Climbing
+
+%%(and (diary-cyclic 1 1 1 2024)) 21:00-21:20 Headrest
+
+;; Work
+%%(and (memq (calendar-day-of-week date) '(1 2 3 4 5)) (diary-cyclic 1 1 2 2024)) 10:00-10:30 Standup
+%%(and (diary-cyclic 7 1 4 2024)) 16:00-17:00 Jira Meeting
+
+;; Social
+%%(and (memq (calendar-day-of-week date) '(2 4)) (diary-cyclic 1 1 2 2024)) 19:00-20:30 🥁 Band Practice

@@ -255,6 +255,30 @@ next potential sentence end"
                             (split-string (getenv "PATH") ":")))))
 #+end_src
 
+** Diary
+#+begin_src emacs-lisp
+(use-package calendar
+  :ensure nil
+  :defer
+  :mode ("\\diary\\'" . diary-mode)
+  :custom
+  (diary-file (concat user-emacs-directory "etc/diary"))
+  (calendar-mark-diary-entries-flat t)
+  (diary-comment-start ";;")
+  (diary-comment-end ""))
+#+end_src
+
+** Appt
+Appointment reminder
+#+begin_src emacs-lisp
+(use-package appt
+  :ensure nil
+  :hook (after-init . appt-activate)
+  :custom
+  (appt-message-warning-time 20)
+  (appt-display-interval 4))
+#+end_src
+
 ** Org Mode
 *** Org
 Main configuration
