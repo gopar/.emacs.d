@@ -453,10 +453,19 @@ Main configuration
   :bind (("C-c a" . org-agenda))
   ;; :hook (org-agenda-finalize . org-agenda-entry-text-mode)
   :custom
+  (org-agenda-current-time-string (if (and (display-graphic-p)
+           (char-displayable-p ?←)
+           (char-displayable-p ?─))
+      "⬅️ now ⏰"
+    "now - - - - - - - - - - - - - - - - - - - - - - - - -"))
+  (org-agenda-timegrid-use-ampm t)
   (org-agenda-tags-column 'auto)
   (org-agenda-window-setup 'only-window)
   (org-agenda-restore-windows-after-quit t)
   (org-agenda-log-mode-items '(closed clock state))
+  (org-agenda-time-grid '((daily today require-timed)
+                          (600 800 1000 1200 1400 1600 1800 2000)
+                          " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"))
   ;; (org-agenda-start-with-log-mode '(closed clock state))
   (org-agenda-files "~/.emacs.d/org/agenda-files.org")
   ;; (org-agenda-todo-ignore-scheduled 'future)
@@ -719,6 +728,14 @@ When called with a prefix aurgument, it will open annotations file."
   :quelpa (org-modern-indent :fetcher github :repo "jdtsmith/org-modern-indent"))
 #+end_src
 
+*** COMMENT Org Margin
+Seems like its broken for now
+#+begin_src emacs-lisp
+(use-package org-margin
+  :ensure nil
+  :quelpa (org-margin :fetcher github :repo "rougier/org-margin"))
+#+end_src
+
 *** Org Misc
 #+begin_src emacs-lisp
 (defun gopar/daily-log ()
@@ -972,12 +989,15 @@ I'm keeping this function around since it's convineint to be able to create venv
 #+end_src
 
 *** [[https://github.com/anachronic/importmagic.el][importmagic]]
+*Note* For some reason the projects =python= env isn't loaded when we run the =shell-command=.
+Workaround is set a timer to run 3 seconds after python is correctly set to avoid issues
 #+begin_src emacs-lisp
 (use-package importmagic
   :ensure t
   :custom
   (importmagic-be-quiet t)
-  :hook (python-mode . gopar/enable-importmagic-if-found)
+  ;; :hook (python-mode . gopar/enable-importmagic-if-found)
+  :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-importmagic-if-found)))
   :init
   (defun gopar/enable-importmagic-if-found ()
     "Format the current buffer using the 'importmagic` program, if available."
@@ -1020,10 +1040,15 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
 *** Jedi
 Only use this for eldoc documentation. Works most of the time.
 Requires =pip install jedi epc= in all virtualenvs
+
+*Note* For some reason the projects =python= env isn't loaded when we run the =shell-command=.
+Workaround is set a timer to run 3 seconds after python is correctly set to avoid issues
 #+begin_src emacs-lisp
 (use-package jedi
   :ensure t
-  :hook (python-mode . gopar/enable-jedi-if-found)
+  :defer
+  ;; :hook (python-mode . gopar/enable-jedi-if-found)
+  :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-jedi-if-found)))
   :custom
   (jedi:tooltip-method nil)
   :init
@@ -1031,7 +1056,7 @@ Requires =pip install jedi epc= in all virtualenvs
     "Format the current buffer using the jedi program, if available."
     (interactive)
     (if (zerop (shell-command "python -c 'import jedi'"))
-        (jedi-mode))))
+        (jedi:setup))))
 #+end_src
 
 *** [[https://github.com/AdamNiederer/cov][Cov]]
@@ -2420,7 +2445,7 @@ Only available in 29 or higher
                      (message "Aborted edit"))))))
 #+end_src
 
-** Type Break
+** COMMENT Type Break
 Automatically start a pomodoro session when I exit org-pomodoro since I have a tendency of just
 staying in emacs and losing track of time.
 
@@ -2599,7 +2624,7 @@ Also start type break mode after start up since I might just be dragging along
 
   :bind ("C-c M-d" . gopar/devdocs-lookup)
   :hook ((python-mode . (lambda () (setq-local devdocs-current-docs
-                                      '("django~4.2" "django_rest_framework" "python~3.11"))))
+                                      '("django~4.2" "django_rest_framework" "python~3.11" "postgresql~11" "sqlite"))))
          (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
                                                                    "vue_router~4"
                                                                    "javascript"
