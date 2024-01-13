@@ -39,6 +39,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
+  (debugger-stack-frame-as-list t)
   (narrow-to-defun-include-comments t)
   (use-short-answers t)
   (confirm-nonexistent-file-or-buffer nil)
@@ -285,6 +286,7 @@ Main configuration
 #+begin_src emacs-lisp
 ;; https://stackoverflow.com/a/10091330/2178312
 (use-package org
+  :defer
   :custom
   (fill-column 100)
   (org-agenda-include-diary t)
@@ -300,7 +302,7 @@ Main configuration
   (org-startup-folded 'content)
   (org-M-RET-may-split-line '((default . nil)))
   ;; hide stars except for leader star
-  (org-hide-leading-stars t)
+  ;; (org-hide-leading-stars t)
   (org-hide-emphasis-markers nil)
   ;; Show as utf-8 chars
   (org-pretty-entities t)
@@ -520,7 +522,8 @@ Main configuration
       ((agenda "")
        (todo))
       ((org-agenda-sorting-strategy '(time-up habit-up category-up priority-down ))
-       (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org")))))
+       (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org")
+       (org-agenda-include-diary nil)))))
   :init
   ;; Originally from here: https://stackoverflow.com/a/59001859/2178312
   (defun gopar/get-schedule-or-deadline-if-available ()
@@ -655,8 +658,7 @@ Also not built in but putting it here
 #+begin_src emacs-lisp
 (use-package org-roam
   :ensure t
-  :init
-  (setq org-roam-v2-ack t)
+  :defer
   :custom
   (org-roam-v2-ack t)
   (org-roam-directory (expand-file-name "~/.emacs.d/org/private/org-roam"))
@@ -695,6 +697,7 @@ Also not built in but putting it here
 (use-package org-annotate-file
   :ensure nil
   :load-path "lisp/org"
+  :defer
   :custom
   (org-annotate-file-add-search t)
   :bind (:map prog-mode-map ("C-c C-s" . gopar/org-annotate-file))
@@ -763,6 +766,7 @@ Seems like its broken for now
 (use-package eshell
   :ensure nil
   :hook ((eshell-directory-change . gopar/sync-dir-in-buffer-name)
+         (eshell-mode . gopar/eshell-specific-outline-regexp)
          (eshell-mode . gopar/eshell-setup-keybinding)
          (eshell-mode . (lambda () (setq-local completion-at-point-functions '(cape-file)))))
   :custom
@@ -783,6 +787,7 @@ Seems like its broken for now
     ;; Workaround since bind doesn't work w/ eshell??
     (define-key eshell-mode-map (kbd "C-c >") 'gopar/eshell-redirect-to-buffer)
     (define-key eshell-hist-mode-map (kbd "M-r") 'consult-history))
+
   (defun gopar/eshell-input-filter (input)
     "Do not save empty lines, commands that start with a space or 'l'/'ls'"
     (and
@@ -855,7 +860,10 @@ Stolen from aweshell."
   (defun gopar/eshell-redirect-to-buffer (buffer)
     "Auto create command for redirecting to buffer."
     (interactive (list (read-buffer "Redirect to buffer: ")))
-    (insert (format " >>> #<%s>" buffer))))
+    (insert (format " >>> #<%s>" buffer)))
+
+(defun gopar/eshell-specific-outline-regexp ()
+  (setq-local outline-regexp eshell-prompt-regexp)))
 #+end_src
 
 *** Eshell Syntax Highlighting
@@ -972,13 +980,17 @@ I'm keeping this function around since it's convineint to be able to create venv
 `pyvenv-create` and then do `venv-workon` in dir locals.
 #+begin_src emacs-lisp
 (use-package pyvenv
-  :ensure t)
+  :ensure t
+  :defer
+  :commands (pyvenv-create)
+  )
 #+end_src
 
 *** [[https://github.com/scop/emacs-ruff-format][Ruff]]
 #+begin_src emacs-lisp
 (use-package ruff-format
   :ensure t
+  :defer
   :hook (python-mode . gopar/enable-ruff-if-found)
   :init
   (defun gopar/enable-ruff-if-found ()
@@ -994,10 +1006,11 @@ Workaround is set a timer to run 3 seconds after python is correctly set to avoi
 #+begin_src emacs-lisp
 (use-package importmagic
   :ensure t
+  :defer
   :custom
   (importmagic-be-quiet t)
-  ;; :hook (python-mode . gopar/enable-importmagic-if-found)
-  :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-importmagic-if-found)))
+  :hook (python-mode . gopar/enable-importmagic-if-found)
+  ;; :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-importmagic-if-found)))
   :init
   (defun gopar/enable-importmagic-if-found ()
     "Format the current buffer using the 'importmagic` program, if available."
@@ -1012,6 +1025,7 @@ Required Jedi to work properly
 #+begin_src emacs-lisp
 (use-package pydoc
   :ensure t
+  :defer
   :bind (:map python-mode-map
               ("C-c C-d" . gopar/pydoc-at-point))
   :init
@@ -1047,8 +1061,8 @@ Workaround is set a timer to run 3 seconds after python is correctly set to avoi
 (use-package jedi
   :ensure t
   :defer
-  ;; :hook (python-mode . gopar/enable-jedi-if-found)
-  :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-jedi-if-found)))
+  :hook (python-mode . gopar/enable-jedi-if-found)
+  ;; :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-jedi-if-found)))
   :custom
   (jedi:tooltip-method nil)
   :init
@@ -1066,7 +1080,6 @@ Workaround is set a timer to run 3 seconds after python is correctly set to avoi
   :hook (python-mode . gopar/cov-mode)
   :init
   (setq cov-coverage-mode t)
-
   (defun gopar/cov-mode ()
     "Enable cov-mode if there is a coverate.json at project root"
     (interactive)
@@ -1092,6 +1105,7 @@ Workaround is set a timer to run 3 seconds after python is correctly set to avoi
 #+begin_src emacs-lisp
 (use-package gud
   :ensure nil
+  :defer
   :custom
   (gud-pdb-command-name "PYTHONBREAKPOINT=pdb.set_trace python -m pdb"))
 #+end_src
@@ -1100,6 +1114,7 @@ Workaround is set a timer to run 3 seconds after python is correctly set to avoi
 #+begin_src emacs-lisp
 (use-package compile
   :ensure nil
+  :defer
   :custom
   (compilation-scroll-output 'first-error)
   (compilation-always-kill t)
@@ -1152,7 +1167,10 @@ Window Management
 (use-package winner
   :ensure nil
   :hook after-init
-  :commands (winner-undo winnner-redo))
+  :commands (winner-undo winnner-redo)
+  :custom
+  (winner-boring-buffers '("*Completions*" "*Help*" "*Apropos*"
+                           "*Buffer List*" "*info*" "*Compile-Log*")))
 #+end_src
 
 ** Window
@@ -1160,34 +1178,9 @@ Window Management
 #+begin_src emacs-lisp
 (use-package window
   :ensure nil
+  :defer
   :custom
-  (recenter-positions '(middle top bottom))
-  ;; :init
-   ;; (defun gopar/is-landscape-mode (buffer alist)
-   ;;   (message "landscape")
-   ;;   (> (frame-native-width) (frame-native-height)))
-
-   ;; (defun gopar/is-portrait-mode (buffer alist)
-   ;;   (message "portrait")
-   ;;   (> (frame-native-height) (frame-native-width)))
-
-   ;; (add-to-list 'display-buffer-alist
-   ;;             '("^test[-_]" (
-   ;;                            display-buffer-in-previous-window
-   ;;                            display-buffer-reuse-window
-   ;;                            display-buffer-in-direction)
-   ;;               ((direction . bottom)
-   ;;               (reusable-frames . visible)
-   ;;               (gopar/is-portrait-mode . t))))
-   ;; (add-to-list 'display-buffer-alist
-   ;;             '("^test[-_]" (
-   ;;                            display-buffer-in-previous-window
-   ;;                            display-buffer-reuse-window
-   ;;                            display-buffer-in-direction)
-   ;;               ((direction . right)
-   ;;               (reusable-frames . visible)
-   ;;               (gopar/is-landscape-mode . t))))
-  )
+  (recenter-positions '(middle top bottom)))
 #+end_src
 
 ** [[/Applications/Emacs.app/Contents/Resources/lisp/midnight.el.gz][Midnight]]
@@ -1232,6 +1225,7 @@ The faces aren't showing up :/
 
 (use-package flyspell
   :ensure nil
+  :defer
   :hook ((prog-mode . flyspell-prog-mode)
          (org-mode . flyspell-mode)
          (text-mode . flyspell-mode)
@@ -1375,6 +1369,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 #+begin_src emacs-lisp
 (use-package prog-mode
   :ensure nil
+  :defer
   :hook ((prog-mode . subword-mode)
          (prog-mode . which-function-mode)
          (prog-mode . (lambda () (setq-local fill-column 120)))))
@@ -1428,7 +1423,9 @@ or by pressing last keybinding of previous command
 #+begin_src emacs-lisp
 (use-package savehist
   :ensure nil
-  :hook (after-init . savehist-mode))
+  :hook (after-init . savehist-mode)
+  :custom
+  (savehist-additional-variables '(abbrev-minor-mode-table-alist)))
 #+end_src
 
 ** Grep
@@ -1621,12 +1618,10 @@ If used with a prefix, it will search all buffers as well."
 
 (use-package consult-ag
   :ensure
+  :defer
   :bind (:map projectile-command-map
               ("s s" . consult-ag)
               ("s g" . consult-grep)))
-
-(use-package wgrep-ag
-  :ensure t)
 
 (use-package consult-org-roam
   :ensure t
@@ -1657,19 +1652,12 @@ If used with a prefix, it will search all buffers as well."
 
 (use-package embark
   :ensure t
+  :defer
   :bind (("C-." . embark-act)))
 
 (use-package embark-consult
-  :ensure t)
-#+end_src
-
-** Code Compass
-Package for code base analysis
-#+begin_src emacs-lisp
-(use-package code-compass
-  :ensure
-  :config
-  (code-compass-toggle-display-contributors))
+  :ensure t
+  :after embark)
 #+end_src
 
 ** Dumb Jump
@@ -1677,6 +1665,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 #+begin_src emacs-lisp
 (use-package dumb-jump
   :ensure t
+  :defer
   :custom
   (dumb-jump-prefer-searcher 'ag)
   (dumb-jump-force-searcher 'ag)
@@ -1705,6 +1694,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 #+begin_src emacs-lisp
 (use-package web-mode
   :ensure t
+  :defer
   :init
   (setq-default web-mode-code-indent-offset 2)
   (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
@@ -1735,23 +1725,11 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 #+begin_src emacs-lisp
 (use-package typescript-mode
   :ensure t
+  :defer
   :bind (:map typescript-mode-map
               (";" . easy-camelcase))
   :custom
   (typescript-indent-level 2))
-#+end_src
-
-** Nodejs Repl
-
-#+begin_src emacs-lisp
-(use-package nodejs-repl
-  :ensure t
-  :bind (:map typescript-mode-map
-              ("C-c C-z" . nodejs-repl)
-         (:map js-mode-map
-               ("C-c C-z" . nodejs-repl))
-         (:map web-mode-map
-               ("C-c C-z" . nodejs-repl))))
 #+end_src
 
 ** Markdown
@@ -1766,7 +1744,8 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 ** Dockerfile
 #+begin_src emacs-lisp
 (use-package dockerfile-mode
-  :ensure t)
+  :ensure t
+  :defer)
 #+end_src
 ** [[https://github.com/Silex/docker.el][Docker]]
 #+begin_src emacs-lisp
@@ -1780,6 +1759,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 #+begin_src emacs-lisp
 (use-package ledger-mode
   :ensure t
+  :defer
   :mode ("\\.dat\\'"
          "\\.ledger\\'")
   :bind (:map ledger-mode-map
@@ -1794,13 +1774,15 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 ** YAML
 #+begin_src emacs-lisp
 (use-package yaml-mode
-  :ensure t)
+  :ensure t
+  :defer)
 #+end_src
 
 ** Rainbow mode
 Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package rainbow-mode
+  :defer
   :ensure t
   :hook (prog-mode . rainbow-mode))
 #+end_src
@@ -1809,6 +1791,7 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package alert
   :ensure t
+  :defer
   :custom
   (alert-default-style 'message)
   (alert-fade-time 5))
@@ -1818,15 +1801,16 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package which-key
   :ensure t
-  :config
-  (which-key-mode)
-  (setq which-key-idle-delay 2))
+  :hook (after-init . which-key-mode)
+  :custom
+  (which-key-idle-delay 2))
 #+end_src
 
 ** Helpful
 #+begin_src emacs-lisp
 (use-package helpful
   :ensure t
+  :defer
   :bind (("C-h f" . helpful-callable)
          ("C-h v" . helpful-variable)
          ("C-h k" . helpful-key)))
@@ -1836,6 +1820,7 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package corral
   :ensure t
+  :defer
   :bind (("M-9" . corral-parentheses-backward)
          ("M-0" . corral-parentheses-forward)
          ("M-[" . corral-brackets-backward)
@@ -1848,11 +1833,9 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package highlight-indentation
   :ensure t
+  :defer
   :hook ((prog-mode . highlight-indentation-mode)
-         (prog-mode . highlight-indentation-current-column-mode))
-  ;; :config
-  ;; (set-face-attribute 'highlight-indentation-face nil :background "black")
-  )
+         (prog-mode . highlight-indentation-current-column-mode)))
 #+end_src
 
 ** Highlight TODO
@@ -1867,6 +1850,7 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package move-text
   :ensure t
+  :defer
   :init (move-text-default-bindings))
 #+end_src
 
@@ -1875,6 +1859,7 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package iedit
   :ensure t
+  :defer
   :bind (("C-c o" . iedit-mode))
   :custom
   (iedit-toggle-key-default nil)
@@ -1904,6 +1889,7 @@ With ARG, revert back to normal iedit."
 #+begin_src emacs-lisp
 (use-package expand-region
   :ensure t
+  :defer
   :bind (("C-\\" . er/expand-region)))
 #+end_src
 
@@ -1918,6 +1904,7 @@ With ARG, revert back to normal iedit."
 #+begin_src emacs-lisp
 (use-package avy
   :ensure t
+  :defer
   :bind (("M-g c" . avy-goto-char-2)
          ("M-g g" . avy-goto-line)
          ("M-g w" . avy-goto-word-1)))
@@ -1927,6 +1914,7 @@ With ARG, revert back to normal iedit."
 #+begin_src emacs-lisp
 (use-package all-the-icons
   :ensure t
+  :defer
   :if (display-graphic-p))
 
 (use-package all-the-icons-completion
@@ -1943,6 +1931,7 @@ With ARG, revert back to normal iedit."
 ;; So in order for ibuffer-vc to work, i have to include it in the icons-buffer format -_-
 (use-package all-the-icons-ibuffer
   :ensure t
+  :defer
   :custom
   (all-the-icons-ibuffer-formats
    `((mark modified read-only locked vc-status-mini
@@ -2002,6 +1991,7 @@ With ARG, revert back to normal iedit."
 #+begin_src emacs-lisp
 (use-package elec-pair
   :ensure nil
+  :defer
   :hook (after-init . electric-pair-mode))
 #+end_src
 
@@ -2010,13 +2000,13 @@ With ARG, revert back to normal iedit."
 (use-package magit
   :ensure t
   :commands magit-get-current-branch
-  :demand t
+  :defer
   :bind ("C-x g" . magit)
   :hook (magit-mode . magit-wip-mode)
-  :config
-  (setq magit-diff-refine-hunk 'all)
-  (setq magit-process-finish-apply-ansi-colors t)
-
+  :custom
+  (magit-diff-refine-hunk 'all)
+  (magit-process-finish-apply-ansi-colors t)
+  :init
   (defun magit/undo-last-commit (number-of-commits)
     "Undoes the latest commit or commits without loosing changes"
     (interactive "P")
@@ -2058,7 +2048,8 @@ With ARG, revert back to normal iedit."
 
 ** [[/Applications/Emacs.app/Contents/Resources/lisp/battery.el.gz][Battery]]
 #+begin_src emacs-lisp
-(use-package battery :ensure nil
+(use-package battery
+  :ensure nil
   :hook (after-init . display-battery-mode))
 #+end_src
 
@@ -2069,6 +2060,7 @@ With ARG, revert back to normal iedit."
 ;; =M-x yas-reload-all=
 (use-package yasnippet
   :ensure t
+  :defer
   :hook ((prog-mode . yas-minor-mode)
          (org-mode . yas-minor-mode)
          (fundamental-mode . yas-minor-mode)
@@ -2081,7 +2073,8 @@ With ARG, revert back to normal iedit."
 *** Actual Snippets
 #+begin_src emacs-lisp
 (use-package yasnippet-snippets
-  :ensure t)
+  :ensure t
+  :defer)
 #+end_src
 
 ** [[https://github.com/emacs-dashboard/emacs-dashboard/][Dashboard]]
@@ -2167,6 +2160,7 @@ Collides with compact-docstrings
 #+begin_src emacs-lisp
 (use-package dired
   :ensure nil
+  :defer
   :hook ((dired-mode . dired-hide-details-mode)
          (dired-mode . hl-line-mode))
   :custom
@@ -2180,6 +2174,7 @@ Collides with compact-docstrings
 
 (use-package all-the-icons-dired
   :ensure t
+  :defer
   :hook (dired-mode . all-the-icons-dired-mode)
   :custom
   (all-the-icons-dired-monochrome nil))
@@ -2214,6 +2209,7 @@ Collides with compact-docstrings
 #+begin_src emacs-lisp
 (use-package replace
   :ensure nil
+  :defer
   :hook (occur-mode . (lambda () (setq-local window-size-fixed 'width)))
   :custom
   (list-matching-lines-default-context-lines 0)
@@ -2256,6 +2252,7 @@ Collides with compact-docstrings
 #+begin_src emacs-lisp
 (use-package ansi-color
   :ensure nil
+  :defer
   :hook (compilation-filter . gopar/colorize-compilation-buffer)
   :init
   (defun gopar/compilation-nuke-ansi-escapes ()
@@ -2274,6 +2271,7 @@ Collides with compact-docstrings
 ** JS
 #+begin_src emacs-lisp
 (use-package js
+  :defer
   :bind (:map js-mode-map
               (";" . easy-camelcase)
 
@@ -2293,6 +2291,7 @@ Collides with compact-docstrings
 #+begin_src emacs-lisp
 (use-package pulse
   :ensure nil
+  :defer
   :init
   (defun pulse-line (&rest _)
     "Pulse the current line."
@@ -2318,6 +2317,7 @@ For my mouse that also has left - right mouse scroll
 #+begin_src emacs-lisp
 (use-package whitespace
   :ensure nil
+  :defer
   :hook (before-save . whitespace-cleanup))
 #+end_src
 
@@ -2330,10 +2330,12 @@ For my mouse that also has left - right mouse scroll
   (global-auto-revert-mode t))
 #+end_src
 
-** Sample
+** Simple
+Built in package that holds a few goodies
 #+begin_src emacs-lisp
 (use-package simple
   :ensure nil
+  :defer
   :hook ((makefile-mode . indent-tabs-mode)
          (fundamental-mode . delete-selection-mode)
          (fundamental-mode . auto-fill-mode)
@@ -2346,6 +2348,7 @@ Seems to be working now...
 #+begin_src emacs-lisp
 (use-package treemacs
   :ensure t
+  :defer
   :bind ("<f5>" . treemacs)
   :custom
   (treemacs-is-never-other-window t)
@@ -2362,6 +2365,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
 #+begin_src emacs-lisp
 (use-package dizzee
   :ensure t
+  :defer
   :config
   (dz-defservice bfd-runserver "python"
                  :args ("manage.py" "runserver")
@@ -2396,6 +2400,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
 #+begin_src emacs-lisp
 (use-package string-inflection
   :ensure t
+  :defer
   :commands string-inflection-insert
   :bind (("C-;" . gopar/string-inflection-cycle-auto))
   :init
@@ -2430,6 +2435,7 @@ Only available in 29 or higher
 #+begin_src emacs-lisp
 (use-package string-edit
   :ensure nil
+  :defer
   :init
   (defun gopar/replace-str-at-point (new-str)
     (let ((bounds (bounds-of-thing-at-point 'string)))
@@ -2499,6 +2505,7 @@ Also start type break mode after start up since I might just be dragging along
 #+begin_src emacs-lisp
 (use-package compact-docstrings
   :ensure t
+  :defer
   :hook (prog-mode . compact-docstrings-mode))
 #+end_src
 
@@ -2506,6 +2513,7 @@ Also start type break mode after start up since I might just be dragging along
 #+begin_src emacs-lisp
 (use-package pdf-tools
   :ensure t
+  :defer
   :hook (find-file . gopar/my-pdf-view-mode-hook)
   :init
   (defun gopar/my-pdf-view-mode-hook ()
@@ -2518,84 +2526,15 @@ Also start type break mode after start up since I might just be dragging along
 #+begin_src emacs-lisp
 (use-package ace-window
   :ensure t
-  :commands (ace-window))
-#+end_src
-
-** Hydra
-#+begin_src emacs-lisp
-(use-package hydra
-  :demand ;; to load up :hydra use package
-  :ensure t
-  :config
-
-  (global-set-key
-   (kbd "C-M-o")
-   (defhydra hydra-window (:color red
-                        :hint nil)
-  "
- Split: _v_ert _x_:horz
- Move Splitter(Vim): _J_ _K_ _H_ _L_
- Delete: _o_nly  _da_ce
- Move: _j_ _k_ _h_ _l_ _s_wap _a_ce _B_alance windows
- Winner:  _u_ndo  _r_edo _b_uffer"
-  ("h" windmove-left)
-  ("j" windmove-down)
-  ("k" windmove-up)
-  ("l" windmove-right)
-  ("H" hydra-move-splitter-left)
-  ("J" hydra-move-splitter-down)
-  ("K" hydra-move-splitter-up)
-  ("L" hydra-move-splitter-right)
-  ("v" split-window-right)
-  ("x" split-window-below)
-  ;; winner-mode must be enabled
-  ("u" winner-undo)
-  ("r" winner-redo) ;;Fixme, not working?
-  ("o" delete-other-windows :exit t)
-  ("a" ace-window :exit t)
-  ("s" ace-swap-window)
-  ("da" ace-delete-window)
-  ("q" nil)
-  ("b" consult-buffer)
-  ("B" balance-windows)))
-  :init
-  (defun hydra-move-splitter-left (arg)
-  "Move window splitter left."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (shrink-window-horizontally arg)
-    (enlarge-window-horizontally arg)))
-
-(defun hydra-move-splitter-right (arg)
-  "Move window splitter right."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (enlarge-window-horizontally arg)
-    (shrink-window-horizontally arg)))
-
-(defun hydra-move-splitter-up (arg)
-  "Move window splitter up."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (enlarge-window arg)
-    (shrink-window arg)))
-
-(defun hydra-move-splitter-down (arg)
-  "Move window splitter down."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (shrink-window arg)
-    (enlarge-window arg))))
+  :defer
+  :bind ("M-o" . ace-window))
 #+end_src
 
 ** Vterm
 #+begin_src emacs-lisp
 (use-package vterm
   :ensure t
+  :defer
   :custom
   (vterm-max-scrollback 100000))
 #+end_src
@@ -2605,6 +2544,7 @@ Also start type break mode after start up since I might just be dragging along
 (use-package devdocs
   :ensure t
   :defer
+  :bind ("C-c M-d" . gopar/devdocs-lookup)
   :init
   (add-to-list 'display-buffer-alist
                '("\\*devdocs\\*"
@@ -2612,9 +2552,7 @@ Also start type break mode after start up since I might just be dragging along
                  (side . right)
                  (slot . 3)
                  (window-parameters . ((no-delete-other-windows . t)))
-                 (dedicated . t)
-                 ;; (window-width . 100)
-                 ))
+                 (dedicated . t)))
 
   (defun gopar/devdocs-lookup (&optional ask-docs)
     "Light wrapper around `devdocs-lookup` which pre-populates the function input with thing at point"
@@ -2622,7 +2560,7 @@ Also start type break mode after start up since I might just be dragging along
     (let ((query (thing-at-point 'symbol t)))
       (devdocs-lookup ask-docs query)))
 
-  :bind ("C-c M-d" . gopar/devdocs-lookup)
+
   :hook ((python-mode . (lambda () (setq-local devdocs-current-docs
                                       '("django~4.2" "django_rest_framework" "python~3.11" "postgresql~11" "sqlite"))))
          (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
@@ -2644,13 +2582,16 @@ Also start type break mode after start up since I might just be dragging along
 
 ** Link Hint
 #+begin_src emacs-lisp
-(use-package link-hint :ensure t :defer)
+(use-package link-hint
+  :ensure t
+  :defer)
 #+end_src
 
 ** Flycheck
 #+begin_src emacs-lisp
 (use-package flycheck
   :ensure
+  :defer
   :hook ((python-mode . flycheck-mode)
          (python-mode . (lambda () (interactive) (add-to-list 'flycheck-checkers 'python-ruff))))
   :bind (:map flycheck-mode-map
@@ -2715,6 +2656,7 @@ See URL `https://beta.ruff.rs/docs/'."
                ("M-RET" . shell-maker-submit)
                ("M-." . dictionary-lookup-definition)))
   :custom
+  (shell-maker-prompt-before-killing-buffer nil)
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
   (chatgpt-shell-transmitted-context-length 5)
@@ -2724,6 +2666,7 @@ See URL `https://beta.ruff.rs/docs/'."
 #+begin_src emacs-lisp
 (use-package dall-e-shell
   :ensure t
+  :defer
   :bind (:map dall-e-shell-mode-map
                (("RET" . newline)
                ("M-RET" . shell-maker-submit)))
@@ -2737,9 +2680,10 @@ See URL `https://beta.ruff.rs/docs/'."
 #+begin_src emacs-lisp
 (use-package org-present
   :ensure t
+  :defer
   :hook ((org-present-mode . gopar/org-present-start)
          (org-present-mode-quit . gopar/org-present-end))
-  :init
+  :config
   (defun gopar/org-present-start ()
     ; Tweak font sizes
     (setq-local face-remapping-alist '((default (:height 1.5) default)
@@ -2791,6 +2735,7 @@ Only being used with =org-present=
 #+begin_src emacs-lisp
 (use-package visual-fill-column
   :ensure t
+  :defer
   :custom
   (visual-fill-column-width 140)
   (visual-fill-column-center-text t))
@@ -2831,6 +2776,7 @@ adds padding around windows and frames
 #+begin_src emacs-lisp
 (use-package spacious-padding
   :ensure t
+  :defer
   :hook (after-init . spacious-padding-mode)
   )
 #+end_src
@@ -2922,6 +2868,7 @@ Themes I like
 #+begin_src emacs-lisp
 (use-package fill-function-arguments
   :ensure t
+  :defer
   :bind (:map prog-mode-map
               ("M-q" . fill-function-arguments-dwim)))
 #+end_src
