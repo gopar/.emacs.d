@@ -301,8 +301,8 @@ Main configuration
   ;; Should everything be hidden?
   (org-startup-folded 'content)
   (org-M-RET-may-split-line '((default . nil)))
-  ;; hide stars except for leader star
-  ;; (org-hide-leading-stars t)
+  ;; Don't hide stars
+  (org-hide-leading-stars nil)
   (org-hide-emphasis-markers nil)
   ;; Show as utf-8 chars
   (org-pretty-entities t)
@@ -336,28 +336,9 @@ Main configuration
   (org-track-ordered-property-with-tag t)
   ;; Where should notes go to? Dont even use them tho
   (org-default-notes-file (concat org-directory "notes.org"))
-  ;; List of default tags to choose from
-  ;; (org-tag-alist
-  ;;  '(("break" . ?b) ;; Something i can do during my pomodoro break
-  ;;    ("freetime" . ?f) ;; To do whenever i have time to kill
-  ;;    ("emacs" . ?e) ;; emacs related project/task
-  ;;    ("calls" . ?c) ;; involves calling humans
-  ;;    ("moneyMaker" . ?m) ;; Things that potentially bring in money
-  ;;    ("driving" . ?d) ;; Have to drive to X
-  ;;    ("project" . ?p) ;; To let me know this is part of a project
-  ;;    ("someday" . ?s) ;; Eventually i'll do this. I'll revisit this weekly thanks to GTD
-  ;;    ("misc" . ?x) ;; Anything that doesn't fit these tags
-  ;;    ("health" . ?h) ;; Health related things. Mucho important
-  ;;    ("watch" . ?w) ;; Things to watch. Might never get to these sigh
-  ;;    ("fun" . ?g) ;; FUN
-  ;;    ))
   ;; The right side of | indicates the DONE states
   (org-todo-keywords
-   '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i!)" "WAITING(w@/@)" "|" "DONE(d)" "CANCELED(c@)" "DELEGATED(p@)")))
-  ;; global Effort estimate values
-  (org-global-properties
-   '(("Effort_ALL" . "0:30 1:00 2:00 3:00 5:00 8:00 10:00")
-     ("Points_ALL" . "1 2 3 5 8 13")))
+   '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i!)" "WAITING(w!)" "|" "DONE(d!)" "CANCELED(c!)" "DELEGATED(p!)")))
   ;; Needed to allow helm to compute all refile options in buffer
   (org-outline-path-complete-in-steps nil)
   (org-deadline-warning-days 2)
@@ -369,8 +350,6 @@ Main configuration
   ;; Refile options
   (org-refile-use-outline-path 'file)
   (org-refile-allow-creating-parent-nodes 'confirm)
-  ;; This worked ok, but lets try some more detail refiling
-  ;; (org-refile-targets '((org-agenda-files :level .  1)))
   (org-refile-targets '(("~/.emacs.d/org/private/org-roam/gtd/gtd.org" :maxlevel . 3)
                         ("~/.emacs.d/org/private/org-roam/gtd/someday.org" :level . 1)
                         ("~/.emacs.d/org/private/org-roam/gtd/tickler.org" :maxlevel . 1)
@@ -602,7 +581,9 @@ Main configuration
 #+begin_src emacs-lisp
 (use-package org-indent
   :ensure nil
-  :diminish)
+  :diminish
+  :custom
+  (org-indent-mode-turns-on-hiding-stars nil))
 #+end_src
 *** [[https://github.com/marcinkoziej/org-pomodoro][Org Pomodoro]]
 I know this isn't built in but putting it here w/ org mode stuff
@@ -712,31 +693,6 @@ When called with a prefix aurgument, it will open annotations file."
       (if arg
           (find-file org-annotate-file-storage-file)
         (org-annotate-file)))))
-#+end_src
-
-*** Org Modern
-#+begin_src emacs-lisp
-(use-package org-modern
-  :ensure t
-  :defer
-  :hook ((org-mode . org-modern-mode)
-         (org-agenda-finalize . org-modern-agenda)))
-#+end_src
-
-*** Org Modern Indent
-#+begin_src emacs-lisp
-(use-package org-modern-indent
-  :ensure nil                           ; quelpa installs it
-  :hook (org-mode . org-modern-indent-mode)
-  :quelpa (org-modern-indent :fetcher github :repo "jdtsmith/org-modern-indent"))
-#+end_src
-
-*** COMMENT Org Margin
-Seems like its broken for now
-#+begin_src emacs-lisp
-(use-package org-margin
-  :ensure nil
-  :quelpa (org-margin :fetcher github :repo "rougier/org-margin"))
 #+end_src
 
 *** Org Misc
@@ -1475,6 +1431,7 @@ Also includes displaying of them
           (gopar/consult-line (:not posframe))
           (consult-ag (:not posframe))
           (consult-grep (:not posframe))
+          (consult-imenu (:not posframe))
           (xref-find-definitions (:not posframe))
           (t posframe))))
 
@@ -1862,27 +1819,7 @@ Color the string of whatever color code they are holding
   :defer
   :bind (("C-c o" . iedit-mode))
   :custom
-  (iedit-toggle-key-default nil)
-  :init
-
-  ;; Not working correctly?
-  (defun gopar/iedit-dwim (arg)
-    "Starts iedit but uses \\[narrow-to-defun] to limit its scope.
-With ARG, revert back to normal iedit."
-    (interactive "P")
-    (require 'iedit)
-    (if arg
-        (iedit-mode)
-      (save-excursion
-        (save-restriction
-          (widen)
-          ;; this function determines the scope of `iedit-start'.
-          (if iedit-mode
-              (iedit-done)
-            ;; `current-word' can of course be replaced by other
-            ;; functions.
-            (narrow-to-defun)
-            (iedit-start (current-word) (point-min) (point-max))))))))
+  (iedit-toggle-key-default nil))
 #+end_src
 
 ** Expand Region
@@ -2214,9 +2151,10 @@ Collides with compact-docstrings
   :custom
   (list-matching-lines-default-context-lines 0)
   :bind (("C-c C-o" . gopar/occur-definitions)
-         :map occur-mode-map
-         ("RET" . gopar/jump-to-defintion-and-kill-all-other-windows)
-         ("<C-return>" . occur-mode-goto-occurrence))
+         ;; :map occur-mode-map
+         ;; ("RET" . gopar/jump-to-defintion-and-kill-all-other-windows)
+         ;; ("<C-return>" . occur-mode-goto-occurrence)
+         )
   :init
   (add-to-list 'display-buffer-alist
                '("^\\*Occur\\*"
@@ -2522,12 +2460,97 @@ Also start type break mode after start up since I might just be dragging along
       (pdf-view-mode))))
 #+end_src
 
-** Ace Window
+** COMMENT Ace Window
 #+begin_src emacs-lisp
 (use-package ace-window
   :ensure t
   :defer
   :bind ("M-o" . ace-window))
+#+end_src
+
+** Transient
+#+begin_src emacs-lisp
+(use-package transient
+  :ensure t
+  :defer
+  :bind ("C-M-o" . windows-transient-window)
+  :init
+  (transient-define-prefix windows-transient-window ()
+   "Display a transient buffer showing useful window manipulation bindings."
+    [["Resize"
+     ("}" "h+" enlarge-window-horizontally :transient t)
+     ("{" "h-" shrink-window-horizontally :transient t)
+     ("^" "v+" enlarge-window :transient t)
+     ("V" "v-" shrink-window :transient t)]
+     ["Split"
+    ("v" "vertical" (lambda ()
+       (interactive)
+       (split-window-right)
+       (windmove-right)) :transient t)
+    ("x" "horizontal" (lambda ()
+       (interactive)
+       (split-window-below)
+       (windmove-down)) :transient t)
+    ("wv" "win-vertical" (lambda ()
+       (interactive)
+       (select-window (split-window-right))
+       (windows-transient-window)) :transient nil)
+    ("wx" "win-horizontal" (lambda ()
+       (interactive)
+       (select-window (split-window-below))
+       (windows-transient-window)) :transient nil)]
+    ["Misc"
+     ("B" "switch buffer" (lambda ()
+                            (interactive)
+                            (consult-buffer)
+                            (windows-transient-window)))
+     ("z" "undo" (lambda ()
+                  (interactive)
+                  (winner-undo)
+                  (setq this-command 'winner-undo)) :transient t)
+    ("Z" "redo" winner-redo :transient t)]]
+    [["Move"
+    ("h" "←" windmove-left :transient t)
+    ("j" "↓" windmove-down :transient t)
+    ("l" "→" windmove-right :transient t)
+    ("k" "↑" windmove-up :transient t)]
+    ["Swap"
+    ("sh" "←" windmove-swap-states-left :transient t)
+    ("sj" "↓" windmove-swap-states-down :transient t)
+    ("sl" "→" windmove-swap-states-right :transient t)
+    ("sk" "↑" windmove-swap-states-up :transient t)]
+    ["Delete"
+    ("dh" "←" windmove-delete-left :transient t)
+    ("dj" "↓" windmove-delete-down :transient t)
+    ("dl" "→" windmove-delete-right :transient t)
+    ("dk" "↑" windmove-delete-up :transient t)
+    ("D" "This" delete-window :transient t)]
+    ["Transpose"
+    ("tt" "↜" (lambda ()
+                (interactive)
+                (transpose-frame)
+                (windows-transient-window)) :transient nil)
+    ("ti" "↕" (lambda ()
+                (interactive)
+                (flip-frame)
+                (windows-transient-window)) :transient nil)
+    ("to" "⟷" (lambda ()
+                (interactive)
+                (flop-frame)
+                (windows-transient-window)) :transient nil)
+    ("tc" "⟳" (lambda ()
+                (interactive)
+                (rotate-frame-clockwise)
+                (windows-transient-window)) :transient nil)
+    ("ta" "⟲" (lambda ()
+                (interactive)
+                (rotate-frame-anticlockwise)
+                (windows-transient-window)) :transient nil)]]))
+#+end_src
+
+** Transient Frame
+#+begin_src emacs-lisp
+(use-package transpose-frame :after transient :ensure t)
 #+end_src
 
 ** Vterm
@@ -2843,16 +2866,6 @@ Plain Dark/white theme
 #+begin_src emacs-lisp
 (use-package grayscale-theme :ensure t)
 #+end_src
-*** [[https://github.com/doomemacs/themes][Doom Themes]]
-Themes I like
-#+begin_src emacs-lisp
-(use-package doom-themes
-  :ensure t
-  :config
-  (doom-themes-org-config)
-  (doom-themes-visual-bell-config))
-#+end_src
-
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
@@ -2901,7 +2914,7 @@ Sync theme to light/dark based on system settings
   :hook (after-init . auto-dark-mode)
   :init
   (setq auto-dark-dark-theme 'tao-yin)
-  (setq auto-dark-light-theme 'doom-shades-of-purple))
+  (setq auto-dark-light-theme 'leuven))
 #+end_src
 
 ** [[https://github.com/hlissner/emacs-hide-mode-line][Hide Mode Line]]
@@ -2943,6 +2956,7 @@ Display keystors in mode line.
 Useful for when making videos
 #+begin_src emacs-lisp
 (use-package keycast
+  :ensure t
   :defer
   :custom
   (keycast-mode-line-format "%k%c%R ")
@@ -3014,7 +3028,7 @@ Functions that are handy for setting up recording in youtube
 
 (defun gopar/youtube-setup-emacs-goodies-series ()
   (interactive)
-  (consult-theme 'doom-shades-of-purple)
+  (consult-theme 'shades-of-purple)
   (gopar/youtube-setup))
 
 (defun gopar/youtube-setup-python-series ()
@@ -3037,8 +3051,8 @@ Functions that are handy for setting up recording in youtube
 * End
 #+begin_src emacs-lisp
 (progn
-  (add-to-list 'default-frame-alist `(font . "Hack 15"))
-  (set-face-attribute 'default t :font "Hack 15"))
+  (add-to-list 'default-frame-alist `(font . "Hack 16"))
+  (set-face-attribute 'default t :font "Hack 16"))
 #+end_src
 
 ;;; Local Variables: ***

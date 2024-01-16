@@ -19,7 +19,7 @@
 
 %%(and (diary-cyclic 7 1 4 2024)) 06:30-09:00 Gym & Rock Climbing
 %%(and (diary-cyclic 7 1 2 2024)) 06:30-09:00 Gym & Rock Climbing
-%%(and (diary-cyclic 7 1 7 2024)) 14:00-15:50 Gym & Rock Climbing
+%%(and (diary-cyclic 7 1 6 2024)) 10:00-12:50 Gym & Rock Climbing
 
 %%(and (diary-cyclic 1 1 1 2024)) 21:00-21:20 Headrest
 
