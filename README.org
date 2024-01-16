@@ -356,16 +356,7 @@ Main configuration
                         ("~/.emacs.d/org/private/org-roam/gtd/repeat.org" :maxlevel . 1)
                         ))
   ;; Lets customize which modules we load up
-  (org-modules '(ol-w3m
-                 ol-bbdb
-                 ol-bibtex
-                 ol-docview
-                 ol-gnus
-                 ol-info
-                 ol-irc
-                 ol-mhe
-                 ol-rmail
-                 ol-eww
+  (org-modules '(;; ol-eww
                  ;; Stuff I've enabled below
                  org-habit
                  ;; org-checklist
