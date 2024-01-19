@@ -663,6 +663,21 @@ Also not built in but putting it here
   :hook (after-init . org-roam-db-autosync-mode))
 #+end_src
 
+*** Org Modern
+#+begin_src emacs-lisp
+(use-package org-modern
+  :ensure t
+  :hook (org-mode . org-modern-mode))
+#+end_src
+
+*** COMMENT Org Modern Indentation
+#+begin_src emacs-lisp
+(use-package org-modern-indent
+   :ensure nil                           ; quelpa installs it
+   :quelpa (org-modern-indent :fetcher github :repo "jdtsmith/org-modern-indent")
+   :hook (org-modern-mode . org-modern-indent-mode))
+#+end_src
+
 *** Org Annotate File
 #+begin_src emacs-lisp
 ;; Belongs from the org-contrib pkg?
@@ -1130,7 +1145,7 @@ Window Management
   (recenter-positions '(middle top bottom)))
 #+end_src
 
-** [[/Applications/Emacs.app/Contents/Resources/lisp/midnight.el.gz][Midnight]]
+** Midnight
 #+begin_src emacs-lisp
 (use-package midnight
   :ensure nil
@@ -1227,7 +1242,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
      1 nil (lambda () (setq gc-cons-threshold 1600000)))))
 #+end_src
 
-** [[/Applications/Emacs.app/Contents/Resources/lisp/time.el.gz][Time]]
+** Time
 #+begin_src emacs-lisp
 (use-package time
   :ensure nil
@@ -1246,7 +1261,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
     ("Asia/Tokyo" "Tokyo"))))
 #+end_src
 
-** [[/Applications/Emacs.app/Contents/Resources/lisp/proced.el.gz][Proced]]
+** Proced
 #+begin_src emacs-lisp
 (use-package proced
   :ensure nil
@@ -1974,7 +1989,7 @@ Color the string of whatever color code they are holding
   (show-paren-context-when-offscreen t))
 #+end_src
 
-** [[/Applications/Emacs.app/Contents/Resources/lisp/battery.el.gz][Battery]]
+** Battery
 #+begin_src emacs-lisp
 (use-package battery
   :ensure nil
@@ -2774,7 +2789,7 @@ M-x all-the-icons-install-fonts
   (doom-modeline-window-width-limit nil)
   (doom-modeline-buffer-file-name-style 'truncate-with-project)
   (doom-modeline-minor-modes nil)
-  (doom-modeline-enable-word-count t)
+  (doom-modeline-enable-word-count nil)
   (doom-modeline-buffer-encoding nil)
   (doom-modeline-buffer-modification-icon t)
   (doom-modeline-env-python-executable "python")
@@ -2797,6 +2812,17 @@ adds padding around windows and frames
 
 ** Themes
 Most of these themes are black/white colorless themes
+*** Leuven
+
+#+begin_src emacs-lisp
+(use-package leuven-theme
+  :ensure nil
+  :custom-face
+  (doom-modeline-buffer-file ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal))))
+  (doom-modeline-buffer-path ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal))))
+  (which-func ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal :foreground "gray29"))))
+  (doom-modeline-buffer-major-mode ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal)))))
+#+end_src
 *** [[https://github.com/11111000000/tao-theme-emacs][Tao Theme]]
 My favorite theme
 
@@ -2857,6 +2883,11 @@ Plain Dark/white theme
 #+begin_src emacs-lisp
 (use-package grayscale-theme :ensure t)
 #+end_src
+*** Dark Adwaita
+#+begin_src emacs-lisp
+(use-package adwaita-dark-theme :ensure t)
+#+end_src
+
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
@@ -2961,6 +2992,13 @@ Useful for when making videos
      (mouse-event-p nil nil))))
 #+end_src
 
+** Focus
+#+begin_src emacs-lisp
+(use-package focus
+  :ensure t
+  :hook (prog-mode . focus-mode))
+#+end_src
+
 * 1st Party Modes
 Stuff I've made for myself that are modes
 
@@ -3009,7 +3047,14 @@ Stuff I've made for myself that are modes
 Functions that are handy for setting up recording in youtube
 
 #+begin_src emacs-lisp
+(defvar gopar/orginal-font-height nil)
+(defvar gopar/youtube-font-height 220)
 (defun gopar/youtube-setup ()
+  (when (null gopar/orginal-font-height)
+    (setq gopar/orginal-font-height (face-attribute 'default :height)))
+
+  (set-face-attribute 'default nil :height gopar/youtube-font-height)
+
   (delete-other-windows)
   (display-time-mode -1)
   (type-break-mode -1)
@@ -3043,7 +3088,7 @@ Functions that are handy for setting up recording in youtube
 #+begin_src emacs-lisp
 (progn
   (add-to-list 'default-frame-alist `(font . "Hack 16"))
-  (set-face-attribute 'default t :font "Hack 16"))
+  (set-face-attribute 'default nil :font "Hack 16"))
 #+end_src
 
 ;;; Local Variables: ***
