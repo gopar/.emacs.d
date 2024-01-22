@@ -428,10 +428,10 @@ Main configuration
   (org-agenda-current-time-string (if (and (display-graphic-p)
            (char-displayable-p ?←)
            (char-displayable-p ?─))
-      "⬅️ now ⏰"
+      "⬅️ now"
     "now - - - - - - - - - - - - - - - - - - - - - - - - -"))
   (org-agenda-timegrid-use-ampm t)
-  (org-agenda-tags-column 'auto)
+  (org-agenda-tags-column 0)
   (org-agenda-window-setup 'only-window)
   (org-agenda-restore-windows-after-quit t)
   (org-agenda-log-mode-items '(closed clock state))
@@ -667,7 +667,8 @@ Also not built in but putting it here
 #+begin_src emacs-lisp
 (use-package org-modern
   :ensure t
-  :hook (org-mode . org-modern-mode))
+  :hook ((org-mode . org-modern-mode)
+         (org-agenda-finalize . org-modern-agenda)))
 #+end_src
 
 *** COMMENT Org Modern Indentation
@@ -2241,8 +2242,14 @@ Collides with compact-docstrings
     "Pulse the current line."
     (pulse-momentary-highlight-one-line (point)))
 
-  (dolist (command '(scroll-up-command scroll-down-command
-                                       recenter-top-bottom other-window))
+  (dolist (command '(scroll-up-command
+                     scroll-down-command
+                     windmove-left
+                     windmove-right
+                     windmove-up
+                     windmove-down
+                     move-to-window-line-top-bottom
+                     recenter-top-bottom other-window))
     (advice-add command :after #'pulse-line)))
 #+end_src
 
@@ -2918,6 +2925,7 @@ NOTE: Seems like its no longer actively maintained :/
   :ensure t
   :hook (after-init . golden-ratio-mode)
   :custom
+  (golden-ratio-auto-scale t)
   (golden-ratio-exclude-modes '(occur-mode)))
 #+end_src
 
@@ -3087,8 +3095,8 @@ Functions that are handy for setting up recording in youtube
 * End
 #+begin_src emacs-lisp
 (progn
-  (add-to-list 'default-frame-alist `(font . "Hack 16"))
-  (set-face-attribute 'default nil :font "Hack 16"))
+  (add-to-list 'default-frame-alist `(font . "Hack 17"))
+  (set-face-attribute 'default nil :font "Hack 17"))
 #+end_src
 
 ;;; Local Variables: ***
