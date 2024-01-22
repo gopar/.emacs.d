@@ -1,3 +1,4 @@
+(require 'cl)
 (require 'eww)
 (require 'shr)
 (require 'view)
@@ -334,6 +335,44 @@ When ARG is non-nil, open in new EWW buffer."
      keymap)
     modified-keymap))
 
+(defvar ewnium-g-prefix-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "g") #'beginning-of-buffer)
+    (define-key map (kbd "u") #'ewnium--go-up-url-heirarchy)
+    (define-key map (kbd "U") #'ewnium--go-to-root-url-heirarchy)
+    (define-key map (kbd "s") #'eww-view-source)
+    (define-key map (kbd "e") #'ewnium-edit-current-url)
+    (define-key map (kbd "i") #'(lambda ()
+                                  (interactive)
+                                  (gopar/avy-property-jump
+                                   'eww-form
+                                   :prop-pred (lambda (val prop-val) (string= "text" (plist-get prop-val :type))))))
+    map)
+  "Keymap for 'g' prefixed commands in ewnium-mode.")
+
+(defun ewnium--g-key-handler ()
+  "Handle 'g' key press in ewnium-mode."
+  (interactive)
+  (if (ewnium--element-has-local-map-p)
+      (insert "g")
+    (set-transient-map ewnium-g-prefix-map)))
+
+
+(defvar ewnium-y-prefix-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "y") #'eww-copy-page-url)
+    (define-key map (kbd "f") #'shr-maybe-probe-and-copy-url)
+    map)
+  "Keymap for 'y' prefixed commands in ewnium-mode.")
+
+(defun ewnium--y-key-handler ()
+  "Handle 'y' key press in ewnium-mode."
+  (interactive)
+  (if (ewnium--element-has-local-map-p)
+      (insert "y")
+    (set-transient-map ewnium-y-prefix-map)))
+
+
 (defvar ewnium-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<tab>") #'shrface-outline-cycle)
@@ -356,9 +395,7 @@ When ARG is non-nil, open in new EWW buffer."
     (define-key map (kbd "r") #'eww-reload)
     (define-key map (kbd "p") #'ewnium-open-eww-with-recent-kill-ring)
     (define-key map (kbd "P") #'(lambda () (interactive) (ewnium-open-eww-with-recent-kill-ring t)))
-    (define-key map (kbd "f") #'(lambda () (interactive)
-                                  (gopar/avy-property-jump 'shr-url
-                                                           :action '(lambda (pt) (avy-action-goto pt) (shr-browse-url)))))
+    (define-key map (kbd "f") #'link-hint-open-link)
     (define-key map (kbd "F") #'(lambda () (interactive)
                                   (gopar/avy-property-jump 'shr-url
                                                            :action '(lambda (pt) (avy-action-goto pt) (eww-open-in-new-buffer)))))
@@ -369,19 +406,21 @@ When ARG is non-nil, open in new EWW buffer."
     (define-key map (kbd "L") #'eww-forward-url)
     (define-key map (kbd "J") #'ewnium-previous-buffer)
     (define-key map (kbd "K") #'ewnium-next-buffer)
-    (define-key map (kbd "g g") #'beginning-of-buffer)
-    (define-key map (kbd "g u") #'ewnium--go-up-url-heirarchy)
-    (define-key map (kbd "g U") #'ewnium--go-to-root-url-heirarchy)
-    (define-key map (kbd "g s") #'eww-view-source)
-    (define-key map (kbd "g e") #'ewnium-edit-current-url)
-    (define-key map (kbd "g i") #'(lambda ()
-                                    (interactive)
-                                    (gopar/avy-property-jump
-                                     'eww-form
-                                     :prop-pred (lambda (val prop-val) (string= "text" (plist-get prop-val :type))))))
-    (define-key map (kbd "y y") #'eww-copy-page-url)
-    (define-key map (kbd "y f") #'shr-maybe-probe-and-copy-url)
+    (define-key map (kbd "g") #'ewnium--g-key-handler)
+    ;; (define-key map (kbd "g g") #'beginning-of-buffer)
+    ;; (define-key map (kbd "g u") #'ewnium--go-up-url-heirarchy)
+    ;; (define-key map (kbd "g U") #'ewnium--go-to-root-url-heirarchy)
+    ;; (define-key map (kbd "g s") #'eww-view-source)
+    ;; (define-key map (kbd "g e") #'ewnium-edit-current-url)
+    ;; (define-key map (kbd "g i") #'(lambda ()
+    ;;                                 (interactive)
+    ;;                                 (gopar/avy-property-jump
+    ;;                                  'eww-form
+    ;;                                  :prop-pred (lambda (val prop-val) (string= "text" (plist-get prop-val :type))))))
+    ;; (define-key map (kbd "y y") #'eww-copy-page-url)
+    ;; (define-key map (kbd "y f") #'shr-maybe-probe-and-copy-url)
     ;; (define-key map (kbd "y t") #'ewnium-noop)
+    (define-key map (kbd "y") #'ewnium--y-key-handler)
     (define-key map (kbd "[ [") #'ewnium-open-bracket-map)
     (define-key map (kbd "] ]") #'ewnium-close-bracket-map)
     (ewnium--add-context-check-to-keymap map)))
