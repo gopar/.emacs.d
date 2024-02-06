@@ -4,7 +4,8 @@
 
 %%(and (diary-cyclic 7 1 5 2024)) 15:00-17:50 YT Recording/Editing
 
-%%(and (diary-cyclic 7 1 7 2024)) 10:45-13:35 Church
+%%(and (diary-cyclic 7 1 7 2024)) 10:45-13:00 Church
+%%(and (diary-cyclic 14 1 14 2024)) 13:00-16:00 Casual Boardgames
 
 %%(and (diary-cyclic 7 1 5 2024)) 18:00-18:20 Finances
 %%(and (diary-cyclic 7 1 5 2024)) 18:30-18:55 Bachata
@@ -28,6 +29,7 @@
 ;; Work
 %%(and (memq (calendar-day-of-week date) '(1 2 3 4 5)) (diary-cyclic 1 1 2 2024)) 10:00-10:30 Standup
 %%(and (diary-cyclic 7 1 4 2024)) 16:00-17:00 Jira Meeting
+%%(and (diary-cyclic 7 1 22 2024)) 10:45-13:00 [Optional] Wells Meeting
 
 ;; Social
 %%(and (memq (calendar-day-of-week date) '(2 4)) (diary-cyclic 1 1 2 2024)) 19:00-20:30 🥁 Band Practice

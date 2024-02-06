@@ -11,8 +11,6 @@ Literate Programming :)
 (setq treesit-extra-load-path `(,(concat user-emacs-directory "var/tree-sitter-dist/")
                                 ,(concat user-emacs-directory "tree-sitter")))
 (setq load-prefer-newer t)
-(setq gc-cons-percentage .6)
-
 (use-package no-littering
   :ensure t)
 
@@ -62,6 +60,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (tab-always-indent 'complete)
   (use-dialog-box nil) ; Lets be consistent and use minibuffer for everyting
   (scroll-conservatively 100)
+  (frame-inhibit-implied-resize t)
   (custom-file "~/.emacs.d/ignoreme.el")
 
   :config
@@ -113,6 +112,18 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          ("C-x C-k" . (lambda () (interactive) (bury-buffer))))
 
   :init
+  (defmacro k-time (&rest body)
+    "Measure and return the time it takes evaluating BODY."
+    `(let ((time (current-time)))
+       ,@body
+       (float-time (time-since time))))
+
+  ;; When idle for 15sec run the GC no matter what.
+  (defvar k-gc-timer
+    (run-with-idle-timer 15 t
+                         (lambda ()
+                           (message "Garbage Collector has run for %.06fsec"
+                                    (k-time (garbage-collect))))))
   (defun gopar/copy-filename-to-kill-ring ()
     (interactive)
     (kill-new (buffer-file-name))
@@ -264,6 +275,7 @@ next potential sentence end"
   :mode ("\\diary\\'" . diary-mode)
   :custom
   (diary-file (concat user-emacs-directory "etc/diary"))
+  (diary-display-function 'ignore)
   (calendar-mark-diary-entries-flat t)
   (diary-comment-start ";;")
   (diary-comment-end ""))
@@ -1211,6 +1223,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :bind (:map text-mode-map
               ("M-." . dictionary-lookup-definition)
          :map org-mode-map
+              ("M-." . dictionary-lookup-definition)
+         :map dictionary-mode-map
               ("M-." . dictionary-lookup-definition))
   :init
   (add-to-list 'display-buffer-alist
@@ -1228,19 +1242,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 ;; helm and ivy. The following is taken from doom-emacs
 (use-package minibuffer
   :ensure nil
-  :hook ((minibuffer-setup . defer-garbage-collection-h)
-         (minibuffer-exit . restore-garbage-collection-h))
   :custom
-  (completion-styles '(initials partial-completion flex))
-  :init
-  (defun defer-garbage-collection-h ()
-    (setq gc-cons-threshold most-positive-fixnum))
-
-  (defun restore-garbage-collection-h ()
-    ;; Defer it so that commands launched immediately after will enjoy the
-    ;; benefits.
-    (run-at-time
-     1 nil (lambda () (setq gc-cons-threshold 1600000)))))
+  (completion-styles '(initials partial-completion flex)))
 #+end_src
 
 ** Time
@@ -1334,8 +1337,15 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :ensure nil
   :defer
   :hook ((prog-mode . subword-mode)
-         (prog-mode . which-function-mode)
          (prog-mode . (lambda () (setq-local fill-column 120)))))
+#+end_src
+
+** Which Function
+#+begin_src emacs-lisp
+(use-package which-func
+  :ensure nil
+  :defer
+  :hook (prog-mode . which-function-mode))
 #+end_src
 
 ** Projectile
@@ -1351,16 +1361,22 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
   (projectile-per-project-compilation-buffer nil)
   :config
-  (projectile-global-mode))
+  (projectile-global-mode)
+  (setq frame-title-format '(:eval (if (projectile-project-root) (projectile-project-root) "%b")))
+  )
 #+end_src
 
-** TODO Bug Reference
+**  COMMENT Bug Reference
 Need to configure this
 
 Will probably need to extract to a private file since it'll hold
 domain/github info on things I work on
 #+begin_src emacs-lisp
-(use-package bug-reference :ensure nil :defer)
+(use-package bug-reference
+  :ensure nil
+  :defer
+  :load-path "lisp/bug-reference"
+  )
 #+end_src
 
 ** Repeat Mode
@@ -2175,7 +2191,7 @@ Collides with compact-docstrings
     (cond
      ((eq major-mode 'emacs-lisp-mode)
       (occur "\(defun"))
-     ((eq major-mode 'python-mode)
+     ((or (eq major-mode 'python-mode) (eq major-mode 'python-ts-mode))
       (occur "^\s*\\(\\(async\s\\|\\)def\\|class\\)\s"))
      ;; If no matching, then just do regular occur
      (t (call-interactively 'occur)))
@@ -2249,7 +2265,8 @@ Collides with compact-docstrings
                      windmove-up
                      windmove-down
                      move-to-window-line-top-bottom
-                     recenter-top-bottom other-window))
+                     recenter-top-bottom
+                     other-window))
     (advice-add command :after #'pulse-line)))
 #+end_src
 
@@ -2290,7 +2307,10 @@ Built in package that holds a few goodies
   :hook ((makefile-mode . indent-tabs-mode)
          (fundamental-mode . delete-selection-mode)
          (fundamental-mode . auto-fill-mode)
-         (org-mode . auto-fill-mode)))
+         (org-mode . auto-fill-mode))
+  :custom
+  (save-interprogram-paste-before-kill t)
+  )
 #+end_src
 
 ** [[https://github.com/Alexander-Miller/treemacs][Treemacs]]
@@ -2473,14 +2493,6 @@ Also start type break mode after start up since I might just be dragging along
       (pdf-view-mode))))
 #+end_src
 
-** COMMENT Ace Window
-#+begin_src emacs-lisp
-(use-package ace-window
-  :ensure t
-  :defer
-  :bind ("M-o" . ace-window))
-#+end_src
-
 ** Transient
 #+begin_src emacs-lisp
 (use-package transient
@@ -2628,42 +2640,10 @@ Also start type break mode after start up since I might just be dragging along
 (use-package flycheck
   :ensure
   :defer
-  :hook ((python-mode . flycheck-mode)
-         (python-mode . (lambda () (interactive) (add-to-list 'flycheck-checkers 'python-ruff))))
+  :hook ((python-mode . flycheck-mode))
   :bind (:map flycheck-mode-map
               ("C-c C-n" . flycheck-next-error)
               ("C-c C-p" . flycheck-previous-error))
-  :config
-  (flycheck-def-config-file-var flycheck-python-ruff-config python-ruff
-                                '("pyproject.toml" "ruff.toml" ".ruff.toml"))
-
-  (flycheck-define-checker python-ruff
-    "A Python syntax and style checker using the ruff.
-To override the path to the ruff executable, set
-`flycheck-python-ruff-executable'.
-
-See URL `https://beta.ruff.rs/docs/'."
-    :command ("ruff"
-              "check"
-              (config-file "--config" flycheck-python-ruff-config)
-              "--output-format=text"
-              "--stdin-filename" source-original
-              "-")
-    :standard-input t
-    :error-filter (lambda (errors)
-                    (let ((errors (flycheck-sanitize-errors errors)))
-                      (seq-map #'flycheck-flake8-fix-error-level errors)))
-    :error-patterns
-    ((warning line-start
-              (file-name) ":" line ":" (optional column ":") " "
-              (id (one-or-more (any alpha)) (one-or-more digit)) " "
-              (message (one-or-more not-newline))
-              line-end))
-    :modes (python-mode python-ts-mode)
-    :next-checkers ((warning . python-mypy)))
-
-
-
   :custom
   (flycheck-flake8rc '(".flake8" "setup.cfg" "tox.ini" "pyproject.toml")))
 #+end_src
@@ -2926,7 +2906,7 @@ NOTE: Seems like its no longer actively maintained :/
   :hook (after-init . golden-ratio-mode)
   :custom
   (golden-ratio-auto-scale t)
-  (golden-ratio-exclude-modes '(occur-mode)))
+  (golden-ratio-exclude-modes '(treemacs-mode occur-mode)))
 #+end_src
 
 ** [[https://github.com/jhgorrell/ssh-config-mode-el][SSH config Mode]]
@@ -3000,12 +2980,6 @@ Useful for when making videos
      (mouse-event-p nil nil))))
 #+end_src
 
-** Focus
-#+begin_src emacs-lisp
-(use-package focus
-  :ensure t
-  :hook (prog-mode . focus-mode))
-#+end_src
 
 * 1st Party Modes
 Stuff I've made for myself that are modes
@@ -3095,8 +3069,8 @@ Functions that are handy for setting up recording in youtube
 * End
 #+begin_src emacs-lisp
 (progn
-  (add-to-list 'default-frame-alist `(font . "Hack 17"))
-  (set-face-attribute 'default nil :font "Hack 17"))
+  (add-to-list 'default-frame-alist `(font . "Hack 15"))
+  (set-face-attribute 'default nil :font "Hack 15"))
 #+end_src
 
 ;;; Local Variables: ***

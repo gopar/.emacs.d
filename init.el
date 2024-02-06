@@ -1,3 +1,8 @@
+;; https://akrl.sdf.org/#orgc15a10d
+(setq garbage-collection-messages t)
+;; Set garbage collection threshold to 1GB.
+(setq gc-cons-threshold #x40000000)
+
 (require 'package)
 (setq package-enable-at-startup nil
       package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
