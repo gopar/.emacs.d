@@ -3,7 +3,11 @@
 
 * Emacs Configuration
 My Emacs config as an org document.
-Literate Programming :)
+
+**NOTE:** This is a mess, unorganized but it works for me.
+No plan to clean this up. This config will most likely not work for you since its made for me.
+We are all different. Thanks for coming to my Ted Talk
+
 
 * Recommended Packages/Snippets to Have As Early as Possible
 #+begin_src emacs-lisp
@@ -124,6 +128,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
                          (lambda ()
                            (message "Garbage Collector has run for %.06fsec"
                                     (k-time (garbage-collect))))))
+
   (defun gopar/copy-filename-to-kill-ring ()
     (interactive)
     (kill-new (buffer-file-name))
@@ -675,22 +680,6 @@ Also not built in but putting it here
   :hook (after-init . org-roam-db-autosync-mode))
 #+end_src
 
-*** Org Modern
-#+begin_src emacs-lisp
-(use-package org-modern
-  :ensure t
-  :hook ((org-mode . org-modern-mode)
-         (org-agenda-finalize . org-modern-agenda)))
-#+end_src
-
-*** COMMENT Org Modern Indentation
-#+begin_src emacs-lisp
-(use-package org-modern-indent
-   :ensure nil                           ; quelpa installs it
-   :quelpa (org-modern-indent :fetcher github :repo "jdtsmith/org-modern-indent")
-   :hook (org-modern-mode . org-modern-indent-mode))
-#+end_src
-
 *** Org Annotate File
 #+begin_src emacs-lisp
 ;; Belongs from the org-contrib pkg?
@@ -1132,6 +1121,7 @@ For TDD development
         (when (get-buffer "*Compile-Log*")
            (kill-buffer "*Compile-Log*"))
         (delete-other-windows)))))
+
   :init
   (recompile-on-save-advice compile))
 #+end_src
@@ -2480,19 +2470,6 @@ Also start type break mode after start up since I might just be dragging along
   :hook (prog-mode . compact-docstrings-mode))
 #+end_src
 
-** PDF Tools
-#+begin_src emacs-lisp
-(use-package pdf-tools
-  :ensure t
-  :defer
-  :hook (find-file . gopar/my-pdf-view-mode-hook)
-  :init
-  (defun gopar/my-pdf-view-mode-hook ()
-    "Enable `pdf-view-mode' for PDF files."
-    (when (and buffer-file-name (string-suffix-p ".pdf" buffer-file-name))
-      (pdf-view-mode))))
-#+end_src
-
 ** Transient
 #+begin_src emacs-lisp
 (use-package transient
@@ -2803,7 +2780,7 @@ Most of these themes are black/white colorless themes
 
 #+begin_src emacs-lisp
 (use-package leuven-theme
-  :ensure nil
+  :ensure t
   :custom-face
   (doom-modeline-buffer-file ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal))))
   (doom-modeline-buffer-path ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal))))
@@ -2823,6 +2800,7 @@ My favorite theme
   :init
   (defvar after-load-theme-hook nil
     "Hook run after a color theme is loaded using `load-theme'.")
+
   (defadvice load-theme (after run-after-load-theme-hook activate)
     "Run `after-load-theme-hook'."
     (run-hooks 'after-load-theme-hook))
@@ -2923,7 +2901,7 @@ Sync theme to light/dark based on system settings
   :ensure t
   :hook (after-init . auto-dark-mode)
   :init
-  (setq auto-dark-dark-theme 'tao-yin)
+  (setq auto-dark-dark-theme 'leuven-dark)
   (setq auto-dark-light-theme 'leuven))
 #+end_src
 
