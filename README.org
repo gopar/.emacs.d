@@ -122,9 +122,9 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
        ,@body
        (float-time (time-since time))))
 
-  ;; When idle for 15sec run the GC no matter what.
+  ;; When idle for 15 mins run the GC no matter what.
   (defvar k-gc-timer
-    (run-with-idle-timer 15 t
+    (run-with-idle-timer (* 15 60) t
                          (lambda ()
                            (message "Garbage Collector has run for %.06fsec"
                                     (k-time (garbage-collect))))))
@@ -305,7 +305,6 @@ Main configuration
 (use-package org
   :defer
   :custom
-  (fill-column 100)
   (org-agenda-include-diary t)
   ;; Where the org files live
   (org-directory "~/.emacs.d/org/")
@@ -2098,12 +2097,14 @@ Color the string of whatever color code they are holding
   (dashboard-setup-startup-hook))
 #+end_src
 
-** COMMENT Display Fill Column
-Collides with compact-docstrings
+** Display Fill Column
+Collides with compact-docstrings so turning off for programming modes
 #+begin_src emacs-lisp
 (use-package display-fill-column-indicator
   :ensure nil
-  :hook (python-mode . display-fill-column-indicator-mode))
+  :hook (;; (python-mode . display-fill-column-indicator-mode)
+         (org-mode . display-fill-column-indicator-mode))
+  )
 #+end_src
 
 ** Dired
@@ -2902,7 +2903,7 @@ Sync theme to light/dark based on system settings
   :hook (after-init . auto-dark-mode)
   :init
   (setq auto-dark-dark-theme 'leuven-dark)
-  (setq auto-dark-light-theme 'leuven))
+  (setq auto-dark-light-theme 'adwaita))
 #+end_src
 
 ** [[https://github.com/hlissner/emacs-hide-mode-line][Hide Mode Line]]
