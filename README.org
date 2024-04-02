@@ -116,18 +116,18 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          ("C-x C-k" . (lambda () (interactive) (bury-buffer))))
 
   :init
-  (defmacro k-time (&rest body)
-    "Measure and return the time it takes evaluating BODY."
-    `(let ((time (current-time)))
-       ,@body
-       (float-time (time-since time))))
+  ;; (defmacro k-time (&rest body)
+  ;;   "Measure and return the time it takes evaluating BODY."
+  ;;   `(let ((time (current-time)))
+  ;;      ,@body
+  ;;      (float-time (time-since time))))
 
-  ;; When idle for 15 mins run the GC no matter what.
-  (defvar k-gc-timer
-    (run-with-idle-timer (* 15 60) t
-                         (lambda ()
-                           (message "Garbage Collector has run for %.06fsec"
-                                    (k-time (garbage-collect))))))
+  ;; ;; When idle for 15 mins run the GC no matter what.
+  ;; (defvar k-gc-timer
+  ;;   (run-with-idle-timer (* 15 60) t
+  ;;                        (lambda ()
+  ;;                          (message "Garbage Collector has run for %.06fsec"
+  ;;                                   (k-time (garbage-collect))))))
 
   (defun gopar/copy-filename-to-kill-ring ()
     (interactive)
@@ -2233,6 +2233,7 @@ Collides with compact-docstrings so turning off for programming modes
   (js-indent-level 2)
   (js-jsx-indent-level 2)
   :hook (js-mode . (lambda ()
+                     (which-function-mode -1)
                      (define-key js-mode-map (kbd ";") 'easy-camelcase)
                      (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase)
                      ;; Set this to nil to avoid whitespace issues with tabs

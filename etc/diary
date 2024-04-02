@@ -1,33 +1,32 @@
 ;; Upkeep
-%%(and (diary-cyclic 7 1 6 2024)) 09:00-09:30 📓 12 Week Year Review
-
-%%(and (diary-cyclic 7 1 7 2024)) 18:00-18:40 GTD Focus
-
-%%(and (diary-cyclic 7 1 5 2024)) 18:00-18:20 Finances
-%%(and (diary-cyclic 7 1 5 2024)) 18:30-18:55 Bachata
-
-%%(and (diary-cyclic 7 1 3 2024)) 16:00-16:10 Take Out Trash
+%%(diary-cyclic 7 3 10 2024) 08:00-08:15 📓 12 Week Year Review ;; warntime 10
+%%(diary-cyclic 7 3 10 2024) 08:15-08:30 Finances               ;; warntime 2
+%%(diary-cyclic 7 3 10 2024) 18:00-18:40 GTD Focus
+%%(diary-cyclic 7 3 15 2024) 18:30-18:55 Bachata
 
 ;; Health
-;; %%(and (diary-cyclic 7 1 4 2024)) 06:30-09:00 Gym & Rock Climbing
-;; %%(and (diary-cyclic 7 1 2 2024)) 06:30-09:00 Gym & Rock Climbing
-%%(and (diary-cyclic 7 1 6 2024)) 10:00-12:50 Gym & Rock Climbing
+%%(diary-cyclic 7 3 10 2024) 09:00-11:30 Gym & Rock Climbing
+%%(diary-cyclic 7 3 12 2024) 02:30-04:30 Gym & Rock Climbing
+%%(diary-cyclic 7 3 14 2024) 03:30-05:30 Gym & Rock Climbing
 
-%%(and (diary-cyclic 1 1 1 2024)) 21:00-21:20 Headrest
+%%(diary-cyclic 1 1 1 2024) 21:00-21:20 Headrest
 
 ;; Work
-%%(and (memq (calendar-day-of-week date) '(1 2 3 4 5)) (diary-cyclic 1 1 2 2024)) 10:00-10:30 Standup
-%%(and (diary-cyclic 7 1 4 2024)) 16:00-17:00 Jira Meeting
-%%(and (diary-cyclic 7 1 22 2024)) 10:45-13:00 [Optional] Wells Meeting
+%%(and (memq (calendar-day-of-week date) '(1 2 3 4 5)) (diary-cyclic 1 1 2 2024)) 08:00-08:30 [Wells] Standup
+%%(diary-cyclic 7 1 4 2024) 14:00-15:00 [Wells] Jira Meeting
+%%(diary-cyclic 7 1 22 2024) 12:30-13:50 [Optional] Wells Meeting
+%%(and (memq (calendar-day-of-week date) '(1 2 3 4 5)) (diary-cyclic 1 3 11 2024)) 13:30-13:45 [CarYak] Standup
 
 ;; Social
-%%(and (memq (calendar-day-of-week date) '(2 4)) (diary-cyclic 1 1 2 2024)) 19:00-20:30 🥁 Band Practice
-%%(and (diary-cyclic 7 1 7 2024)) 16:00-17:50 🥁 Band Practice
+;; %%(and (memq (calendar-day-of-week date) '(2 4)) (diary-cyclic 1 1 2 2024)) 19:00-20:30 🥁 Band Practice
+;; %%(and (diary-cyclic 7 1 7 2024)) 16:00-17:50 🥁 Band Practice
+
+;; 12WY
+%%(diary-cyclic 7 3 13 2024) 15:00-16:20 Practice Music ;; warntime 5
+%%(diary-cyclic 7 3 14 2024) 19:00-19:40 Practice Music ;; warntime 5
 
 ;; Faith
-%%(and (diary-cyclic 7 1 7 2024)) 10:45-13:00 Church
-%%(and (diary-cyclic 7 2 28 2024)) 18:00-19:00 Wednesday Night Prayer
-
+%%(diary-cyclic 7 3 9 2024) 18:30-21:00 Church
 
 ;; GOOGLE APPEND
-03/09/2024 13:00-16:00 448 Tailoff Ln Unit 78A Open House
+04/04/2024 19:00-21:00 Monthly Python Usergroup Zoom Meeting
