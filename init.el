@@ -2,6 +2,7 @@
 (setq garbage-collection-messages t)
 ;; Set garbage collection threshold to 1GB.
 (setq gc-cons-threshold #x40000000)
+(setq gc-cons-percentage .9)
 
 (require 'package)
 (setq package-enable-at-startup nil

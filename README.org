@@ -116,19 +116,6 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          ("C-x C-k" . (lambda () (interactive) (bury-buffer))))
 
   :init
-  ;; (defmacro k-time (&rest body)
-  ;;   "Measure and return the time it takes evaluating BODY."
-  ;;   `(let ((time (current-time)))
-  ;;      ,@body
-  ;;      (float-time (time-since time))))
-
-  ;; ;; When idle for 15 mins run the GC no matter what.
-  ;; (defvar k-gc-timer
-  ;;   (run-with-idle-timer (* 15 60) t
-  ;;                        (lambda ()
-  ;;                          (message "Garbage Collector has run for %.06fsec"
-  ;;                                   (k-time (garbage-collect))))))
-
   (defun gopar/copy-filename-to-kill-ring ()
     (interactive)
     (kill-new (buffer-file-name))
@@ -1244,13 +1231,11 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (world-clock-time-format "%A %d %B %r %Z")
   (display-time-day-and-date t)
   (display-time-default-load-average nil)
+  (display-time-mail-string "")
   (zoneinfo-style-world-list
   '(("America/Los_Angeles" "Seattle")
     ("America/New_York" "New York")
-    ("Europe/London" "London")
-    ("Europe/Paris" "Paris")
-    ("Europe/Madrid" "Madrid")
-    ("Asia/Calcutta" "Bangalore")
+    ("America/Halifax" "Nova Scotia")
     ("Asia/Tokyo" "Tokyo"))))
 #+end_src
 
@@ -1667,19 +1652,24 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   :init
   (setq-default web-mode-code-indent-offset 2)
   (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
+  (setq web-mode-content-types-alist '(("jsx"  . "\\.js[x]?\\'")))
 
   :hook (web-mode . (lambda ()
                       (highlight-indentation-mode -1)
                       (electric-pair-local-mode -1)))
   :custom
   (web-mode-script-padding 0)
+  (web-mode-enable-html-entities-fontification t)
+  (web-mode-enable-element-content-fontification t)
   (web-mode-enable-current-element-highlight t)
   (web-mode-enable-current-column-highlight t)
   (web-mode-markup-indent-offset 2)
   (web-mode-css-indent-offset 2)
   (web-mode-sql-indent-offset 2)
   :mode (("\\.vue\\'" . web-mode)
-         ("\\.html\\'" . web-mode)))
+         ("\\.html\\'" . web-mode)
+         ("\\.js[x]?\\'" . web-mode)
+         ))
 #+end_src
 
 ** Emmet-mode
@@ -2042,12 +2032,12 @@ Color the string of whatever color code they are holding
   (dashboard-items '(
                      (vocabulary)
                      (recents . 5)
-                     ;; (projects . 5)
                      (bookmarks . 5)
+                     ;; (projects . 5)
                      ;; (agenda . 5)
-                     (monthly-balance)
+                     ;; (monthly-balance)
                      ))
-  (dashboard-item-generators '((monthly-balance . gopar/dashboard-ledger-monthly-balances)
+  (dashboard-item-generators '(;; (monthly-balance . gopar/dashboard-ledger-monthly-balances)
                               (vocabulary . gopar/dashboard-insert-vocabulary)
                               (recents . dashboard-insert-recents)
                               (bookmarks . dashboard-insert-bookmarks)
@@ -2231,13 +2221,7 @@ Collides with compact-docstrings so turning off for programming modes
               (";" . easy-camelcase))
   :custom
   (js-indent-level 2)
-  (js-jsx-indent-level 2)
-  :hook (js-mode . (lambda ()
-                     (which-function-mode -1)
-                     (define-key js-mode-map (kbd ";") 'easy-camelcase)
-                     (define-key js-jsx-mode-map (kbd ";") 'easy-camelcase)
-                     ;; Set this to nil to avoid whitespace issues with tabs
-                     (setq-local indent-tabs-mode nil))))
+  (js-jsx-indent-level 2))
 #+end_src
 
 ** Pulse
@@ -2305,8 +2289,8 @@ Built in package that holds a few goodies
   )
 #+end_src
 
-** [[https://github.com/Alexander-Miller/treemacs][Treemacs]]
-Seems to be working now...
+** COMMENT [[https://github.com/Alexander-Miller/treemacs][Treemacs]]
+Keeps on breaking for me for some reason. Deleting its config file resets it, but that can't be a permanent solution.
 
 #+begin_src emacs-lisp
 (use-package treemacs
@@ -2316,7 +2300,24 @@ Seems to be working now...
   :custom
   (treemacs-is-never-other-window t)
   :hook
-  (treemacs-mode . treemacs-project-follow-mode))
+  (treemacs-mode . treemacs-project-follow-mode)
+  (treemacs-mode . treemacs-hide-gitignored-files-mode))
+#+end_src
+
+** Neotree
+Here since treemacs keeps on breaking, and this is backup. Works pretty well
+
+#+begin_src emacs-lisp
+(use-package neotree
+  :ensure t
+  :bind ("<f5>" . neotree-toggle)
+  :custom
+  (neo-theme 'icons)
+  (neo-smart-open t)
+  (neo-autorefresh t)
+  ;; takes too long to update on first try
+  ;; (neo-vc-integration '(face char))
+  (neo-show-hidden-files t))
 #+end_src
 
 ** Dizze
@@ -2589,7 +2590,7 @@ Also start type break mode after start up since I might just be dragging along
 
 
   :hook ((python-mode . (lambda () (setq-local devdocs-current-docs
-                                      '("django~4.2" "django_rest_framework" "python~3.11" "postgresql~11" "sqlite"))))
+                                      '("django~4.2" "django_rest_framework" "python~3.11" "postgresql~11" "sqlite" "flask~3.0"))))
          (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
                                                                    "vue_router~4"
                                                                    "javascript"
@@ -2736,6 +2737,17 @@ Only being used with =org-present=
   (visual-fill-column-center-text t))
 #+end_src
 
+** [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
+adds padding around windows and frames
+
+#+begin_src emacs-lisp
+(use-package spacious-padding
+  :ensure t
+  :defer
+  :hook (after-init . spacious-padding-mode)
+  )
+#+end_src
+
 ** [[https://github.com/seagle0128/doom-modeline/][Doom Modeline]]
 Better UI for Modeline.
 Need to install fonts first by doing this
@@ -2765,15 +2777,22 @@ M-x all-the-icons-install-fonts
   )
 #+END_SRC
 
-** [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
-adds padding around windows and frames
-
+** Doom Themes
+Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
-(use-package spacious-padding
+(use-package doom-themes
   :ensure t
-  :defer
-  :hook (after-init . spacious-padding-mode)
-  )
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config)
+  ;; Enable custom neotree theme (all-the-icons must be installed!)
+  (doom-themes-neotree-config)
+  ;; Corrects (and improves) org-mode's native fontification.
+  (doom-themes-org-config))
 #+end_src
 
 ** Themes
@@ -2860,10 +2879,7 @@ Plain Dark/white theme
 #+begin_src emacs-lisp
 (use-package solaire-mode
   :ensure t
-  :hook (after-init . solaire-global-mode)
-  :config
-  (push '(treemacs-window-background-face . solaire-default-face) solaire-mode-remap-alist)
-  (push '(treemacs-hl-line-face . solaire-hl-line-face) solaire-mode-remap-alist))
+  :hook (after-init . solaire-global-mode))
 #+end_src
 
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
@@ -2886,7 +2902,7 @@ NOTE: Seems like its no longer actively maintained :/
   :hook (after-init . golden-ratio-mode)
   :custom
   (golden-ratio-auto-scale t)
-  (golden-ratio-exclude-modes '(treemacs-mode occur-mode)))
+  (golden-ratio-exclude-modes '(treemacs-mode occur-mode chatgpt-shell-mode)))
 #+end_src
 
 ** [[https://github.com/jhgorrell/ssh-config-mode-el][SSH config Mode]]
@@ -2903,8 +2919,8 @@ Sync theme to light/dark based on system settings
   :ensure t
   :hook (after-init . auto-dark-mode)
   :init
-  (setq auto-dark-dark-theme 'leuven-dark)
-  (setq auto-dark-light-theme 'adwaita))
+  (setq auto-dark-dark-theme 'doom-dracula)
+  (setq auto-dark-light-theme 'doom-solarized-light))
 #+end_src
 
 ** [[https://github.com/hlissner/emacs-hide-mode-line][Hide Mode Line]]
@@ -2912,8 +2928,8 @@ Sync theme to light/dark based on system settings
 (use-package hide-mode-line
   :ensure t
   :defer
-  :hook ((eshell-mode . hide-mode-line-mode)
-         (vterm-mode . hide-mode-line-mode)
+  :hook (;; (eshell-mode . hide-mode-line-mode)
+         ;; (vterm-mode . hide-mode-line-mode)
          (occur-mode . hide-mode-line-mode)
          (treemacs-mode . hide-mode-line-mode)))
 #+end_src
@@ -2960,6 +2976,14 @@ Useful for when making videos
      (mouse-event-p nil nil))))
 #+end_src
 
+** Garbage Collection
+#+begin_src emacs-lisp
+(use-package gcmh
+:ensure t
+:hook (after-init . gcmh-mode)
+:custom
+(gc-cons-percentage .9))
+#+end_src
 
 * 1st Party Modes
 Stuff I've made for myself that are modes
@@ -3021,12 +3045,12 @@ Functions that are handy for setting up recording in youtube
   (display-time-mode -1)
   (type-break-mode -1)
   (keycast-header-line-mode)
-  (let ((dashboard-items '((vocabulary) (recents . 5) (bookmarks . 5))))
+  (let ((dashboard-items '((vocabulary) (bookmarks . 5))))
     (dashboard-open)))
 
 (defun gopar/youtube-setup-emacs-goodies-series ()
   (interactive)
-  (consult-theme 'shades-of-purple)
+  (consult-theme 'doom-shades-of-purple)
   (gopar/youtube-setup))
 
 (defun gopar/youtube-setup-python-series ()
