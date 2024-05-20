@@ -1,10 +1,10 @@
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :tangle README.el
 
-* Emacs Configuration
-My Emacs config as an org document.
+My Emacs Configuration as an org file cause I wanna be like the cool kids 😎
 
-**NOTE:** This is a mess, unorganized but it works for me.
+* NOTE
+This is a mess, unorganized but it works for me.
 No plan to clean this up. This config will most likely not work for you since its made for me.
 We are all different. Thanks for coming to my Ted Talk
 
@@ -273,7 +273,7 @@ next potential sentence end"
   (diary-comment-end ""))
 #+end_src
 
-** Appt
+** COMMENT Appt
 Appointment reminder
 #+begin_src emacs-lisp
 (use-package appt
@@ -426,7 +426,9 @@ Main configuration
 (use-package org-agenda
   :after org
   :bind (("C-c a" . org-agenda))
-  ;; :hook (org-agenda-finalize . org-agenda-entry-text-mode)
+  :hook ((org-agenda-finalize . hl-line-mode)
+         ;; (org-agenda-finalize . org-agenda-entry-text-mode)
+         )
   :custom
   (org-agenda-current-time-string (if (and (display-graphic-p)
            (char-displayable-p ?←)
@@ -1002,28 +1004,26 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
 #+end_src
 
 *** Jedi
-Only use this for eldoc documentation. Works most of the time.
+Only use this for 'eldoc' documentation. Works most of the time.
+I say 'eldoc' in quotes b/c this doens't really use eldoc.
+It echos out the method/func signature instead of using eldoc.
+
 Requires =pip install jedi epc= in all virtualenvs
 
-*Note* For some reason the projects =python= env isn't loaded when we run the =shell-command=.
-Workaround is set a timer to run 3 seconds after python is correctly set to avoid issues
 #+begin_src emacs-lisp
 (use-package jedi
   :ensure t
   :defer
-  :hook (python-mode . gopar/enable-jedi-if-found)
-  ;; :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-jedi-if-found)))
+  :commands (jedi-mode)
+  :hook (python-mode . jedi-mode)
   :custom
   (jedi:tooltip-method nil)
-  :init
-  (defun gopar/enable-jedi-if-found ()
-    "Format the current buffer using the jedi program, if available."
-    (interactive)
-    (if (zerop (shell-command "python -c 'import jedi'"))
-        (jedi:setup))))
+  (jedi:mode-function nil)
+  (jedi:setup-function nil))
 #+end_src
 
-*** [[https://github.com/AdamNiederer/cov][Cov]]
+*** COMMENT [[https://github.com/AdamNiederer/cov][Cov]]
+Actually don't use this as much
 #+begin_src emacs-lisp
 (use-package cov
   :ensure t
@@ -1311,6 +1311,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :ensure nil
   :defer
   :hook ((prog-mode . subword-mode)
+         (prog-mode . hl-line-mode)
          (prog-mode . (lambda () (setq-local fill-column 120)))))
 #+end_src
 
@@ -1480,7 +1481,7 @@ Also includes displaying of them
   :ensure t
   :init
   (setq cape-dabbrev-min-length 2)
-  (setq cape-dabbrev-check-other-buffers 'some)
+  (setq cape-dabbrev-check-other-buffers 'cape--buffers-major-mode)
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
   (add-to-list 'completion-at-point-functions #'cape-file)
   ;; (add-to-list 'completion-at-point-functions #'cape-history)
@@ -1677,6 +1678,11 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 (use-package emmet-mode
   :ensure t
   :defer t
+  :config
+  (defun emmet-jsx-supported-mode? ()
+    "Is the current mode we're on enabled for jsx class attribute expansion?"
+    (or (member major-mode emmet-jsx-major-modes)
+        (and (string= major-mode "web-mode") (string= web-mode-content-type "jsx"))))
   :hook (web-mode . emmet-mode))
 #+end_src
 
@@ -2563,8 +2569,21 @@ Also start type break mode after start up since I might just be dragging along
 (use-package vterm
   :ensure t
   :defer
+  :bind (:map vterm-mode-map
+              ("<f6>" . vterm-toggle ))
   :custom
   (vterm-max-scrollback 100000))
+#+end_src
+
+** Vterm Toggle
+#+begin_src emacs-lisp
+(use-package vterm-toggle
+  :ensure t
+  :bind ("<f6>" . vterm-toggle )
+  :custom
+  (vterm-toggle-scope 'project)
+  (vterm-toggle-project-root t)
+  )
 #+end_src
 
 ** [[https://github.com/astoff/devdocs.el][Devdocs]]
@@ -3073,8 +3092,8 @@ Functions that are handy for setting up recording in youtube
 * End
 #+begin_src emacs-lisp
 (progn
-  (add-to-list 'default-frame-alist `(font . "Hack 15"))
-  (set-face-attribute 'default nil :font "Hack 15"))
+  (add-to-list 'default-frame-alist `(font . "Hack 16"))
+  (set-face-attribute 'default nil :font "Hack 16"))
 #+end_src
 
 ;;; Local Variables: ***
