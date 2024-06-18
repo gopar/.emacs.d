@@ -263,7 +263,6 @@ next potential sentence end"
 #+begin_src emacs-lisp
 (use-package calendar
   :ensure nil
-  :defer
   :mode ("\\diary\\'" . diary-mode)
   :custom
   (diary-file (concat user-emacs-directory "etc/diary"))
@@ -938,7 +937,7 @@ I'm keeping this function around since it's convineint to be able to create venv
   )
 #+end_src
 
-*** [[https://github.com/scop/emacs-ruff-format][Ruff]]
+*** COMMENT [[https://github.com/scop/emacs-ruff-format][Ruff]]
 #+begin_src emacs-lisp
 (use-package ruff-format
   :ensure t
@@ -952,7 +951,7 @@ I'm keeping this function around since it's convineint to be able to create venv
         (ruff-format-on-save-mode))))
 #+end_src
 
-*** [[https://github.com/anachronic/importmagic.el][importmagic]]
+*** COMMENT [[https://github.com/anachronic/importmagic.el][importmagic]]
 *Note* For some reason the projects =python= env isn't loaded when we run the =shell-command=.
 Workaround is set a timer to run 3 seconds after python is correctly set to avoid issues
 #+begin_src emacs-lisp
@@ -1020,22 +1019,6 @@ Requires =pip install jedi epc= in all virtualenvs
   (jedi:tooltip-method nil)
   (jedi:mode-function nil)
   (jedi:setup-function nil))
-#+end_src
-
-*** COMMENT [[https://github.com/AdamNiederer/cov][Cov]]
-Actually don't use this as much
-#+begin_src emacs-lisp
-(use-package cov
-  :ensure t
-  :hook (python-mode . gopar/cov-mode)
-  :init
-  (setq cov-coverage-mode t)
-  (defun gopar/cov-mode ()
-    "Enable cov-mode if there is a coverate.json at project root"
-    (interactive)
-    (let* ((coverage-exists (locate-dominating-file (buffer-file-name) "coverage.json")))
-      (when coverage-exists
-        (cov-mode)))))
 #+end_src
 
 ** Kotlin
@@ -1226,7 +1209,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 #+begin_src emacs-lisp
 (use-package time
   :ensure nil
-  :hook (after-init . display-time-mode)
+  ;; :hook (after-init . display-time-mode) ;; Usually just look at the OS time
   :custom
   (world-clock-time-format "%A %d %B %r %Z")
   (display-time-day-and-date t)
@@ -1720,7 +1703,7 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   :bind ("C-c d" . docker))
 #+end_src
 
-** GNU Ledger
+** COMMENT GNU Ledger
 #+begin_src emacs-lisp
 (use-package ledger-mode
   :ensure t
@@ -2863,35 +2846,6 @@ My favorite theme
 
   (add-hook 'after-load-theme-hook 'update-doom-modeline-battery-faces))
 #+END_SRC
-*** [[https://github.com/motform/stimmung-themes][Stimmung]]
-Plain Dark/white theme
-#+begin_src emacs-lisp
-(use-package stimmung-themes :ensure t)
-#+end_src
-*** [[https://github.com/thblt/eziam-theme-emacs][Eziam Theme]]
-#+begin_src emacs-lisp
-(use-package eziam-themes :ensure t)
-#+end_src
-*** [[https://github.com/fxn/monochrome-theme.el][Monochrome]]
-#+begin_src emacs-lisp
-(use-package monochrome-theme :ensure t)
-#+end_src
-*** [[https://github.com/cryon/almost-mono-themes][Almost Mono]]
-#+begin_src emacs-lisp
-(use-package almost-mono-themes :ensure t)
-#+end_src
-*** [[https://github.com/voloyev/sexy-monochrome-theme][Sexy Monochrome Theme]]
-#+begin_src emacs-lisp
-(use-package sexy-monochrome-theme :ensure t)
-#+end_src
-*** [[https://github.com/belak/emacs-grayscale-theme][GrayScale]]
-#+begin_src emacs-lisp
-(use-package grayscale-theme :ensure t)
-#+end_src
-*** Dark Adwaita
-#+begin_src emacs-lisp
-(use-package adwaita-dark-theme :ensure t)
-#+end_src
 
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
@@ -3087,6 +3041,16 @@ Functions that are handy for setting up recording in youtube
   (consult-theme 'manoj-dark)
   (gopar/youtube-setup))
 
+#+end_src
+
+** Private
+Things that I want to keep private/out of git
+
+#+begin_src emacs-lisp
+(use-package private
+  :load-path "."
+  :commands (gopar/random-friend)
+  )
 #+end_src
 
 * End

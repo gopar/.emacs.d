@@ -5,6 +5,6 @@ alias oc /usr/bin/find . -name "*.org" | xargs wc -l
 alias netw ledger balance ^assets ^liabilities -V -R $*
 alias netc ledger balance ^expenses ^income -V -R $*
 alias ledger /opt/homebrew/bin/ledger --no-color --no-pager --strict $*
-alias l exa --long --classify --all --group --header --blocks --git --color=never $1
+alias l lsd --long --classify --all --group-directories-first --icon=always  -oneline --human-readable $1
 alias ff find-file $1
 alias c clear-scrollback
