@@ -36,3 +36,5 @@ eshell/history
 eshell/alias
 emacs29.el
 /quelpa/
+private.el
+.DS_Store

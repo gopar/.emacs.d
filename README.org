@@ -11,9 +11,6 @@ We are all different. Thanks for coming to my Ted Talk
 
 * Recommended Packages/Snippets to Have As Early as Possible
 #+begin_src emacs-lisp
-;; Recommended to have this at the top
-(setq treesit-extra-load-path `(,(concat user-emacs-directory "var/tree-sitter-dist/")
-                                ,(concat user-emacs-directory "tree-sitter")))
 (setq load-prefer-newer t)
 (use-package no-littering
   :ensure t)
@@ -218,6 +215,10 @@ next potential sentence end"
     (if (looking-at "[    \n]+[A-Z]\\|\\\\")
         nil
       (gopar/next-sentence)))
+
+  (defun gopar/list-git-authors-for-file ()
+    (interactive)
+    (message (shell-command-to-string "git shortlog HEAD -s -n")))
 
   (defun gopar/last-sentence ()
     "Does the same as 'gopar/next-sentence' except it goes in reverse"
@@ -889,6 +890,7 @@ function. Lets just have in buffer completion
   :bind (:map python-mode-map
               ("C-c C-p" . nil)
               ("C-c C-e" . nil)
+              ("C-c C-s" . nil)
               ("C-c C-z" . gopar/run-python))
   :hook ((python-mode . (lambda ()
                           (setq-local forward-sexp-function nil)
@@ -952,8 +954,6 @@ I'm keeping this function around since it's convineint to be able to create venv
 #+end_src
 
 *** COMMENT [[https://github.com/anachronic/importmagic.el][importmagic]]
-*Note* For some reason the projects =python= env isn't loaded when we run the =shell-command=.
-Workaround is set a timer to run 3 seconds after python is correctly set to avoid issues
 #+begin_src emacs-lisp
 (use-package importmagic
   :ensure t
@@ -961,7 +961,6 @@ Workaround is set a timer to run 3 seconds after python is correctly set to avoi
   :custom
   (importmagic-be-quiet t)
   :hook (python-mode . gopar/enable-importmagic-if-found)
-  ;; :hook (python-mode . (lambda () (run-at-time "3 sec" nil 'gopar/enable-importmagic-if-found)))
   :init
   (defun gopar/enable-importmagic-if-found ()
     "Format the current buffer using the 'importmagic` program, if available."
@@ -1952,12 +1951,9 @@ Color the string of whatever color code they are holding
   :init
   (defun gopar/auto-insert-jira-ticket-in-commit-msg ()
     (let ((has-ticket-title (string-match "^[A-Z]+-[0-9]+" (magit-get-current-branch)))
-          (has-ss-ticket (string-match "^[A-Za-Z]+/[A-Z]+-[0-9]+" (magit-get-current-branch)))
           (words (s-split-words (magit-get-current-branch))))
       (if has-ticket-title
-          (insert (format "[%s-%s] " (car words) (car (cdr words)))))
-      (if has-ss-ticket
-          (insert (format "[%s-%s] " (nth 1 words) (nth 2 words)))))))
+          (insert (format "[%s-%s] " (car words) (car (cdr words))))))))
 
 (use-package git-gutter
   :ensure t
@@ -2017,22 +2013,17 @@ Color the string of whatever color code they are holding
   (dashboard-icon-type 'all-the-icons)
   (dashboard-set-file-icons t)
   (dashboard-projects-backend 'projectile)
-  ;; (dashboard-agenda-sort-strategy '(priority-down))
   (dashboard-items '(
                      (vocabulary)
                      (recents . 5)
                      (bookmarks . 5)
-                     ;; (projects . 5)
-                     ;; (agenda . 5)
                      ;; (monthly-balance)
                      ))
   (dashboard-item-generators '(;; (monthly-balance . gopar/dashboard-ledger-monthly-balances)
                               (vocabulary . gopar/dashboard-insert-vocabulary)
                               (recents . dashboard-insert-recents)
                               (bookmarks . dashboard-insert-bookmarks)
-                              (projects . dashboard-insert-projects)
-                              (agenda . dashboard-insert-agenda)
-                              (registers . dashboard-insert-registers)))
+                              ))
   :init
   (defun gopar/dashboard-insert-vocabulary (list-size)
     (dashboard-insert-heading "Word of the Day:"
@@ -2135,25 +2126,22 @@ Collides with compact-docstrings so turning off for programming modes
               ))
 #+end_src
 
-** Replace
+** Replace/Occur
 #+begin_src emacs-lisp
 (use-package replace
   :ensure nil
   :defer
-  :hook (occur-mode . (lambda () (setq-local window-size-fixed 'width)))
+  :hook (occur-mode . (lambda () ;; (setq-local window-size-fixed 'width)
+                        (occur-rename-buffer)))
   :custom
   (list-matching-lines-default-context-lines 0)
-  :bind (("C-c C-o" . gopar/occur-definitions)
-         ;; :map occur-mode-map
-         ;; ("RET" . gopar/jump-to-defintion-and-kill-all-other-windows)
-         ;; ("<C-return>" . occur-mode-goto-occurrence)
-         )
+  :bind (("C-c C-o" . gopar/occur-definitions))
   :init
-  (add-to-list 'display-buffer-alist
-               '("^\\*Occur\\*"
-                 display-buffer-in-side-window
-                 (side . left)
-                 (window-width . 40)))
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '("^\\*Occur\\*"
+  ;;                display-buffer-in-side-window
+  ;;                (side . left)
+  ;;                (window-width . 40)))
 
   (defun gopar/occur-definitions ()
     "Show all the function/method/class definitions for the current language."
@@ -2164,19 +2152,7 @@ Collides with compact-docstrings so turning off for programming modes
      ((or (eq major-mode 'python-mode) (eq major-mode 'python-ts-mode))
       (occur "^\s*\\(\\(async\s\\|\\)def\\|class\\)\s"))
      ;; If no matching, then just do regular occur
-     (t (call-interactively 'occur)))
-
-    ;; Lets switch to that new occur buffer
-    (let ((window (get-buffer-window "*Occur*")))
-      (if window
-          (select-window window)
-        (switch-to-buffer "*Occur*"))))
-
-  (defun gopar/jump-to-defintion-and-kill-all-other-windows ()
-    (interactive)
-    (occur-mode-goto-occurrence)
-    (kill-buffer "*Occur*")
-    (delete-other-windows)))
+     (t (call-interactively 'occur)))))
 #+end_src
 
 ** Ansi Color
@@ -2275,7 +2251,14 @@ Built in package that holds a few goodies
          (org-mode . auto-fill-mode))
   :custom
   (save-interprogram-paste-before-kill t)
-  )
+  :init
+  (defun gopar/pulse-current-region (&rest _)
+  "Pulse the current implicit or active region."
+  (if mark-active
+      (pulse-momentary-highlight-region (region-beginning) (region-end))
+    (pulse-momentary-highlight-region (mark) (point))))
+
+  (advice-add #'kill-ring-save :before #'gopar/pulse-current-region))
 #+end_src
 
 ** COMMENT [[https://github.com/Alexander-Miller/treemacs][Treemacs]]
@@ -2566,6 +2549,8 @@ Also start type break mode after start up since I might just be dragging along
   :custom
   (vterm-toggle-scope 'project)
   (vterm-toggle-project-root t)
+  (vterm-toggle-reset-window-configration-after-exit t)
+  (vterm-toggle-hide-method 'reset-window-configration)
   )
 #+end_src
 
@@ -2640,7 +2625,7 @@ Also start type break mode after start up since I might just be dragging along
          ("C-c C-e" . chatgpt-shell-prompt-compose))
   :hook (chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
   :init
-  (setq shell-maker-history-path (concat user-emacs-directory "var/"))
+  (setq shell-maker-root-path (concat user-emacs-directory "var/"))
   (add-to-list 'display-buffer-alist
                '("\\*chatgpt\\*"
                  display-buffer-in-side-window
@@ -2846,13 +2831,20 @@ My favorite theme
 
   (add-hook 'after-load-theme-hook 'update-doom-modeline-battery-faces))
 #+END_SRC
+*** [[https://github.com/topikettunen/tok-theme][Tok]]
+#+begin_src emacs-lisp
+(use-package tok-theme :ensure t)
+#+end_src
 
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
 (use-package solaire-mode
   :ensure t
-  :hook (after-init . solaire-global-mode))
+  :hook (after-init . solaire-global-mode)
+  :custom
+  (solaire-mode-themes-to-face-swap '(tao-yin tao-yang))
+  )
 #+end_src
 
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
@@ -2892,8 +2884,10 @@ Sync theme to light/dark based on system settings
   :ensure t
   :hook (after-init . auto-dark-mode)
   :init
-  (setq auto-dark-dark-theme 'doom-dracula)
-  (setq auto-dark-light-theme 'doom-solarized-light))
+  (setq auto-dark-dark-theme 'tao-yin)
+  ;; (setq auto-dark-light-theme 'doom-solarized-light)
+  (setq auto-dark-light-theme 'tao-yang) ;; tok
+  )
 #+end_src
 
 ** [[https://github.com/hlissner/emacs-hide-mode-line][Hide Mode Line]]
@@ -2991,7 +2985,7 @@ Stuff I've made for myself that are modes
       ;; disable all themes change to a friendlier theme
       (mapcar 'disable-theme custom-enabled-themes)
       (load-theme 'doom-shades-of-purple)
-      (treemacs)
+      (neotree)
       (setq gopar-pair-programming t))))
 #+end_src
 
@@ -3013,6 +3007,7 @@ Functions that are handy for setting up recording in youtube
     (setq gopar/orginal-font-height (face-attribute 'default :height)))
 
   (set-face-attribute 'default nil :height gopar/youtube-font-height)
+  (set-frame-size (selected-frame) 95 40)
 
   (delete-other-windows)
   (display-time-mode -1)
@@ -3048,7 +3043,7 @@ Things that I want to keep private/out of git
 
 #+begin_src emacs-lisp
 (use-package private
-  :load-path "."
+  :load-path "lisp"
   :commands (gopar/random-friend)
   )
 #+end_src
