@@ -217,8 +217,15 @@ next potential sentence end"
       (gopar/next-sentence)))
 
   (defun gopar/list-git-authors-for-file ()
+    "Display all the authors for a given file.
+If file is not in a git repo or file is not a real file (aka buffer), then do nothing."
     (interactive)
-    (message (shell-command-to-string "git shortlog HEAD -s -n")))
+    (let* ((file (buffer-file-name))
+           (root (when (vc-root-dir) (expand-file-name (vc-root-dir))))
+           (file (when (and file root) (s-chop-prefix root file))))
+      (when (and root file)
+        (message (format "Contributors for %s:\n%s" file (shell-command-to-string
+          (format "git shortlog HEAD -s -n %s" file)))))))
 
   (defun gopar/last-sentence ()
     "Does the same as 'gopar/next-sentence' except it goes in reverse"
@@ -506,7 +513,6 @@ Main configuration
           (deadline (org-get-deadline-time (point))))
       (if (not (or scheduled deadline))
           (format "🗓️ ")
-          ;; (format " ")
         "   "))))
 
 #+end_src
@@ -677,7 +683,13 @@ Also not built in but putting it here
   :defer
   :custom
   (org-annotate-file-add-search t)
-  :bind (:map prog-mode-map ("C-c C-s" . gopar/org-annotate-file))
+  (org-annotate-file-storage-file (concat user-emacs-directory "var/.org-annotate-file.org"))
+  :bind (:map prog-mode-map
+              ("C-c C-s" . gopar/org-annotate-file)
+         :map python-mode-map
+              ("C-c C-s" . gopar/org-annotate-file)
+         :map web-mode-map
+              ("C-c C-s" . gopar/org-annotate-file))
   :init
   (defun gopar/org-annotate-file (&optional arg)
     "Annotate current line.
@@ -685,7 +697,10 @@ When called with a prefix aurgument, it will open annotations file."
     (interactive "P")
     (require 'org-annotate-file)
     (let* ((root (projectile-project-root))
-           (org-annotate-file-storage-file (format "%s.org-annotate.org" root)))
+           (org-annotate-file-storage-file
+            (if root
+                (format "%s.org-annotate.org" root)
+              org-annotate-file-storage-file)))
       (if arg
           (find-file org-annotate-file-storage-file)
         (org-annotate-file)))))
@@ -2252,6 +2267,7 @@ Built in package that holds a few goodies
   :custom
   (save-interprogram-paste-before-kill t)
   :init
+
   (defun gopar/pulse-current-region (&rest _)
   "Pulse the current implicit or active region."
   (if mark-active
@@ -2287,6 +2303,7 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
   (neo-theme 'icons)
   (neo-smart-open t)
   (neo-autorefresh t)
+  (neo-window-width 40) ;; Around ~12% of screen space on my ultra wide
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
   (neo-show-hidden-files t))
@@ -3007,7 +3024,7 @@ Functions that are handy for setting up recording in youtube
     (setq gopar/orginal-font-height (face-attribute 'default :height)))
 
   (set-face-attribute 'default nil :height gopar/youtube-font-height)
-  (set-frame-size (selected-frame) 95 40)
+  (set-frame-size (selected-frame) 143 40)
 
   (delete-other-windows)
   (display-time-mode -1)
