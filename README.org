@@ -1040,6 +1040,15 @@ Requires =pip install jedi epc= in all virtualenvs
 (use-package kotlin-mode :ensure t :defer)
 #+end_src
 
+** Tree Sitter Auto Magic
+#+begin_src emacs-lisp
+(use-package treesit-auto
+  :custom
+  (treesit-auto-install 'prompt)
+  :config
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (global-treesit-auto-mode))
+#+end_src
 ** Flycheck Kotlin
 #+begin_src emacs-lisp
 (use-package flycheck-kotlin
@@ -1949,6 +1958,7 @@ Color the string of whatever color code they are holding
   (magit-diff-refine-hunk 'all)
   (magit-process-finish-apply-ansi-colors t)
   :init
+  (setq magit-process-finish-apply-ansi-colors t)
   (defun magit/undo-last-commit (number-of-commits)
     "Undoes the latest commit or commits without loosing changes"
     (interactive "P")
@@ -2660,7 +2670,7 @@ Also start type break mode after start up since I might just be dragging along
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
   (chatgpt-shell-transmitted-context-length 5)
-  (chatgpt-shell-model-versions '("gpt-4" "gpt-3.5-turbo-16k" "gpt-3.5-turbo"  "gpt-4-32k")))
+  (chatgpt-shell-model-versions '("gpt-4o")))
 #+end_src
 *** Dall-E
 #+begin_src emacs-lisp
