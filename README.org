@@ -740,7 +740,9 @@ When called with a prefix aurgument, it will open annotations file."
          (eshell-mode . gopar/eshell-specific-outline-regexp)
          (eshell-mode . gopar/eshell-setup-keybinding)
          (eshell-banner-load . (lambda () (setq eshell-banner-message (concat (shell-command-to-string "fortune -s | cowsay") "\n\n"))))
-         (eshell-mode . (lambda () (setq-local completion-at-point-functions '(cape-file)))))
+         (eshell-mode . (lambda ()
+                          (setq-local corfu-count 3)
+                          (setq-local completion-at-point-functions '(cape-file cape-history)))))
   :custom
   (eshell-buffer-maximum-lines 10000)
   (eshell-scroll-to-bottom-on-input t)
@@ -854,7 +856,7 @@ Stolen from aweshell."
 ;;   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
-*** Eshell Auto Fish History
+*** COMMENT Eshell Auto Fish History
 #+begin_src emacs-lisp
 (use-package esh-autosuggest
   :hook (eshell-mode . esh-autosuggest-mode)
@@ -862,20 +864,6 @@ Stolen from aweshell."
               ("TAB" . company-complete-selection))
   :ensure t)
 #+end_src
-*** Eshell vterm
-Defer visual commands to vterm instead of shell
-#+begin_src emacs-lisp
-(use-package eshell-vterm
-  :ensure
-  :after eshell
-  :bind (:map vterm-mode-map
-         ("C-q" . vterm-send-next-key))
-  :config
-  (eshell-vterm-mode)
-  :init
-  (defalias 'eshell/v 'eshell-exec-visual))
-#+end_src
-
 *** Eshell Toggle
 #+begin_src emacs-lisp
 (use-package eshell-toggle
@@ -907,15 +895,14 @@ function. Lets just have in buffer completion
               ("C-c C-e" . nil)
               ("C-c C-s" . nil)
               ("C-c C-z" . gopar/run-python))
-  :hook ((python-mode . (lambda ()
+  :hook ((python-ts-mode . (lambda ()
                           (setq-local forward-sexp-function nil)
                           (make-local-variable 'python-shell-virtualenv-root)
                           (setq-local comment-inline-offset 2)
                           (setq-local completion-at-point-functions
                                       '(cape-file
-                                        python-completion-at-point
-                                        cape-dabbrev
-                                        cape-keyword
+                                        ;; python-completion-at-point
+                                        gopar/cape-yasnippet-keyword-dabbrev
                                         gopar/cape-dict-only-in-strings
                                         gopar/cape-dict-only-in-comments
                                         ))))
@@ -1421,17 +1408,6 @@ Also includes displaying of them
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
   :init
   (vertico-mode)
-
-  ;; Different scroll margin
-  ;; (setq vertico-scroll-margin 0)
-
-  ;; Show more candidates
-  ;; (setq vertico-count 20)
-
-  ;; Grow and shrink the Vertico minibuffer
-  ;; (setq vertico-resize t)
-
-  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
   (setq vertico-cycle t))
 
 (use-package vertico-multiform
@@ -1465,30 +1441,14 @@ Also includes displaying of them
 
 (use-package corfu
   :ensure t
-  ;; Optional customizations
+  :bind (:map corfu-map
+              ("RET" . corfu-send))
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
   (corfu-on-exact-match 'insert) ;; Insert when there's only one match
   (corfu-quit-no-match t)        ;; Quit when ther is no match
-  ;; (corfu-separator ?\s)          ;; Orderless field separator
-  ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-
-  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-  ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
-  ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-  ;; (corfu-scroll-margin 5)        ;; Use scroll margin
-
-  ;; Enable Corfu only for certain modes.
-  ;; :hook ((prog-mode . corfu-mode)
-  ;;        (shell-mode . corfu-mode)
-  ;;        (eshell-mode . corfu-mode))
-
-  ;; Recommended: Enable Corfu globally.
-  ;; This is recommended since Dabbrev can be used globally (M-/).
-  ;; See also `corfu-excluded-modes'.
   :init
-  (setq corfu-exclude-modes '(eshell-mode))
   (global-corfu-mode)
 
   (defun corfu-enable-always-in-minibuffer ()
@@ -1514,19 +1474,17 @@ Also includes displaying of them
 
   (defun gopar/cape-dict-only-in-comments ()
     (cape-wrap-inside-comment 'cape-dict))
+
   (defun gopar/cape-dict-only-in-strings ()
     (cape-wrap-inside-string 'cape-dict))
 
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (defun gopar/cape-yasnippet-keyword-dabbrev ()
+    (cape-wrap-super #'yasnippet-capf #'cape-keyword #'cape-dabbrev))
+
   (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'gopar/cape-yasnippet-keyword-dabbrev)
   (add-to-list 'completion-at-point-functions #'gopar/cape-dict-only-in-strings)
-  (add-to-list 'completion-at-point-functions #'gopar/cape-dict-only-in-comments)
-  ;;(add-to-list 'completion-at-point-functions #'cape-history)
-  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
-  ;;(add-to-list 'completion-at-point-functions #'cape-line)
-  )
+  (add-to-list 'completion-at-point-functions #'gopar/cape-dict-only-in-comments))
 
 (use-package orderless
   :ensure t
@@ -1538,7 +1496,7 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :after projectile
-  :bind (("C-s" . consult-line)
+  :bind (("C-s" . gopar/consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
          ("C-x r b" . consult-bookmark)
@@ -1640,6 +1598,20 @@ If used with a prefix, it will search all buffers as well."
   :after embark)
 #+end_src
 
+*** COMMENT [[https://github.com/muffinmad/emacs-pdb-capf][Gud pdb]]
+Experimental. Not working?
+
+#+begin_src emacs-lisp
+(use-package pdb-capf
+  :ensure t
+  :defer
+  :quelpa (pdb-capf :fetcher github :repo "muffinmad/emacs-pdb-capf")
+  :init
+  (add-hook 'pdb-mode-hook
+          (lambda ()
+            (add-hook 'completion-at-point-functions
+                      'pdb-capf nil t))))
+#+end_src
 ** Dumb Jump
 A basic 'go to' functionality that works really well. So I don't need LSP
 #+begin_src emacs-lisp
@@ -1651,6 +1623,15 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   (dumb-jump-force-searcher 'ag)
   (dumb-jump-selector 'completing-read)
   (dumb-jump-default-project "~/work")
+  :init
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
+#+end_src
+
+** Xref
+#+begin_src emacs-lisp
+(use-package xref
+  :ensure nil
+  :defer t
   :init
   (defun gopar/xref-backend-html-template ()
     "Xref backend for jumping to HTML template definitions."
@@ -1665,11 +1646,8 @@ A basic 'go to' functionality that works really well. So I don't need LSP
                             (projectile-project-files (projectile-project-root)))))
       (when path
         (list (xref-make identifier (xref-make-file-location (format "%s%s" (projectile-project-root) path) 1 0))))))
-
-  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   (add-hook 'xref-backend-functions #'gopar/xref-backend-html-template))
 #+end_src
-
 ** Web Mode
 #+begin_src emacs-lisp
 (use-package web-mode
@@ -2042,6 +2020,14 @@ Color the string of whatever color code they are holding
 (use-package yasnippet-snippets
   :ensure t
   :defer)
+#+end_src
+
+*** [[https://github.com/elken/yasnippet-capf][Yasnippet capf]]
+To use as a super capf with a few others
+#+begin_src emacs-lisp
+(use-package yasnippet-capf
+  :ensure t
+  :quelpa (yasnippet-capf :fetcher github :repo "elken/yasnippet-capf"))
 #+end_src
 
 ** [[https://github.com/emacs-dashboard/emacs-dashboard/][Dashboard]]
@@ -2580,6 +2566,7 @@ Also start type break mode after start up since I might just be dragging along
 (use-package vterm
   :ensure t
   :defer
+  :bind (:map vterm-mode-map ("C-q" . vterm-send-next-key))
   :custom
   (vterm-max-scrollback 100000))
 #+end_src
