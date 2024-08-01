@@ -688,6 +688,8 @@ Also not built in but putting it here
               ("C-c C-s" . gopar/org-annotate-file)
          :map python-mode-map
               ("C-c C-s" . gopar/org-annotate-file)
+         :map python-ts-mode-map
+              ("C-c C-s" . gopar/org-annotate-file)
          :map web-mode-map
               ("C-c C-s" . gopar/org-annotate-file))
   :init
@@ -726,6 +728,8 @@ When called with a prefix aurgument, it will open annotations file."
   (insert "- Plans for Tomorrow:\n")
   (insert "  - Task 1\n")
   (insert "  - Task 2\n"))
+
+(defalias 'gopar/journal-eng-entry 'gopar/daily-log)
 #+end_src
 
 ** Eshell
@@ -735,6 +739,7 @@ When called with a prefix aurgument, it will open annotations file."
   :hook ((eshell-directory-change . gopar/sync-dir-in-buffer-name)
          (eshell-mode . gopar/eshell-specific-outline-regexp)
          (eshell-mode . gopar/eshell-setup-keybinding)
+         (eshell-banner-load . (lambda () (setq eshell-banner-message (concat (shell-command-to-string "fortune -s | cowsay") "\n\n"))))
          (eshell-mode . (lambda () (setq-local completion-at-point-functions '(cape-file)))))
   :custom
   (eshell-buffer-maximum-lines 10000)
@@ -756,11 +761,8 @@ When called with a prefix aurgument, it will open annotations file."
     (define-key eshell-hist-mode-map (kbd "M-r") 'consult-history))
 
   (defun gopar/eshell-input-filter (input)
-    "Do not save empty lines, commands that start with a space or 'l'/'ls'"
+    "Do not save empty lines, or commands that start with a space."
     (and
-     (not (string-prefix-p "ls" input))
-     (not (or (string-prefix-p "l " input) (string-equal "l" input)))
-     (not (string-prefix-p "cd" input))
      (eshell-input-filter-default input)
      (eshell-input-filter-initial-space input)))
 
@@ -777,25 +779,6 @@ Stolen form aweshell"
       ;; not the starting directory
       (mapc #'find-file (mapcar #'expand-file-name (eshell-flatten-list (reverse args)))))
     )
-
-  (defun eshell/clear ()
-    "Clear the eshell buffer.
-This overrides the built in eshell/clear cmd in esh-mode."
-    (interactive)
-    (eshell/clear-scrollback))
-
-  (defun eshell/z (&optional regexp)
-    "Navigate to a previously visited directory in eshell.
-Similar to `cd =`"
-    (let ((eshell-dirs (delete-dups
-                        (mapcar 'abbreviate-file-name
-                                (ring-elements eshell-last-dir-ring)))))
-      (eshell/cd (if regexp (eshell-find-previous-directory regexp)
-                   (completing-read "cd: " eshell-dirs)))))
-
-  (defun eshell/jj ()
-    "Jumpt to Root."
-    (eshell/cd (projectile-project-root)))
 
   (defun eshell/cat (filename)
     "Like cat(1) but with syntax highlighting.
@@ -871,6 +854,14 @@ Stolen from aweshell."
 ;;   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
+*** Eshell Auto Fish History
+#+begin_src emacs-lisp
+(use-package esh-autosuggest
+  :hook (eshell-mode . esh-autosuggest-mode)
+  :bind (:map esh-autosuggest-active-map
+              ("TAB" . company-complete-selection))
+  :ensure t)
+#+end_src
 *** Eshell vterm
 Defer visual commands to vterm instead of shell
 #+begin_src emacs-lisp
@@ -885,14 +876,18 @@ Defer visual commands to vterm instead of shell
   (defalias 'eshell/v 'eshell-exec-visual))
 #+end_src
 
-*** Eshell Banner
+*** Eshell Toggle
 #+begin_src emacs-lisp
-(use-package eshell-info-banner
+(use-package eshell-toggle
   :ensure t
   :defer t
-  :hook (eshell-banner-load . eshell-info-banner-update-banner))
+  :bind ("<f6>" . eshell-toggle)
+  :custom
+  (eshell-toggle-default-directory "~")
+  (eshell-toggle-size-fraction 3)
+  (eshell-toggle-find-project-root-package 'projectile) ;; for projectile
+  (eshell-toggle-run-command nil))
 #+end_src
-
 ** Python
 Run on every fresh virtualenv install
 =pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest=
@@ -906,12 +901,24 @@ function. Lets just have in buffer completion
               ("C-c C-p" . nil)
               ("C-c C-e" . nil)
               ("C-c C-s" . nil)
+              ("C-c C-z" . gopar/run-python)
+         :map python-ts-mode-map
+              ("C-c C-p" . nil)
+              ("C-c C-e" . nil)
+              ("C-c C-s" . nil)
               ("C-c C-z" . gopar/run-python))
   :hook ((python-mode . (lambda ()
                           (setq-local forward-sexp-function nil)
                           (make-local-variable 'python-shell-virtualenv-root)
                           (setq-local comment-inline-offset 2)
-                          (setq-local completion-at-point-functions '(cape-file python-completion-at-point cape-dabbrev cape-keyword))))
+                          (setq-local completion-at-point-functions
+                                      '(cape-file
+                                        python-completion-at-point
+                                        cape-dabbrev
+                                        cape-keyword
+                                        gopar/cape-dict-only-in-strings
+                                        gopar/cape-dict-only-in-comments
+                                        ))))
          (inferior-python-mode . (lambda ()
                                    (setq-local completion-at-point-functions '(t)))))
 
@@ -959,7 +966,7 @@ I'm keeping this function around since it's convineint to be able to create venv
 (use-package ruff-format
   :ensure t
   :defer
-  :hook (python-mode . gopar/enable-ruff-if-found)
+  :hook ((python-mode python-ts-mode) . gopar/enable-ruff-if-found)
   :init
   (defun gopar/enable-ruff-if-found ()
     "Format the current buffer using the 'ruff` program, if available."
@@ -975,7 +982,7 @@ I'm keeping this function around since it's convineint to be able to create venv
   :defer
   :custom
   (importmagic-be-quiet t)
-  :hook (python-mode . gopar/enable-importmagic-if-found)
+  :hook ((python-mode python-ts-mode) . gopar/enable-importmagic-if-found)
   :init
   (defun gopar/enable-importmagic-if-found ()
     "Format the current buffer using the 'importmagic` program, if available."
@@ -1028,7 +1035,7 @@ Requires =pip install jedi epc= in all virtualenvs
   :ensure t
   :defer
   :commands (jedi-mode)
-  :hook (python-mode . jedi-mode)
+  :hook ((python-mode python-ts-mode) . jedi-mode)
   :custom
   (jedi:tooltip-method nil)
   (jedi:mode-function nil)
@@ -1265,6 +1272,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (browse-url-firefox-program "/Applications/Firefox.app/Contents/MacOS/firefox")
   ;; Neat trick to open that route to different places
   (browse-url-firefox-new-window-is-tab t)
+  ;; Default to using eww for browsing
+  (browse-url-browser-function 'eww-browse-url)
   :config
   (put 'browse-url-handlers 'safe-local-variable (lambda (x) t)))
 #+end_src
@@ -1281,7 +1290,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 
 #+end_src
 
-** Ewnium
+** COMMENT Ewnium
 #+begin_src emacs-lisp
 (use-package ewnium
   :ensure nil
@@ -1423,8 +1432,7 @@ Also includes displaying of them
   ;; (setq vertico-resize t)
 
   ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-  (setq vertico-cycle t)
-  )
+  (setq vertico-cycle t))
 
 (use-package vertico-multiform
   :ensure nil
@@ -1481,20 +1489,8 @@ Also includes displaying of them
   ;; See also `corfu-excluded-modes'.
   :init
   (setq corfu-exclude-modes '(eshell-mode))
-  (global-corfu-mode))
+  (global-corfu-mode)
 
-(use-package cape
-  :ensure t
-  :init
-  (setq cape-dabbrev-min-length 2)
-  (setq cape-dabbrev-check-other-buffers 'cape--buffers-major-mode)
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  (add-to-list 'completion-at-point-functions #'cape-file)
-  ;; (add-to-list 'completion-at-point-functions #'cape-history)
-  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
-  ;;(add-to-list 'completion-at-point-functions #'cape-line)
   (defun corfu-enable-always-in-minibuffer ()
     "Enable Corfu in the minibuffer if Vertico/Mct are not active."
     (unless (or (bound-and-true-p mct--active)
@@ -1505,8 +1501,31 @@ Also includes displaying of them
                   corfu-popupinfo-delay nil)
       (corfu-mode 1)))
 
-  (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1)
+  (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1))
+
+(use-package cape
+  :ensure t
   :bind ("C-c SPC" . cape-dabbrev)
+  :custom
+  (cape-dict-case-replace nil)
+  :init
+  (setq cape-dabbrev-min-length 2)
+  (setq cape-dabbrev-check-other-buffers 'cape--buffers-major-mode)
+
+  (defun gopar/cape-dict-only-in-comments ()
+    (cape-wrap-inside-comment 'cape-dict))
+  (defun gopar/cape-dict-only-in-strings ()
+    (cape-wrap-inside-string 'cape-dict))
+
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'gopar/cape-dict-only-in-strings)
+  (add-to-list 'completion-at-point-functions #'gopar/cape-dict-only-in-comments)
+  ;;(add-to-list 'completion-at-point-functions #'cape-history)
+  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+  ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
+  ;;(add-to-list 'completion-at-point-functions #'cape-line)
   )
 
 (use-package orderless
@@ -1633,22 +1652,22 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   (dumb-jump-selector 'completing-read)
   (dumb-jump-default-project "~/work")
   :init
-  (defun gopar-filename/xref-filename-backend ()
+  (defun gopar/xref-backend-html-template ()
     "Xref backend for jumping to HTML template definitions."
     (when (and (thing-at-point 'filename t) (string-suffix-p ".html" (thing-at-point 'filename t)))
-      'gopar-filename))
+      'gopar-html-template))
 
-  (cl-defmethod xref-backend-identifier-at-point ((_backend (eql gopar-filename)))
+  (cl-defmethod xref-backend-identifier-at-point ((_backend (eql gopar-html-template)))
     (thing-at-point 'filename t))
 
-  (cl-defmethod xref-backend-definitions ((_backend (eql gopar-filename)) identifier)
+  (cl-defmethod xref-backend-definitions ((_backend (eql gopar-html-template)) identifier)
     (let ((path (cl-find-if (lambda (x) (string-match-p identifier x))
                             (projectile-project-files (projectile-project-root)))))
       (when path
         (list (xref-make identifier (xref-make-file-location (format "%s%s" (projectile-project-root) path) 1 0))))))
 
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
-  (add-hook 'xref-backend-functions #'gopar-filename/xref-filename-backend))
+  (add-hook 'xref-backend-functions #'gopar/xref-backend-html-template))
 #+end_src
 
 ** Web Mode
@@ -1879,7 +1898,7 @@ Color the string of whatever color code they are holding
 ** Ibuffer
 #+begin_src emacs-lisp
 ;; Ibuffer Icons sets it's own local buffer format and overrides the =ibuffer-formats= variable.
-;; So in order for ibuffer-vc to work, i have to include it in the icons-buffer format -_-
+;; So in order for ibuffer-vc to work, I have to include it in the icons-buffer format -_-
 (use-package all-the-icons-ibuffer
   :ensure t
   :defer
@@ -1903,8 +1922,7 @@ Color the string of whatever color code they are holding
 
   :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
 
-;; Quick recap of what =vc-status-mini=
-;; https://github.com/purcell/ibuffer-vc/blob/master/ibuffer-vc.el#L204
+;; https://github.com/purcell/ibuffer-vc/blob/master/ibuffer-vc.el
 (use-package ibuffer-vc
   :ensure t
   :hook (ibuffer . (lambda ()
@@ -2374,7 +2392,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
      ((eq major-mode 'emacs-lisp-mode)
       (string-inflection-all-cycle))
 
-     ((eq major-mode 'python-mode)
+     ((or (eq major-mode 'python-mode) (eq major-mode 'python-ts-mode))
       (string-inflection-python-style-cycle))
 
      ((or (eq major-mode 'js-mode)
@@ -2562,23 +2580,8 @@ Also start type break mode after start up since I might just be dragging along
 (use-package vterm
   :ensure t
   :defer
-  :bind (:map vterm-mode-map
-              ("<f6>" . vterm-toggle ))
   :custom
   (vterm-max-scrollback 100000))
-#+end_src
-
-** Vterm Toggle
-#+begin_src emacs-lisp
-(use-package vterm-toggle
-  :ensure t
-  :bind ("<f6>" . vterm-toggle )
-  :custom
-  (vterm-toggle-scope 'project)
-  (vterm-toggle-project-root t)
-  (vterm-toggle-reset-window-configration-after-exit t)
-  (vterm-toggle-hide-method 'reset-window-configration)
-  )
 #+end_src
 
 ** [[https://github.com/astoff/devdocs.el][Devdocs]]
@@ -2603,7 +2606,7 @@ Also start type break mode after start up since I might just be dragging along
       (devdocs-lookup ask-docs query)))
 
 
-  :hook ((python-mode . (lambda () (setq-local devdocs-current-docs
+  :hook (((python-mode python-ts-mode) . (lambda () (setq-local devdocs-current-docs
                                       '("django~4.2" "django_rest_framework" "python~3.11" "postgresql~11" "sqlite" "flask~3.0"))))
          (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
                                                                    "vue_router~4"
@@ -2634,7 +2637,7 @@ Also start type break mode after start up since I might just be dragging along
 (use-package flycheck
   :ensure
   :defer
-  :hook ((python-mode . flycheck-mode))
+  :hook (((python-mode python-ts-mode) . flycheck-mode))
   :bind (:map flycheck-mode-map
               ("C-c C-n" . flycheck-next-error)
               ("C-c C-p" . flycheck-previous-error))
@@ -2870,8 +2873,7 @@ My favorite theme
   :ensure t
   :hook (after-init . solaire-global-mode)
   :custom
-  (solaire-mode-themes-to-face-swap '(tao-yin tao-yang))
-  )
+  (solaire-mode-themes-to-face-swap '(tao-yin tao-yang)))
 #+end_src
 
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
@@ -2883,7 +2885,7 @@ My favorite theme
               ("M-q" . fill-function-arguments-dwim)))
 #+end_src
 
-** [[https://github.com/roman/golden-ratio.el][Golden Ration]]
+** COMMENT [[https://github.com/roman/golden-ratio.el][Golden Ration]]
 
 Use `golden-ratio-toggle-widescreen` if splits are too wide
 
@@ -3020,7 +3022,7 @@ Stuff I've made for myself that are modes
 #+begin_src emacs-lisp
 (use-package boolcase
   :load-path "lisp/modes/boolcase"
-  :hook (python-mode . boolcase-mode))
+  :hook ((python-mode python-ts-mode) . boolcase-mode))
 #+end_src
 
 ** YouTube
@@ -3074,6 +3076,22 @@ Things that I want to keep private/out of git
   :commands (gopar/random-friend)
   )
 #+end_src
+
+** COMMENT Eshell
+
+- Can change directory just by typing name
+- When it receives no argument at all, it changes to the home directory.
+- Giving the command cd - changes back to the previous working directory (this is the same as cd $-).
+- The command cd = shows the directory ring. Each line is numbered.
+- With cd =foo, Eshell searches the directory ring for a directory matching the regular expression ‘foo’, and changes to that directory.
+- With cd -42, you can access the directory stack slots by number.
+- If eshell-cd-shows-directory is non-nil, cd will report the directory it changes to. If eshell-list-files-after-cd is
+  non-nil, then ls is called with any remaining arguments after changing directories.
+
+  #+begin_src emacs-lisp
+  (setq eshell-cd-shows-directory t)
+  (setq eshell-list-files-after-cd t)
+  #+end_src
 
 * End
 #+begin_src emacs-lisp
