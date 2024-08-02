@@ -768,21 +768,7 @@ When called with a prefix aurgument, it will open annotations file."
      (eshell-input-filter-default input)
      (eshell-input-filter-initial-space input)))
 
-  (defun eshell/ff (&rest args)
-    "Open files in emacs.
-Stolen form aweshell"
-    (if (null args)
-        ;; If I just ran "emacs", I probably expect to be launching
-        ;; Emacs, which is rather silly since I'm already in Emacs.
-        ;; So just pretend to do what I ask.
-        (bury-buffer)
-      ;; We have to expand the file names or else naming a directory in an
-      ;; argument causes later arguments to be looked for in that directory,
-      ;; not the starting directory
-      (mapc #'find-file (mapcar #'expand-file-name (eshell-flatten-list (reverse args)))))
-    )
-
-  (defun eshell/cat (filename)
+  (defun eshell/cat-with-syntax-highlighting (filename)
     "Like cat(1) but with syntax highlighting.
 Stole from aweshell"
     (let ((existing-buffer (get-file-buffer filename))
@@ -799,6 +785,7 @@ Stole from aweshell"
       (unless existing-buffer
         (kill-buffer buffer))
       nil))
+  (advice-add 'eshell/cat :override #'eshell/cat-with-syntax-highlighting)
 
   (defun gopar/sync-dir-in-buffer-name ()
     "Update eshell buffer to show directory path.
@@ -845,15 +832,6 @@ Stolen from aweshell."
   (add-to-list 'eshell-git-prompt-themes
                '(powerline-plus eshell-git-prompt-powerline-venv eshell-git-prompt-powerline-regexp))
   (eshell-git-prompt-use-theme 'powerline-plus))
-
-;; (use-package powerline-with-pyvenv
-;;   :ensure nil
-;;   :after eshell-git-prompt
-;;   :load-path "lisp/themes/powerline-with-venv"
-;;   :config
-;;   (add-to-list 'eshell-git-prompt-themes
-;;                '(powerline-plus eshell-git-prompt-powerline-pyvenv eshell-git-prompt-powerline-regexp))
-;;   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
 *** COMMENT Eshell Auto Fish History
