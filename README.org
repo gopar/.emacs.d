@@ -643,12 +643,8 @@ Also not built in but putting it here
   :ensure t
   :defer
   :custom
-  (org-roam-v2-ack t)
   (org-roam-directory (expand-file-name "~/.emacs.d/org/private/org-roam"))
   (org-roam-db-location (expand-file-name "~/.emacs.d/org/private/org-roam.db"))
-  (org-roam-tag-sources '(prop))
-  (org-roam-db-update-method 'immediate)
-  (org-roam-graph-viewer 'browse-url-firefox)
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
       :target (file+head "./references/${slug}.org" "#+title: ${title}\n")
@@ -674,6 +670,15 @@ Also not built in but putting it here
   :hook (after-init . org-roam-db-autosync-mode))
 #+end_src
 
+*** [[https://github.com/emacsomancer/org-roam-daily-reflection/tree/main][Org Roam Dailies]]
+For daily journaling
+
+#+begin_src emacs-lisp
+(use-package org-roam-daily-reflection
+  :quelpa (org-roam-daily-reflection :fetcher github :repo "emacsomancer/org-roam-daily-reflection")
+  :custom
+  (org-roam-daily-reflection-dailies-directory "~/.emacs.d/org/private/journal/daily/"))
+#+end_src
 *** Org Annotate File
 #+begin_src emacs-lisp
 ;; Belongs from the org-contrib pkg?
@@ -741,10 +746,10 @@ When called with a prefix aurgument, it will open annotations file."
          (eshell-mode . gopar/eshell-setup-keybinding)
          (eshell-banner-load . (lambda () (setq eshell-banner-message (concat (shell-command-to-string "fortune -s | cowsay") "\n\n"))))
          (eshell-mode . (lambda ()
+                          (setq-local completion-styles '(basic)) ; maybe emacs21?
                           (setq-local corfu-count 3)
-                          (setq-local completion-at-point-functions '(cape-file cape-history)))))
+                          (setq-local completion-at-point-functions '(pcomplete-completions-at-point cape-file cape-history)))))
   :custom
-  (eshell-buffer-maximum-lines 10000)
   (eshell-scroll-to-bottom-on-input t)
   (eshell-highlight-prompt nil)
   (eshell-history-size 1024)
@@ -755,7 +760,6 @@ When called with a prefix aurgument, it will open annotations file."
   (eshell-pushd-dunique t)
   (eshell-last-dir-unique t)
   (eshell-last-dir-ring-size 32)
-  (eshell-list-files-after-cd nil)
   :init
   (defun gopar/eshell-setup-keybinding ()
     ;; Workaround since bind doesn't work w/ eshell??
@@ -763,10 +767,16 @@ When called with a prefix aurgument, it will open annotations file."
     (define-key eshell-hist-mode-map (kbd "M-r") 'consult-history))
 
   (defun gopar/eshell-input-filter (input)
-    "Do not save empty lines, or commands that start with a space."
+    "Do not save on the following:
+       - empty lines
+       - commands that start with a space, `cd`, `ls`/`l`"
     (and
      (eshell-input-filter-default input)
-     (eshell-input-filter-initial-space input)))
+     (eshell-input-filter-initial-space input)
+     (not (string-prefix-p "cd " input))
+     (not (string-prefix-p "ls " input))
+     (not (string-prefix-p "lsd " input))
+     (not (string-prefix-p "l " input))))
 
   (defun eshell/cat-with-syntax-highlighting (filename)
     "Like cat(1) but with syntax highlighting.
@@ -1321,7 +1331,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   )
 #+end_src
 
-**  COMMENT Bug Reference
+** COMMENT Bug Reference
 Need to configure this
 
 Will probably need to extract to a private file since it'll hold
@@ -1988,6 +1998,7 @@ Color the string of whatever color code they are holding
          (org-mode . yas-minor-mode)
          (fundamental-mode . yas-minor-mode)
          (text-mode . yas-minor-mode)
+         (eshell-mode . yas-minor-mode)
          (after-init . yas-reload-all))
   :bind (:map yas-minor-mode-map
               ("C-c C-SPC" . yas-insert-snippet)))
@@ -2617,8 +2628,13 @@ Also start type break mode after start up since I might just be dragging along
   :ensure t
   :commands (chatgpt-shell--primary-buffer chatgpt-shell chatgpt-shell-prompt-compose)
   :bind (("C-x m" . chatgpt-shell)
-         ("C-c C-e" . chatgpt-shell-prompt-compose))
-  :hook (chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
+         ("C-c C-e" . chatgpt-shell-prompt-compose)
+         (:map chatgpt-shell-mode-map
+               (("RET" . newline)
+               ("M-RET" . shell-maker-submit)
+               ("M-." . dictionary-lookup-definition))))
+  :hook ((chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
+         (eshell-first-time-mode . chatgpt-shell-add-??-command-to-eshell))
   :init
   (setq shell-maker-root-path (concat user-emacs-directory "var/"))
   (add-to-list 'display-buffer-alist
@@ -2628,12 +2644,7 @@ Also start type break mode after start up since I might just be dragging along
                  (slot . 0)
                  (window-parameters . ((no-delete-other-windows . t)))
                  (dedicated . t)))
-
-  :bind (:map chatgpt-shell-mode-map
-               (("RET" . newline)
-               ("M-RET" . shell-maker-submit)
-               ("M-." . dictionary-lookup-definition)))
-  :custom
+   :custom
   (shell-maker-prompt-before-killing-buffer nil)
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
