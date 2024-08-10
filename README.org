@@ -475,7 +475,7 @@ Main configuration
   ;; Lets define some custom cmds in agenda menu
   (org-agenda-custom-commands
    '(("h" "Agenda and Home tasks"
-      ((agenda "" ((org-agenda-span 2)))
+      ((agenda "" ((org-agenda-span 1)))
        (todo "WAITING|IN-PROGRESS")
        (tags-todo "inbox|break")
        (todo "NEXT"))
@@ -738,17 +738,22 @@ When called with a prefix aurgument, it will open annotations file."
 #+end_src
 
 ** Eshell
+
+Some of the following are stolen from https://github.com/manateelazycat/aweshell
 #+begin_src emacs-lisp
 (use-package eshell
   :ensure nil
   :hook ((eshell-directory-change . gopar/sync-dir-in-buffer-name)
          (eshell-mode . gopar/eshell-specific-outline-regexp)
          (eshell-mode . gopar/eshell-setup-keybinding)
-         (eshell-banner-load . (lambda () (setq eshell-banner-message (concat (shell-command-to-string "fortune -s | cowsay") "\n\n"))))
+         (eshell-banner-load . (lambda ()
+                                 (setq eshell-banner-message
+                                       (concat (shell-command-to-string "fortune -s | cowsay") "\n\n"))))
          (eshell-mode . (lambda ()
                           (setq-local completion-styles '(basic)) ; maybe emacs21?
                           (setq-local corfu-count 3)
-                          (setq-local completion-at-point-functions '(pcomplete-completions-at-point cape-file cape-history)))))
+                          (setq-local completion-at-point-functions
+                                      '(pcomplete-completions-at-point cape-file cape-history)))))
   :custom
   (eshell-scroll-to-bottom-on-input t)
   (eshell-highlight-prompt nil)
@@ -815,7 +820,7 @@ Stolen from aweshell."
   (setq-local outline-regexp eshell-prompt-regexp)))
 #+end_src
 
-*** Eshell Syntax Highlighting
+*** [[https://github.com/akreisher/eshell-syntax-highlighting/][Eshell Syntax Highlighting]]
 #+begin_src emacs-lisp
 (use-package eshell-syntax-highlighting
   :ensure t
@@ -828,7 +833,7 @@ Stolen from aweshell."
     :group 'eshell-syntax-highlighting))
 #+end_src
 
-*** Eshell git prompt
+*** [[https://github.com/xuchunyang/eshell-git-prompt][Eshell git prompt]]
 #+begin_src emacs-lisp
 (use-package eshell-git-prompt
   :after eshell
@@ -844,26 +849,6 @@ Stolen from aweshell."
   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
-*** COMMENT Eshell Auto Fish History
-#+begin_src emacs-lisp
-(use-package esh-autosuggest
-  :hook (eshell-mode . esh-autosuggest-mode)
-  :bind (:map esh-autosuggest-active-map
-              ("TAB" . company-complete-selection))
-  :ensure t)
-#+end_src
-*** Eshell Toggle
-#+begin_src emacs-lisp
-(use-package eshell-toggle
-  :ensure t
-  :defer t
-  :bind ("<f6>" . eshell-toggle)
-  :custom
-  (eshell-toggle-default-directory "~")
-  (eshell-toggle-size-fraction 3)
-  (eshell-toggle-find-project-root-package 'projectile) ;; for projectile
-  (eshell-toggle-run-command nil))
-#+end_src
 ** Python
 Run on every fresh virtualenv install
 =pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest=
@@ -1250,7 +1235,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   ;; Default to using eww for browsing
   (browse-url-browser-function 'eww-browse-url)
   :config
-  (put 'browse-url-handlers 'safe-local-variable (lambda (x) t)))
+  (put 'browse-url-handlers 'safe-local-variable (lambda (x) t))
+  (put 'browse-url-browser-function 'safe-local-variable (lambda (x) t)))
 #+end_src
 
 ** Eww
@@ -1429,8 +1415,11 @@ Also includes displaying of them
 
 (use-package corfu
   :ensure t
-  :bind (:map corfu-map
-              ("RET" . corfu-send))
+  ;; Originally, I liked the idea of `corfu-send` but this makes it behave
+  ;; in way that is different from 'fish' shell. So lets disable and see
+  ;; how we feel about it in the future
+  ;; :bind (:map corfu-map
+  ;;             ("RET" . corfu-send))
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
@@ -2280,21 +2269,6 @@ Built in package that holds a few goodies
   (advice-add #'kill-ring-save :before #'gopar/pulse-current-region))
 #+end_src
 
-** COMMENT [[https://github.com/Alexander-Miller/treemacs][Treemacs]]
-Keeps on breaking for me for some reason. Deleting its config file resets it, but that can't be a permanent solution.
-
-#+begin_src emacs-lisp
-(use-package treemacs
-  :ensure t
-  :defer
-  :bind ("<f5>" . treemacs)
-  :custom
-  (treemacs-is-never-other-window t)
-  :hook
-  (treemacs-mode . treemacs-project-follow-mode)
-  (treemacs-mode . treemacs-hide-gitignored-files-mode))
-#+end_src
-
 ** Neotree
 Here since treemacs keeps on breaking, and this is backup. Works pretty well
 
@@ -2632,7 +2606,9 @@ Also start type break mode after start up since I might just be dragging along
          (:map chatgpt-shell-mode-map
                (("RET" . newline)
                ("M-RET" . shell-maker-submit)
-               ("M-." . dictionary-lookup-definition))))
+               ("M-." . dictionary-lookup-definition)))
+         (:map eshell-mode-map
+               ("C-c C-e" . chatgpt-shell-prompt-compose)))
   :hook ((chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
          (eshell-first-time-mode . chatgpt-shell-add-??-command-to-eshell))
   :init
@@ -2649,7 +2625,7 @@ Also start type break mode after start up since I might just be dragging along
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
   (chatgpt-shell-transmitted-context-length 5)
-  (chatgpt-shell-model-versions '("gpt-4o")))
+  (chatgpt-shell-model-versions '("gpt-4o-2024-08-06")))
 #+end_src
 *** Dall-E
 #+begin_src emacs-lisp

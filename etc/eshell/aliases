@@ -1,10 +1,10 @@
-alias ledger /opt/homebrew/bin/ledger --no-color --no-pager --strict $*
-alias tithe ledger bal Liabilities:Tithe -V $*
-alias taxes ledger bal Liabilities:Taxes -V $*
-alias netw ledger balance ^assets ^liabilities -V -R $*
-alias netc ledger balance ^expenses ^income -V -R $*
-alias rmpyc /usr/bin/find . -name *pyc -delete
-alias oc /usr/bin/find . -name "*.org" | xargs wc -l
-alias l lsd --long --classify --all --group-directories-first --icon=always --oneline --human-readable --color=never $1
+alias clear clear t
 alias ff find-file $1
-alias c clear-scrollback
+alias l lsd --long --classify --all --group-directories-first --icon=always --oneline --human-readable --color=never $1
+alias oc /usr/bin/find . -name "*.org" | xargs wc -l
+alias rmpyc /usr/bin/find . -name *pyc -delete
+alias netc ledger balance ^expenses ^income -V -R $*
+alias netw ledger balance ^assets ^liabilities -V -R $*
+alias taxes ledger bal Liabilities:Taxes -V $*
+alias tithe ledger bal Liabilities:Tithe -V $*
+alias ledger /opt/homebrew/bin/ledger --no-color --no-pager --strict $*
