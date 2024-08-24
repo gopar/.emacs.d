@@ -57,7 +57,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   ;; Completion stuff for consult
   (completion-ignore-case t)
   (read-buffer-completion-ignore-case t)
-  (completion-cycle-threshold 3)
+  (completion-cycle-threshold nil)
   (tab-always-indent 'complete)
   (use-dialog-box nil) ; Lets be consistent and use minibuffer for everyting
   (scroll-conservatively 100)
@@ -90,6 +90,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (put 'narrow-to-region 'disabled nil)
   (tool-bar-mode -1)
   (menu-bar-mode -1)
+  (command-query 'save-buffers-kill-terminal "Do you really want to kill emacs?")
 
   :bind (("C-z" . nil)
          ("C-x C-z" . nil)
@@ -481,11 +482,6 @@ Main configuration
        (todo "NEXT"))
       ((org-agenda-sorting-strategy '(time-up habit-up priority-down category-up))))
 
-     ("w" "Agenda and break|inbox tasks"
-      ((agenda "" ((org-agenda-span 1)))
-       (tags-todo "inbox|break"))
-      ((org-agenda-sorting-strategy '(time-up habit-up priority-down category-up))))
-
      ("i" "In-Progress Tasks"
       ((todo "IN-PROGRESS|WAITING")
        (agenda ""))
@@ -501,7 +497,7 @@ Main configuration
        ))
 
      ("r" "Weekly Review"
-      ((agenda "")
+      ((agenda "" ((org-agenda-span 14)))
        (todo))
       ((org-agenda-sorting-strategy '(time-up habit-up category-up priority-down ))
        (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org")
@@ -751,9 +747,9 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
                                        (concat (shell-command-to-string "fortune -s | cowsay") "\n\n"))))
          (eshell-mode . (lambda ()
                           (setq-local completion-styles '(basic)) ; maybe emacs21?
-                          (setq-local corfu-count 3)
-                          (setq-local completion-at-point-functions
-                                      '(pcomplete-completions-at-point cape-file cape-history)))))
+                          (setq-local corfu-count 10)
+                          (setq-local corfu-auto nil)
+                          (setq-local completion-at-point-functions '(pcomplete-completions-at-point cape-file)))))
   :custom
   (eshell-scroll-to-bottom-on-input t)
   (eshell-highlight-prompt nil)
@@ -765,20 +761,45 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
   (eshell-pushd-dunique t)
   (eshell-last-dir-unique t)
   (eshell-last-dir-ring-size 32)
+  :config
+  (advice-add #'eshell-add-input-to-history
+                :around
+                #'adviced:eshell-add-input-to-history)
+
   :init
   (defun gopar/eshell-setup-keybinding ()
     ;; Workaround since bind doesn't work w/ eshell??
     (define-key eshell-mode-map (kbd "C-c >") 'gopar/eshell-redirect-to-buffer)
     (define-key eshell-hist-mode-map (kbd "M-r") 'consult-history))
 
+  (defun adviced:eshell-add-input-to-history (orig-fun &rest r)
+      "Cd to relative paths aren't that useful in history. Change to absolute paths."
+      (require 'seq)
+      (let* ((input (nth 0 r))
+             (args (progn
+                     (set-text-properties 0 (length input) nil input)
+                     (split-string input))))
+        (if (and (equal "cd" (nth 0 args))
+                 (not (seq-find (lambda (item)
+                                  ;; Don't rewrite "cd /ssh:" in history.
+                                  (string-prefix-p "/ssh:" item))
+                                args))
+                 (not (seq-find (lambda (item)
+                                  ;; Don't rewrite "cd -" in history.
+                                  (string-equal "-" item))
+                                args)))
+            (apply orig-fun (list (format "cd %s"
+                                          (expand-file-name (concat default-directory
+                                                                    (nth 1 args))))))
+          (apply orig-fun r))))
+
   (defun gopar/eshell-input-filter (input)
     "Do not save on the following:
        - empty lines
-       - commands that start with a space, `cd`, `ls`/`l`"
+       - commands that start with a space, `ls`/`l`/`lsd`"
     (and
      (eshell-input-filter-default input)
      (eshell-input-filter-initial-space input)
-     (not (string-prefix-p "cd " input))
      (not (string-prefix-p "ls " input))
      (not (string-prefix-p "lsd " input))
      (not (string-prefix-p "l " input))))
@@ -818,6 +839,7 @@ Stolen from aweshell."
 
 (defun gopar/eshell-specific-outline-regexp ()
   (setq-local outline-regexp eshell-prompt-regexp)))
+
 #+end_src
 
 *** [[https://github.com/akreisher/eshell-syntax-highlighting/][Eshell Syntax Highlighting]]
@@ -849,6 +871,25 @@ Stolen from aweshell."
   (eshell-git-prompt-use-theme 'powerline-plus))
 #+end_src
 
+*** [[https://elpa.gnu.org/packages/capf-autosuggest.html][Capf Auto Suggest]]
+#+begin_src emacs-lisp
+(use-package capf-autosuggest
+  :ensure t
+  :hook ((eshell-mode . capf-autosuggest-mode))
+  :custom
+  (capf-autosuggest-dwim-next-line nil))
+#+end_src
+
+*** COMMENT [[https://codeberg.org/akib/emacs-eat][Eat (Emulate a terminal)]]
+#+begin_src emacs-lisp
+(use-package eat
+  :ensure t
+  :defer t
+  :hook ((eshell-load . eat-eshell-mode)
+         (eshell-load . eat-eshell-visual-command-mode))
+  :config
+  (setq eshell-visual-commands nil))
+#+end_src
 ** Python
 Run on every fresh virtualenv install
 =pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest=
@@ -1042,8 +1083,16 @@ Requires =pip install jedi epc= in all virtualenvs
   (compilation-scroll-output 'first-error)
   (compilation-always-kill t)
   (compilation-max-output-line-length nil)
+  (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
   :init
+  (defun gopar/compilation-buffer-name-function (compilation-mode)
+    "Rename buffer to whatever command was used.
+eg. *python main.py*"
+    (concat "*" (downcase compilation-mode)
+          (when (projectile-project-p) (concat " " (projectile-project-name))) "* "
+          compile-command))
+
   ; from enberg on #emacs
   (add-hook 'compilation-finish-functions
             (lambda (buf str)
@@ -1052,10 +1101,8 @@ Requires =pip install jedi epc= in all virtualenvs
                   (progn
                     (run-at-time
                      "1 sec" nil 'delete-windows-on
-                     (get-buffer-create "*compilation*"))
-                    (message "No Compilation Errors!")))))
-
-  )
+                     (buffer-name))
+                    (message "No Compilation Errors!"))))))
 #+end_src
 
 *** [[https://codeberg.org/ideasman42/emacs-fancy-compilation][Fancy Compile]]
@@ -1125,7 +1172,7 @@ Window Management
   :hook (after-save . executable-make-buffer-file-executable-if-script-p))
 #+end_src
 
-** Spelling
+** COMMENT Spelling
 There seems to be some weird stuff happeing when using tree-sitter with flyspell.
 The faces aren't showing up :/
 
@@ -1305,6 +1352,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :ensure
   :load t
   :commands projectile-project-root
+  :hook (after-init . projectile-global-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map)
 
@@ -1312,8 +1360,55 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
   (projectile-per-project-compilation-buffer nil)
   :config
-  (projectile-global-mode)
   (setq frame-title-format '(:eval (if (projectile-project-root) (projectile-project-root) "%b")))
+  (advice-add 'projectile--run-project-cmd :override #'gopar/projectile--run-project-cmd)
+  :init
+  ;; Redefinig with my changes since projectil overwrites `compilation-buffer-name-function`
+  (cl-defun gopar/projectile--run-project-cmd
+    (command command-map &key show-prompt prompt-prefix save-buffers use-comint-mode)
+  "Run a project COMMAND, typically a test- or compile command.
+
+Cache the COMMAND for later use inside the hash-table COMMAND-MAP.
+
+Normally you'll be prompted for a compilation command, unless
+variable `compilation-read-command'.  You can force the prompt
+by setting SHOW-PROMPT.  The prompt will be prefixed with PROMPT-PREFIX.
+
+If SAVE-BUFFERS is non-nil save all projectile buffers before
+running the command.
+
+The command actually run is returned."
+  (let* ((project-root (projectile-project-root))
+         (default-directory (projectile-compilation-dir))
+         (command (projectile-maybe-read-command show-prompt
+                                                 command
+                                                 prompt-prefix)))
+    (when command-map
+      (puthash default-directory command command-map)
+      (let ((hist (projectile--get-command-history project-root)))
+        (cond
+         ((eq projectile-cmd-hist-ignoredups t)
+          (unless (string= (car-safe (ring-elements hist)) command)
+            (ring-insert hist command)))
+         ((eq projectile-cmd-hist-ignoredups 'erase)
+          (let ((idx (ring-member hist command)))
+            (while idx
+              (ring-remove hist idx)
+              (setq idx (ring-member hist command))))
+          (ring-insert hist command))
+         (t (ring-insert hist command)))))
+    (when save-buffers
+      (save-some-buffers (not compilation-ask-about-save)
+                         (lambda ()
+                           (projectile-project-buffer-p (current-buffer)
+                                                        project-root))))
+    (when projectile-per-project-compilation-buffer
+      (setq compilation-buffer-name-function #'projectile-compilation-buffer-name)
+      (setq compilation-save-buffers-predicate #'projectile-current-project-buffer-p))
+    (unless (file-directory-p default-directory)
+      (mkdir default-directory))
+    (projectile-run-compilation command use-comint-mode)
+    command))
   )
 #+end_src
 
@@ -1565,30 +1660,37 @@ If used with a prefix, it will search all buffers as well."
   ;; enabled right away. Note that this forces loading the package.
   (marginalia-mode))
 
-(use-package embark
-  :ensure t
-  :defer
-  :bind (("C-." . embark-act)))
+;; (use-package embark
+;;   :ensure t
+;;   :defer
+;;   :bind (("C-." . embark-act)))
 
-(use-package embark-consult
-  :ensure t
-  :after embark)
+;; (use-package embark-consult
+;;   :ensure t
+;;   :after embark)
 #+end_src
 
-*** COMMENT [[https://github.com/muffinmad/emacs-pdb-capf][Gud pdb]]
-Experimental. Not working?
-
+*** pcomplete
 #+begin_src emacs-lisp
-(use-package pdb-capf
+(use-package pcmpl-args
   :ensure t
-  :defer
-  :quelpa (pdb-capf :fetcher github :repo "muffinmad/emacs-pdb-capf")
+  :load t
+  :hook (eshell-first-time-mode . gopar/add-pcmpl-custom-commands)
   :init
-  (add-hook 'pdb-mode-hook
-          (lambda ()
-            (add-hook 'completion-at-point-functions
-                      'pdb-capf nil t))))
+  (defun gopar/add-pcmpl-custom-commands ()
+                                     (dolist (command '("lsd" "pip3" "docker" "docker-compose" "ffmpeg"))
+                                       (let ((alias-name (intern (concat "pcomplete/" command))))
+                                         (eval `(defalias ',alias-name 'pcmpl-args-pcomplete-on-help))))
+
+                                     (dolist (command '())
+                                       (let ((alias-name (intern (concat "pcomplete/" command))))
+                                         (eval `(defalias ',alias-name 'pcmpl-args-pcomplete-on-man))))
+
+                                     (defalias 'pcomplete/pip 'pcomplete/pip3)))
+
+(use-package pcmpl-homebrew :ensure t :after eshell)
 #+end_src
+
 ** Dumb Jump
 A basic 'go to' functionality that works really well. So I don't need LSP
 #+begin_src emacs-lisp
@@ -1939,6 +2041,10 @@ Color the string of whatever color code they are holding
                    number-of-commits
                  1)))
       (magit-reset-soft (format "HEAD^%d" num)))))
+
+(use-package forge
+  :ensure t
+  :after magit)
 
 ;; Part of magit
 (use-package git-commit
@@ -2334,6 +2440,23 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
   :commands string-inflection-insert
   :bind (("C-;" . gopar/string-inflection-cycle-auto))
   :init
+  (defun string-inflection-web-mode-function (str)
+    "foo_bar => fooBar => Foo_Bar => FOO_BAR => fooBar"
+    (cond
+     ((string-inflection-underscore-p str)
+      (string-inflection-camelcase-function str))
+     ((string-inflection-camelcase-p str)
+      (string-inflection-pascal-case-function str))
+     ((string-inflection-pascal-case-p str)
+      (string-inflection-upcase-function str))
+     (t
+      (string-inflection-camelcase-function str))))
+
+  (defun string-inflection-web-mode-style-cycle ()
+    "foo_bar => FOO_BAR => FooBar => foo_bar"
+    (interactive)
+    (string-inflection--single-or-region #'string-inflection-web-mode-function))
+
   (defun gopar/string-inflection-cycle-auto ()
     "Switching by major mode."
     (interactive)
@@ -2355,6 +2478,9 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
 
      ((eq major-mode 'hy-mode)
       (string-inflection-kebab-case))
+
+     ((eq major-mode 'web-mode)
+      (string-inflection-web-mode-style-cycle))
 
      (t
       (string-inflection-ruby-style-cycle)))))
@@ -2605,8 +2731,8 @@ Also start type break mode after start up since I might just be dragging along
          ("C-c C-e" . chatgpt-shell-prompt-compose)
          (:map chatgpt-shell-mode-map
                (("RET" . newline)
-               ("M-RET" . shell-maker-submit)
-               ("M-." . dictionary-lookup-definition)))
+                ("M-RET" . shell-maker-submit)
+                ("M-." . dictionary-lookup-definition)))
          (:map eshell-mode-map
                ("C-c C-e" . chatgpt-shell-prompt-compose)))
   :hook ((chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
@@ -2620,7 +2746,8 @@ Also start type break mode after start up since I might just be dragging along
                  (slot . 0)
                  (window-parameters . ((no-delete-other-windows . t)))
                  (dedicated . t)))
-   :custom
+  :custom
+  (chatgpt-shell-highlight-blocks nil)
   (shell-maker-prompt-before-killing-buffer nil)
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
