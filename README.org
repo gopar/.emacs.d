@@ -734,6 +734,9 @@ When called with a prefix aurgument, it will open annotations file."
 #+end_src
 
 ** Eshell
+:PROPERTIES:
+:ID: FCA3DA09-955C-4572-BA20-18D1C3543F1D
+:END:
 
 Some of the following are stolen from https://github.com/manateelazycat/aweshell
 #+begin_src emacs-lisp
@@ -749,6 +752,7 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
                           (setq-local completion-styles '(basic)) ; maybe emacs21?
                           (setq-local corfu-count 10)
                           (setq-local corfu-auto nil)
+                          (setq-local corfu-preview-current nil)
                           (setq-local completion-at-point-functions '(pcomplete-completions-at-point cape-file)))))
   :custom
   (eshell-scroll-to-bottom-on-input t)
@@ -764,7 +768,7 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
   :config
   (advice-add #'eshell-add-input-to-history
                 :around
-                #'adviced:eshell-add-input-to-history)
+                #'gopar/adviced-eshell-add-input-to-history)
 
   :init
   (defun gopar/eshell-setup-keybinding ()
@@ -772,7 +776,7 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
     (define-key eshell-mode-map (kbd "C-c >") 'gopar/eshell-redirect-to-buffer)
     (define-key eshell-hist-mode-map (kbd "M-r") 'consult-history))
 
-  (defun adviced:eshell-add-input-to-history (orig-fun &rest r)
+  (defun gopar/adviced-eshell-add-input-to-history (orig-fun &rest r)
       "Cd to relative paths aren't that useful in history. Change to absolute paths."
       (require 'seq)
       (let* ((input (nth 0 r))
@@ -872,6 +876,9 @@ Stolen from aweshell."
 #+end_src
 
 *** [[https://elpa.gnu.org/packages/capf-autosuggest.html][Capf Auto Suggest]]
+:PROPERTIES:
+:ID:       3B47ABF2-4A35-47BA-964F-628D6299FAA6
+:END:
 #+begin_src emacs-lisp
 (use-package capf-autosuggest
   :ensure t
@@ -1671,6 +1678,10 @@ If used with a prefix, it will search all buffers as well."
 #+end_src
 
 *** pcomplete
+:PROPERTIES:
+:ID:       C25D76A7-38FE-4A7F-908B-CFFA4512E592
+:END:
+
 #+begin_src emacs-lisp
 (use-package pcmpl-args
   :ensure t
@@ -2048,6 +2059,7 @@ Color the string of whatever color code they are holding
 
 ;; Part of magit
 (use-package git-commit
+  :ensure nil
   :after magit
   :hook (git-commit-setup . gopar/auto-insert-jira-ticket-in-commit-msg)
   :custom
@@ -3121,7 +3133,8 @@ Functions that are handy for setting up recording in youtube
   (display-time-mode -1)
   (type-break-mode -1)
   (keycast-header-line-mode)
-  (let ((dashboard-items '((vocabulary) (bookmarks . 5))))
+  (let ((dashboard-items '((vocabulary) (bookmarks . 5)))
+        (dashboard-banner-logo-title "✨ Memberships are available. Thank you for the support! ✨"))
     (dashboard-open)))
 
 (defun gopar/youtube-setup-emacs-goodies-series ()
@@ -3155,22 +3168,6 @@ Things that I want to keep private/out of git
   :commands (gopar/random-friend)
   )
 #+end_src
-
-** COMMENT Eshell
-
-- Can change directory just by typing name
-- When it receives no argument at all, it changes to the home directory.
-- Giving the command cd - changes back to the previous working directory (this is the same as cd $-).
-- The command cd = shows the directory ring. Each line is numbered.
-- With cd =foo, Eshell searches the directory ring for a directory matching the regular expression ‘foo’, and changes to that directory.
-- With cd -42, you can access the directory stack slots by number.
-- If eshell-cd-shows-directory is non-nil, cd will report the directory it changes to. If eshell-list-files-after-cd is
-  non-nil, then ls is called with any remaining arguments after changing directories.
-
-  #+begin_src emacs-lisp
-  (setq eshell-cd-shows-directory t)
-  (setq eshell-list-files-after-cd t)
-  #+end_src
 
 * End
 #+begin_src emacs-lisp
