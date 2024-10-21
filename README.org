@@ -969,7 +969,7 @@ I'm keeping this function around since it's convineint to be able to create venv
   )
 #+end_src
 
-*** COMMENT [[https://github.com/scop/emacs-ruff-format][Ruff]]
+*** [[https://github.com/scop/emacs-ruff-format][Ruff]]
 #+begin_src emacs-lisp
 (use-package ruff-format
   :ensure t
@@ -1058,6 +1058,7 @@ Requires =pip install jedi epc= in all virtualenvs
 ** Tree Sitter Auto Magic
 #+begin_src emacs-lisp
 (use-package treesit-auto
+  :ensure t
   :custom
   (treesit-auto-install 'prompt)
   :config
@@ -1216,6 +1217,16 @@ The faces aren't showing up :/
               ("C-." . flyspell-auto-correct-word)))
 #+end_src
 
+** Jinx Spelling
+#+begin_src emacs-lisp
+(use-package jinx
+  :hook (after-init . global-jinx-mode)
+  :bind (("C-." . jinx-correct)
+         ("C-," . jinx-next)
+         :map jinx-mode-map
+         ("M-$" . nill)
+         ))
+#+end_src
 ** Dictionary
 Look up word at point using dict.org in readme/text/org-mode buffers
 
@@ -1737,6 +1748,24 @@ A basic 'go to' functionality that works really well. So I don't need LSP
       (when path
         (list (xref-make identifier (xref-make-file-location (format "%s%s" (projectile-project-root) path) 1 0))))))
   (add-hook 'xref-backend-functions #'gopar/xref-backend-html-template))
+#+end_src
+
+** TODO COMMENT [[https://github.com/eval-exec/super-hint.el][Super Hints]]
+Compliment to xref
+#+begin_src emacs-lisp
+(use-package super-hint
+  :load-path "~/.emacs.d/tmp/super-hint.el/"
+
+  :config
+  (require 'rg)
+  (require 'super-hint-rg)
+  (super-hint-rg-mode 1) ;; then M-x rg-project to enjoy super-hint
+
+  (require 'super-hint-xref)
+  (super-hint-xref-mode 1) ;; then M-x xref-find-references to enjoy super-hint
+
+  ;; (which-function-mode t) ;; enable which-function mode if you not
+  )
 #+end_src
 ** Web Mode
 #+begin_src emacs-lisp
@@ -2624,10 +2653,12 @@ Also start type break mode after start up since I might just be dragging along
     ("l" "→" windmove-right :transient t)
     ("k" "↑" windmove-up :transient t)]
     ["Swap"
-    ("sh" "←" windmove-swap-states-left :transient t)
-    ("sj" "↓" windmove-swap-states-down :transient t)
-    ("sl" "→" windmove-swap-states-right :transient t)
-    ("sk" "↑" windmove-swap-states-up :transient t)]
+     ("s" "Swap" ace-swap-window)
+     ]
+    ;; ("sh" "←" windmove-swap-states-left :transient t)
+    ;; ("sj" "↓" windmove-swap-states-down :transient t)
+    ;; ("sl" "→" windmove-swap-states-right :transient t)
+    ;; ("sk" "↑" windmove-swap-states-up :transient t)]
     ["Delete"
     ("dh" "←" windmove-delete-left :transient t)
     ("dj" "↓" windmove-delete-down :transient t)
@@ -2668,6 +2699,28 @@ Also start type break mode after start up since I might just be dragging along
   :ensure t
   :defer
   :bind (:map vterm-mode-map ("C-q" . vterm-send-next-key))
+  :init
+  ;; Remove window if we exit vterm
+  (add-hook 'vterm-exit-functions
+     (lambda (_ _)
+       (let* ((buffer (current-buffer))
+              (window (get-buffer-window buffer)))
+         (when (not (one-window-p))
+           (delete-window window))
+         (kill-buffer buffer))))
+
+   (defun gopar/display-vterm-buffer (buffer alist)
+    (let ((window (display-buffer-in-direction
+                   buffer '((direction . bottom)
+                            (split-height-threshold . 1)
+                            (window-height . .33)))))
+      (if window
+          (select-window window)
+        (message "No appropriate window found for displaying VTerm buffer"))))
+
+   (add-to-list 'display-buffer-alist
+             '("\\*vterm"
+               gopar/display-vterm-buffer))
   :custom
   (vterm-max-scrollback 100000))
 #+end_src
@@ -2758,6 +2811,7 @@ Also start type break mode after start up since I might just be dragging along
                  (slot . 0)
                  (window-parameters . ((no-delete-other-windows . t)))
                  (dedicated . t)))
+  (setq chatgpt-shell-model-version "gpt-4o-2024-08-06")
   :custom
   (chatgpt-shell-highlight-blocks nil)
   (shell-maker-prompt-before-killing-buffer nil)
