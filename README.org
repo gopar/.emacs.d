@@ -666,15 +666,6 @@ Also not built in but putting it here
   :hook (after-init . org-roam-db-autosync-mode))
 #+end_src
 
-*** [[https://github.com/emacsomancer/org-roam-daily-reflection/tree/main][Org Roam Dailies]]
-For daily journaling
-
-#+begin_src emacs-lisp
-(use-package org-roam-daily-reflection
-  :quelpa (org-roam-daily-reflection :fetcher github :repo "emacsomancer/org-roam-daily-reflection")
-  :custom
-  (org-roam-daily-reflection-dailies-directory "~/.emacs.d/org/private/journal/daily/"))
-#+end_src
 *** Org Annotate File
 #+begin_src emacs-lisp
 ;; Belongs from the org-contrib pkg?
@@ -887,16 +878,6 @@ Stolen from aweshell."
   (capf-autosuggest-dwim-next-line nil))
 #+end_src
 
-*** COMMENT [[https://codeberg.org/akib/emacs-eat][Eat (Emulate a terminal)]]
-#+begin_src emacs-lisp
-(use-package eat
-  :ensure t
-  :defer t
-  :hook ((eshell-load . eat-eshell-mode)
-         (eshell-load . eat-eshell-visual-command-mode))
-  :config
-  (setq eshell-visual-commands nil))
-#+end_src
 ** Python
 Run on every fresh virtualenv install
 =pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest=
@@ -982,22 +963,6 @@ I'm keeping this function around since it's convineint to be able to create venv
     (if (executable-find "ruff")
         (ruff-format-on-save-mode))))
 #+end_src
-
-*** COMMENT [[https://github.com/anachronic/importmagic.el][importmagic]]
-#+begin_src emacs-lisp
-(use-package importmagic
-  :ensure t
-  :defer
-  :custom
-  (importmagic-be-quiet t)
-  :hook ((python-mode python-ts-mode) . gopar/enable-importmagic-if-found)
-  :init
-  (defun gopar/enable-importmagic-if-found ()
-    "Format the current buffer using the 'importmagic` program, if available."
-    (interactive)
-    (if (zerop (shell-command "python -c 'import importmagic'"))
-        (importmagic-mode))))
-#+END_src
 
 *** [[https://github.com/statmobile/pydoc][Pydoc]]
 Required Jedi to work properly
@@ -1218,8 +1183,10 @@ The faces aren't showing up :/
 #+end_src
 
 ** Jinx Spelling
+If on new system, might need to install =enchant= and =pkg-config=
 #+begin_src emacs-lisp
 (use-package jinx
+  :ensure t
   :hook (after-init . global-jinx-mode)
   :bind (("C-." . jinx-correct)
          ("C-," . jinx-next)
@@ -1513,6 +1480,7 @@ Also includes displaying of them
 ;; just for looks
 (use-package vertico-posframe
   :ensure t
+  :hook (after-init . vertico-posframe-mode)
   :custom
   (vertico-posframe-parameters
    '((left-fringe . 8)
@@ -1840,22 +1808,6 @@ Compliment to xref
   :ensure t
   :defer
   :bind ("C-c d" . docker))
-#+end_src
-
-** COMMENT GNU Ledger
-#+begin_src emacs-lisp
-(use-package ledger-mode
-  :ensure t
-  :defer
-  :mode ("\\.dat\\'"
-         "\\.ledger\\'")
-  :bind (:map ledger-mode-map
-              ("C-c C-n" . ledger-navigate-next-uncleared)
-              ("C-c C-b" . ledger-navigate-previous-uncleared))
-  :custom
-  (ledger-clear-whole-transactions t)
-  (ledger-report-use-native-highlighting nil)
-  (ledger-accounts-file (expand-file-name "~/personal/finances/data/accounts.dat")))
 #+end_src
 
 ** YAML
@@ -3049,19 +3001,6 @@ NOTE: Seems like its no longer actively maintained :/
 (use-package ssh-config-mode
   :ensure t
   :defer)
-#+end_src
-
-** [[https://github.com/LionyxML/auto-dark-emacs][Auto Dark]]
-Sync theme to light/dark based on system settings
-#+begin_src emacs-lisp
-(use-package auto-dark
-  :ensure t
-  :hook (after-init . auto-dark-mode)
-  :init
-  (setq auto-dark-dark-theme 'tao-yin)
-  ;; (setq auto-dark-light-theme 'doom-solarized-light)
-  (setq auto-dark-light-theme 'tao-yang) ;; tok
-  )
 #+end_src
 
 ** [[https://github.com/hlissner/emacs-hide-mode-line][Hide Mode Line]]
