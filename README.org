@@ -2982,7 +2982,7 @@ My favorite theme
               ("M-q" . fill-function-arguments-dwim)))
 #+end_src
 
-** COMMENT [[https://github.com/roman/golden-ratio.el][Golden Ration]]
+** [[https://github.com/roman/golden-ratio.el][Golden Ration]]
 
 Use `golden-ratio-toggle-widescreen` if splits are too wide
 
