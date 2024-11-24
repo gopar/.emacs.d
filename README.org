@@ -2763,7 +2763,7 @@ Also start type break mode after start up since I might just be dragging along
                  (slot . 0)
                  (window-parameters . ((no-delete-other-windows . t)))
                  (dedicated . t)))
-  (setq chatgpt-shell-model-version "gpt-4o-2024-08-06")
+  (setq chatgpt-shell-model-version "chatgpt-4o-latest")
   :custom
   (chatgpt-shell-highlight-blocks nil)
   (shell-maker-prompt-before-killing-buffer nil)
@@ -2982,7 +2982,7 @@ My favorite theme
               ("M-q" . fill-function-arguments-dwim)))
 #+end_src
 
-** [[https://github.com/roman/golden-ratio.el][Golden Ration]]
+** COMMENT [[https://github.com/roman/golden-ratio.el][Golden Ration]]
 
 Use `golden-ratio-toggle-widescreen` if splits are too wide
 
