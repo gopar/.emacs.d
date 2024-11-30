@@ -1003,6 +1003,8 @@ It echos out the method/func signature instead of using eldoc.
 
 Requires =pip install jedi epc= in all virtualenvs
 
+*NOTE*: Needs this [[https://github.com/tkf/emacs-jedi/pull/372][PR]] in order to work in newer python versions
+
 #+begin_src emacs-lisp
 (use-package jedi
   :ensure t
@@ -1054,6 +1056,7 @@ Requires =pip install jedi epc= in all virtualenvs
   :defer
   :custom
   (compilation-scroll-output 'first-error)
+  (compilation-ask-about-save nil)
   (compilation-always-kill t)
   (compilation-max-output-line-length nil)
   (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
@@ -2266,7 +2269,7 @@ Collides with compact-docstrings so turning off for programming modes
 (use-package ansi-color
   :ensure nil
   :defer
-  :hook (compilation-filter . gopar/colorize-compilation-buffer)
+  :hook (compilation-filter . ansi-color-compilation-filter)
   :init
   (defun gopar/compilation-nuke-ansi-escapes ()
     (toggle-read-only)
@@ -2379,10 +2382,29 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
   (neo-theme 'icons)
   (neo-smart-open t)
   (neo-autorefresh t)
-  (neo-window-width 40) ;; Around ~12% of screen space on my ultra wide
+  (neo-window-width (gopar/neo-width))
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
-  (neo-show-hidden-files t))
+  (neo-show-hidden-files t)
+
+  :init
+  (defun gopar/neo-width ()
+    "Detect if the display is an ultrawide monitor or a built-in Mac display."
+    (interactive)
+    (let* ((display-width (display-pixel-width))
+           (display-height (display-pixel-height))
+           (aspect-ratio (/ (float display-width) display-height)))
+      (cond
+       ;; Example conditions, need to adjust based on the specific resolution
+       ;; criteria you're using to differentiate displays.
+       ((and (> display-width 2500)
+             (> aspect-ratio 2.0))
+        40) ;; ~12 percent of ultra wide screen
+       ((and (<= display-width 2560)
+             (<= aspect-ratio 2.0))
+        30)
+       (t
+        (error "Unknown display type"))))))
 #+end_src
 
 ** Dizze
@@ -2700,7 +2722,7 @@ Also start type break mode after start up since I might just be dragging along
 
 
   :hook (((python-mode python-ts-mode) . (lambda () (setq-local devdocs-current-docs
-                                      '("django~4.2" "django_rest_framework" "python~3.11" "postgresql~11" "sqlite" "flask~3.0"))))
+                                      '("django~4.2" "django_rest_framework" "python~3.11" "postgresql~12"))))
          (web-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
                                                                    "vue_router~4"
                                                                    "javascript"
@@ -2765,7 +2787,7 @@ Also start type break mode after start up since I might just be dragging along
                  (dedicated . t)))
   (setq chatgpt-shell-model-version "chatgpt-4o-latest")
   :custom
-  (chatgpt-shell-highlight-blocks nil)
+  (chatgpt-shell-highlight-blocks t)
   (shell-maker-prompt-before-killing-buffer nil)
   (chatgpt-shell-openai-key
    (auth-source-pick-first-password :host "api.openai.com"))
