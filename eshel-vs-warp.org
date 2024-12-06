@@ -1,0 +1,17 @@
+✨ Memberships Available + Super Comments ✨
+* Eshell vs Warp
+Video: https://www.youtube.com/watch?v=34INSNevPOk
+
+⛔️ ✅
+| Feature                     | Warp | Eshell |
+|-----------------------------+------+--------|
+| Select Text With Mouse      | ✅   |        |
+| Edit multiple objects       | ✅   |        |
+| Command Completion          | ✅   |        |
+| Groups output/blocks        | ✅   |        |
+| searching (no cat/grep)     | ✅   |        |
+| Share output/blocks         | ✅   |        |
+| AI integration              | ✅   |        |
+| Warp Drive (storeable cmds) | ✅   |        |
+| Customizeable               | ✅   |        |
+| Require login               | ✅   |        |
