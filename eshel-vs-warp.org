@@ -2,7 +2,7 @@
 * Eshell vs Warp
 Video: https://www.youtube.com/watch?v=34INSNevPOk
 
-⛔️ ✅
+
 | Feature                     | Warp | Eshell |
 |-----------------------------+------+--------|
 | Select Text With Mouse      | ✅   |        |
@@ -14,4 +14,26 @@ Video: https://www.youtube.com/watch?v=34INSNevPOk
 | AI integration              | ✅   |        |
 | Warp Drive (storeable cmds) | ✅   |        |
 | Customizeable               | ✅   |        |
-| Require login               | ✅   |        |
+| Does not require login      | ⛔️   |        |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+⛔️ ✅

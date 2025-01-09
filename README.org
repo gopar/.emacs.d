@@ -477,7 +477,8 @@ Main configuration
   (org-agenda-custom-commands
    '(("h" "Agenda and Home tasks"
       ((agenda "" ((org-agenda-span 1)))
-       (todo "WAITING|IN-PROGRESS")
+       (todo "IN-PROGRESS")
+       (todo "WAITING")
        (tags-todo "inbox|break")
        (todo "NEXT"))
       ((org-agenda-sorting-strategy '(time-up habit-up priority-down category-up))))
@@ -618,6 +619,7 @@ I know this isn't built in but putting it here w/ org mode stuff
   (defun gopar/load-window-config-and-close-home-agenda ()
     (interactive)
     (org-save-all-org-buffers)
+    (shell-command "shortcuts run 'Emacs Pomodoro'")
     (jump-to-register ?`)))
 #+end_src
 
@@ -1017,6 +1019,14 @@ Requires =pip install jedi epc= in all virtualenvs
   (jedi:setup-function nil))
 #+end_src
 
+*** Pip Requirements
+#+begin_src emacs-lisp
+(use-package pip-requirements
+  :ensure t
+  :defer
+  :hook (pip-requirements-mode . (lambda () (focus-mode -1)))
+  )
+#+end_src
 ** Kotlin
 #+begin_src emacs-lisp
 (use-package kotlin-mode :ensure t :defer)
@@ -1146,43 +1156,6 @@ Window Management
 (use-package executable
   :ensure nil
   :hook (after-save . executable-make-buffer-file-executable-if-script-p))
-#+end_src
-
-** COMMENT Spelling
-There seems to be some weird stuff happeing when using tree-sitter with flyspell.
-The faces aren't showing up :/
-
-#+begin_src emacs-lisp
-(use-package ispell
-  :ensure nil
-  :custom
-  (ispell-program-name "aspell")
-  (ispell-personal-dictionary (concat user-emacs-directory "etc/.aspell.lang.pws"))
-  (ispell-dictionary nil)
-  (ispell-local-dictionary nil)
-  (ispell-extra-args '("--sug-mode=ultra" "--lang=en_US"
-                       "--run-together" "--run-together-limit=16"
-                       "--camel-case"))
-  :init
-  (defun gopar/add-word-to-dictionary ()
-    (interactive)
-    (let ((word (word-at-point)))
-      (append-to-file (concat word "\n") nil ispell-personal-dictionary)
-      (message "Added '%s' to %s" word ispell-personal-dictionary))))
-
-(use-package flyspell
-  :ensure nil
-  :defer
-  :hook ((prog-mode . flyspell-prog-mode)
-         (org-mode . flyspell-mode)
-         (text-mode . flyspell-mode)
-         (flyspell-mode . (lambda ()
-                            (set-face-attribute 'flyspell-incorrect nil :underline '(:style wave :color "Red1"))
-                            (set-face-attribute 'flyspell-duplicate nil :underline '(:style wave :color "DarkOrange")))))
-  :bind (:map flyspell-mode-map
-              ("C-;" . nil)
-              ("C-," . flyspell-goto-next-error)
-              ("C-." . flyspell-auto-correct-word)))
 #+end_src
 
 ** Jinx Spelling
@@ -2779,7 +2752,7 @@ Also start type break mode after start up since I might just be dragging along
   :init
   (setq shell-maker-root-path (concat user-emacs-directory "var/"))
   (add-to-list 'display-buffer-alist
-               '("\\*chatgpt\\*"
+               '("\\*chatgpt"
                  display-buffer-in-side-window
                  (side . right)
                  (slot . 0)
@@ -3085,6 +3058,17 @@ Useful for when making videos
 :hook (after-init . gcmh-mode)
 :custom
 (gc-cons-percentage .9))
+#+end_src
+
+** [[https://github.com/larstvei/Focus][Focus]]
+#+begin_src emacs-lisp
+(use-package focus
+  :ensure t
+  :defer
+  :hook ((prog-mode . focus-mode)
+         (docker-ts-mode . (lambda () (focus-mode -1)))
+         (typescript-ts-mode . (lambda () (focus-mode -1)))
+         (web-mode . (lambda () (focus-mode -1)))))
 #+end_src
 
 * 1st Party Modes

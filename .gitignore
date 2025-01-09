@@ -39,3 +39,6 @@ emacs29.el
 private.el
 .DS_Store
 /etc/diary
+/tree-sitter/
+/tmp/
+/.chatgpt-shell.el
