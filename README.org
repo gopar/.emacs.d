@@ -12,11 +12,10 @@ We are all different. Thanks for coming to my Ted Talk
 * Recommended Packages/Snippets to Have As Early as Possible
 #+begin_src emacs-lisp
 (setq load-prefer-newer t)
-(use-package no-littering
-  :ensure t)
+(use-package no-littering :ensure t)
 
-(use-package quelpa :ensure t)
-(use-package quelpa-use-package :ensure t)
+;; (use-package quelpa :ensure t)
+;; (use-package quelpa-use-package :ensure t)
 #+end_src
 
 * Built-Ins
@@ -110,8 +109,8 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          ("M-e" . gopar/next-sentence)
          ("M-a" . gopar/last-sentence)
          (";" . gopar/easy-underscore)
-         ("C-x k" . (lambda () (interactive) (kill-buffer)))
-         ("C-x C-k" . (lambda () (interactive) (bury-buffer))))
+         ("C-x k" . (lambda () (interactive) (bury-buffer)))
+         ("C-x C-k" . (lambda () (interactive) (kill-buffer))))
 
   :init
   (defun gopar/copy-filename-to-kill-ring ()
@@ -435,8 +434,7 @@ Main configuration
   :after org
   :bind (("C-c a" . org-agenda))
   :hook ((org-agenda-finalize . hl-line-mode)
-         ;; (org-agenda-finalize . org-agenda-entry-text-mode)
-         )
+         (org-agenda-finalize . org-agenda-entry-text-mode))
   :custom
   (org-agenda-current-time-string (if (and (display-graphic-p)
            (char-displayable-p ?←)
@@ -502,7 +500,8 @@ Main configuration
        (todo))
       ((org-agenda-sorting-strategy '(time-up habit-up category-up priority-down ))
        (org-agenda-files "~/.emacs.d/org/weekly-reivew-agenda-files.org")
-       (org-agenda-include-diary nil)))))
+       ;; (org-agenda-include-diary nil)
+       ))))
   :init
   ;; Originally from here: https://stackoverflow.com/a/59001859/2178312
   (defun gopar/get-schedule-or-deadline-if-available ()
@@ -1448,6 +1447,7 @@ Also includes displaying of them
         '((consult-line (:not posframe))
           (gopar/consult-line (:not posframe))
           (consult-ag (:not posframe))
+          (consult-ripgrep (:not posframe))
           (consult-grep (:not posframe))
           (consult-imenu (:not posframe))
           (xref-find-definitions (:not posframe))
@@ -1593,7 +1593,9 @@ If used with a prefix, it will search all buffers as well."
   :defer
   :bind (:map projectile-command-map
               ("s s" . consult-ag)
+              ("s r" . consult-ripgrep)
               ("s g" . consult-grep)))
+
 
 (use-package consult-org-roam
   :ensure t
@@ -2705,7 +2707,7 @@ Also start type break mode after start up since I might just be dragging along
                                                                    "tailwindcss"
                                                                    "html"
                                                                    "css"))))
-         (typescript-mode . (lambda () (setq-local devdocs-current-docs '("vue~3"
+         ((typescript-mode typescript-ts-mode) . (lambda () (setq-local devdocs-current-docs '("vue~3"
                                                                           "vue_router~4"
                                                                           "javascript"
                                                                           "typescript"
@@ -2891,6 +2893,7 @@ Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
+  :hook (after-init . (lambda () (load-theme 'doom-challenger-deep)))
   :config
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -2953,11 +2956,6 @@ My favorite theme
 
   (add-hook 'after-load-theme-hook 'update-doom-modeline-battery-faces))
 #+END_SRC
-*** [[https://github.com/topikettunen/tok-theme][Tok]]
-#+begin_src emacs-lisp
-(use-package tok-theme :ensure t)
-#+end_src
-
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
@@ -3170,9 +3168,12 @@ Things that I want to keep private/out of git
 
 * End
 #+begin_src emacs-lisp
+;; (progn
+;;   (add-to-list 'default-frame-alist `(font . "Hack 16"))
+;;   (set-face-attribute 'default nil :font "Hack 16"))
 (progn
-  (add-to-list 'default-frame-alist `(font . "Hack 16"))
-  (set-face-attribute 'default nil :font "Hack 16"))
+  (add-to-list 'default-frame-alist `(font . "IBM Plex Mono 16"))
+  (set-face-attribute 'default nil :font "IBM Plex Mono 16"))
 #+end_src
 
 ;;; Local Variables: ***
