@@ -14,8 +14,8 @@ We are all different. Thanks for coming to my Ted Talk
 (setq load-prefer-newer t)
 (use-package no-littering :ensure t)
 
-;; (use-package quelpa :ensure t)
-;; (use-package quelpa-use-package :ensure t)
+(use-package quelpa :ensure t)
+(use-package quelpa-use-package :ensure t)
 #+end_src
 
 * Built-Ins
@@ -1015,7 +1015,14 @@ Requires =pip install jedi epc= in all virtualenvs
   :custom
   (jedi:tooltip-method nil)
   (jedi:mode-function nil)
-  (jedi:setup-function nil))
+  (jedi:setup-function nil)
+  :init
+  ;; Only until PR is resolved above cause the warning buffer is to dang annoying
+  (add-to-list 'display-buffer-alist
+             '("^\\*Warnings\\*$"
+               (display-buffer-no-window)
+               (allow-no-window . t)))
+  )
 #+end_src
 
 *** Pip Requirements
@@ -1098,6 +1105,7 @@ eg. *python main.py*"
   :config
   (fancy-compilation-mode)
   :custom
+  (fancy-compilation-override-colors nil)
   (fancy-compilation-scroll-output 'first-error))
 #+end_src
 
@@ -1422,6 +1430,13 @@ or by pressing last keybinding of previous command
   (grep-find-ignored-directories (append grep-find-ignored-directories '(".mypy_cache" ".pytest_cache" "htmlcov"))))
 #+end_src
 
+** ripgrep (rg)
+#+begin_src emacs-lisp
+(use-package rg
+  :ensure t
+  :defer
+  :hook (rg-mode . rg-save-search))
+#+end_src
 ** wgrep
 #+begin_src emacs-lisp
 (use-package wgrep-ag :ensure t :defer)
@@ -1445,12 +1460,14 @@ Also includes displaying of them
   :init
   (setq vertico-multiform-commands
         '((consult-line (:not posframe))
+          (consult-xref (:not posframe))
           (gopar/consult-line (:not posframe))
           (consult-ag (:not posframe))
           (consult-ripgrep (:not posframe))
           (consult-grep (:not posframe))
           (consult-imenu (:not posframe))
-          (xref-find-definitions (:not posframe))
+          (consult-outline (:not posframe))
+          (consult-imenu-multi (:not posframe))
           (t posframe))))
 
 ;; just for looks
@@ -1538,6 +1555,7 @@ Also includes displaying of them
          ;; M-g bindings (goto-map)
          ("M-g M-g" . consult-goto-line)
          ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+         ("M-g i" . consult-imenu-multi)
          ("M-g m" . consult-mark)
          ("M-g k" . consult-global-mark)
          ("C-z" . consult-theme)
@@ -1545,9 +1563,7 @@ Also includes displaying of them
          ("M-s" . consult-history)                 ;; orig. next-matching-history-element
          ("M-r" . consult-history)
          :map projectile-command-map
-         ("b" . consult-project-buffer)
-         :map prog-mode-map
-         ("M-g o" . consult-imenu))
+         ("b" . consult-project-buffer))
 
   :init
   (defun remove-items (x y)
@@ -2011,10 +2027,6 @@ Color the string of whatever color code they are holding
                    number-of-commits
                  1)))
       (magit-reset-soft (format "HEAD^%d" num)))))
-
-(use-package forge
-  :ensure t
-  :after magit)
 
 ;; Part of magit
 (use-package git-commit
