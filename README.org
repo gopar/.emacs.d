@@ -3135,6 +3135,21 @@ Useful for when making videos
 (gc-cons-percentage .9))
 #+end_src
 
+** Dot Env Mode
+#+begin_src emacs-lisp
+(use-package dotenv-mode
+  :ensure t
+  :defer
+  :hook (dotenv-mode . (lambda () (focus-mode -1)))
+  :mode ("\\.env\\..*\\'" . dotenv-mode))
+#+end_src
+
+** Dot Env Hide
+#+begin_src emacs-lisp
+(use-package dotenv-hide
+  :load-path "lisp/modes/dotenv-hide"
+  :hook (dotenv-mode . dotenv-hide-mode))
+#+end_src
 ** [[https://github.com/larstvei/Focus][Focus]]
 #+begin_src emacs-lisp
 (use-package focus
