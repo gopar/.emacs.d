@@ -2251,11 +2251,15 @@ Collides with compact-docstrings so turning off for programming modes
   (list-matching-lines-default-context-lines 0)
   :bind (("C-c C-o" . gopar/occur-definitions))
   :init
-  ;; (add-to-list 'display-buffer-alist
-  ;;              '("^\\*Occur\\*"
-  ;;                display-buffer-in-side-window
-  ;;                (side . left)
-  ;;                (window-width . 40)))
+  (add-to-list 'display-buffer-alist
+               '("\\*Occur"
+                 display-buffer-in-side-window
+                 (side . left)
+                 (slot . 1)
+                 (dedicated . t)
+                 (window-parameters . ((no-delete-other-windows . t)))
+                 ;; (window-width . 60)
+                 ))
 
   (defun gopar/occur-definitions ()
     "Show all the function/method/class definitions for the current language."
@@ -2269,6 +2273,49 @@ Collides with compact-docstrings so turning off for programming modes
      (t (call-interactively 'occur)))))
 #+end_src
 
+*** Occur-x
+Only really used to remove lines to the right of margin.
+
+Can honestly just rip out relevant part to remove lines vs installing this library
+#+begin_src emacs-lisp
+(use-package occur-x
+  :ensure t
+  :hook (occur-mode . turn-on-occur-x-mode)
+  :custom
+  (occur-linenumbers-in-margin 'none)
+  :init
+  (defun occur-x--linenums-to-margin()
+    "Custom function that overwrites library default to completely remove lines"
+    (save-excursion
+      (when (not (equal occur-linenumbers-in-margin 'none))
+        (occur-x--set-margin))
+      (goto-char (point-min))
+      (forward-line 1)
+      (let ((inhibit-read-only t)
+            (context (cadr occur-revert-arguments))
+            width side)
+        (if (equal occur-linenumbers-in-margin 'right-margin)
+            (setq width right-margin-width
+                  side 'right-margin)
+          (setq width left-margin-width
+                side 'left-margin))
+        (while (not (eobp))
+          (if (looking-at "^\s*\\([0-9]+\\):")
+              (if (equal occur-linenumbers-in-margin 'none)
+                  (delete-region (point) (match-end 0))
+                (let ((n (propertize
+                          (format (format "%%%ds" width) (match-string 1))
+                          'face 'occur-margin-face))
+                      (o (make-overlay (point) (point))))
+                  (delete-region (point) (match-end 0))
+                  (overlay-put o 'before-string
+                               (propertize " " 'display
+                                           `((margin ,side) ,n)))))
+            (if (and context (looking-at "^\s+:"))
+                (delete-region (point) (match-end 0))))
+          (forward-line 1)))))
+  )
+#+end_src
 ** Ansi Color
 #+begin_src emacs-lisp
 (use-package ansi-color
