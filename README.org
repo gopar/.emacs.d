@@ -2018,6 +2018,7 @@ Color the string of whatever color code they are holding
   :custom
   (magit-diff-refine-hunk 'all)
   (magit-process-finish-apply-ansi-colors t)
+  (magit-format-file-function #'magit-format-file-all-the-icons)
   :init
   (setq magit-process-finish-apply-ansi-colors t)
   (defun magit/undo-last-commit (number-of-commits)
