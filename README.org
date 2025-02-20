@@ -2429,7 +2429,7 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
 #+begin_src emacs-lisp
 (use-package neotree
   :ensure t
-  :bind ("<f5>" . neotree-toggle)
+  ;; :bind ("<f5>" . neotree-toggle)
   :custom
   (neo-theme 'icons)
   (neo-smart-open t)
@@ -2459,6 +2459,17 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
         (error "Unknown display type"))))))
 #+end_src
 
+** Treemacs
+#+begin_src emacs-lisp
+(use-package treemacs
+  :ensure t
+  :hook (treemacs-mode . treemacs-project-follow-mode)
+  :bind ("<f5>" . treemacs)
+  :custom
+  (treemacs-hide-dot-git-directory nil)
+  (treemacs-is-never-other-window t)
+  (treemacs-project-follow-into-home t))
+#+end_src
 ** Dizze
 Unfortunately need this:
 https://github.com/davidmiller/dizzee/pull/5
