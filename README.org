@@ -44,7 +44,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   ;; Treat manual switching of buffers the same as programatic
   (switch-to-buffer-obey-display-actions t)
   (switch-to-buffer-in-dedicated-window nil)
-  (window-sides-slots '(3 0 3 1))
+  (window-sides-slots '(3 0 3 3))
   ;; Sentences end with 1 space not 2
   (sentence-end-double-space nil)
   ;; make cursor the width of the character it is under
@@ -1893,9 +1893,26 @@ Color the string of whatever color code they are holding
 (use-package iedit
   :ensure t
   :defer
-  :bind (("C-c o" . iedit-mode))
+  :bind (("C-c o" . iedit-dwim))
   :custom
-  (iedit-toggle-key-default nil))
+  (iedit-toggle-key-default nil)
+  :init
+  ;; Stolen from mastering emacs
+  (defun iedit-dwim (arg)
+    "Starts iedit but uses \\[narrow-to-defun] to limit its scope."
+    (interactive "P")
+    (if arg
+        (iedit-mode)
+      (save-excursion
+        (save-restriction
+          (widen)
+          ;; this function determines the scope of `iedit-start'.
+          (if iedit-mode
+              (iedit-done)
+            ;; `current-word' can of course be replaced by other
+            ;; functions.
+            (narrow-to-defun)
+            (iedit-start (current-word) (point-min) (point-max))))))))
 #+end_src
 
 ** Expand Region
