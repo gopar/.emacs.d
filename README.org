@@ -2970,7 +2970,7 @@ Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
-  :hook (after-init . (lambda () (load-theme 'doom-challenger-deep)))
+  :hook (after-init . (lambda () (load-theme 'vscode-dark-plus)))
   :config
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -3033,6 +3033,13 @@ My favorite theme
 
   (add-hook 'after-load-theme-hook 'update-doom-modeline-battery-faces))
 #+END_SRC
+*** VS Code Theme
+#+begin_src emacs-lisp
+(use-package vscode-dark-plus-theme
+  :ensure t
+  :custom-face
+  (org-indent ((t (:inherit SlateGray1)))))
+#+end_src
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
