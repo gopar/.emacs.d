@@ -1901,6 +1901,7 @@ Color the string of whatever color code they are holding
   (defun iedit-dwim (arg)
     "Starts iedit but uses \\[narrow-to-defun] to limit its scope."
     (interactive "P")
+    (require 'iedit)
     (if arg
         (iedit-mode)
       (save-excursion
@@ -2245,11 +2246,14 @@ Collides with compact-docstrings so turning off for programming modes
 (use-package replace
   :ensure nil
   :defer
-  :hook (occur-mode . (lambda () ;; (setq-local window-size-fixed 'width)
-                        (occur-rename-buffer)))
+  :hook (occur-mode . occur-rename-buffer)
   :custom
   (list-matching-lines-default-context-lines 0)
-  :bind (("C-c C-o" . gopar/occur-definitions))
+  (list-matching-lines-face nil)
+  :bind (("C-c C-o" . gopar/occur-definitions)
+         :map occur-mode-map
+         ("n" . occur-next)
+         ("p" . occur-prev))
   :init
   (add-to-list 'display-buffer-alist
                '("\\*Occur"
@@ -2258,8 +2262,7 @@ Collides with compact-docstrings so turning off for programming modes
                  (slot . 1)
                  (dedicated . t)
                  (window-parameters . ((no-delete-other-windows . t)))
-                 ;; (window-width . 60)
-                 ))
+                 (window-width . 30)))
 
   (defun gopar/occur-definitions ()
     "Show all the function/method/class definitions for the current language."
@@ -2283,7 +2286,7 @@ Can honestly just rip out relevant part to remove lines vs installing this libra
   :hook (occur-mode . turn-on-occur-x-mode)
   :custom
   (occur-linenumbers-in-margin 'none)
-  :init
+  :config
   (defun occur-x--linenums-to-margin()
     "Custom function that overwrites library default to completely remove lines"
     (save-excursion
