@@ -41,8 +41,8 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (narrow-to-defun-include-comments t)
   (use-short-answers t)
   (confirm-nonexistent-file-or-buffer nil)
-  ;; Treat manual switching of buffers the same as programatic
-  (switch-to-buffer-obey-display-actions t)
+  ;; Dont Treat manual switching of buffers the same as programatic
+  (switch-to-buffer-obey-display-actions nil)
   (switch-to-buffer-in-dedicated-window nil)
   (window-sides-slots '(3 0 3 3))
   ;; Sentences end with 1 space not 2
@@ -85,6 +85,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   (put 'upcase-region 'disabled nil)
   (put 'downcase-region 'disabled nil)
   (put 'erase-buffer 'disabled nil)
+  (put 'list-timers 'disabled nil)
   ;; C-x n <key> useful stuff
   (put 'narrow-to-region 'disabled nil)
   (tool-bar-mode -1)
