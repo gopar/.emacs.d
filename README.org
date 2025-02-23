@@ -3085,7 +3085,7 @@ NOTE: Seems like its no longer actively maintained :/
   :hook (after-init . golden-ratio-mode)
   :custom
   (golden-ratio-auto-scale t)
-  (golden-ratio-exclude-modes '(treemacs-mode occur-mode chatgpt-shell-mode)))
+  (golden-ratio-exclude-modes '(treemacs-mode occur-mode chatgpt-shell-mode devdocs-mode vtem-mode eshell-mode)))
 #+end_src
 
 ** [[https://github.com/jhgorrell/ssh-config-mode-el][SSH config Mode]]
@@ -3182,7 +3182,11 @@ Useful for when making videos
          (typescript-ts-mode . (lambda () (focus-mode -1)))
          (web-mode . (lambda () (focus-mode -1)))))
 #+end_src
+** COMMENT [[https://github.com/ema2159/centaur-tabs][Centaur Tabs]]
+Perhaps one day when I have a few hours to customize.
+#+begin_src emacs-lisp
 
+#+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
 
