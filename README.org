@@ -192,7 +192,10 @@ If the next line is joined to the current line, kill the extra indent whitespace
     (when (and (eolp) (not (bolp)))
       (save-excursion
         (forward-char 1)
-        (just-one-space 1))))
+        (let ((start (point)))
+          (skip-chars-forward " \t")
+          (delete-region start (point))
+          (insert " ")))))
 
   (defun gopar/delete-line-backward ()
     "Delete text between the beginning of the line to the cursor position.
@@ -256,6 +259,7 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
     "Setup environment variables that I will need."
     (load-file "~/.emacs.d/etc/eshell/set_env.el")
     (setq-default eshell-path-env (getenv "PATH"))
+    (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
 
     (setq exec-path (append exec-path
                             `("/usr/local/bin"
@@ -310,7 +314,7 @@ Main configuration
   ;; I dont use it for subs/super scripts
   (org-use-sub-superscripts nil)
   ;; Should everything be hidden?
-  (org-startup-folded 'content)
+  (org-startup-folded t)
   (org-M-RET-may-split-line '((default . nil)))
   ;; Don't hide stars
   (org-hide-leading-stars nil)
@@ -1324,6 +1328,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :hook (after-init . projectile-global-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map)
+  :bind (:map projectile-command-map
+              ("x a" . gopar/projectile-run-aider))
 
   :custom
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
@@ -1331,11 +1337,64 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :config
   (setq frame-title-format '(:eval (if (projectile-project-root) (projectile-project-root) "%b")))
   (advice-add 'projectile--run-project-cmd :override #'gopar/projectile--run-project-cmd)
+
+  (defun gopar/projectile-run-aider (&optional arg)
+    (interactive "P")
+    (gopar/projectile--aider arg t))
+
+  (defun gopar/projectile--aider (&optional new-process other-window)
+    "Invoke `aider' in the project's root.
+
+Use argument NEW-PROCESS to indicate creation of a new process instead.
+Use argument OTHER-WINDOW to indentation whether the buffer should
+be displayed in a different window.
+
+Switch to the project specific term buffer if it already exists."
+    (let* ((project (projectile-acquire-root))
+           (buffer (projectile-generate-process-name "aider" new-process project)))
+      (unless (require 'vterm nil 'noerror)
+        (error "Package 'vterm' is not available"))
+      (if (buffer-live-p (get-buffer buffer))
+          (if other-window
+              (switch-to-buffer-other-window buffer)
+            (switch-to-buffer buffer))
+        (projectile-with-default-dir project
+          (if other-window
+              (vterm-other-window buffer)
+            (vterm buffer))
+
+          (vterm-send-string
+           (mapconcat 'identity
+                      `("aider"
+                        "--architect"
+                        "--model"
+                        "claude-3-7-sonnet-latest"
+                        "--editor-model"
+                        "claude-3-5-sonnet-latest"
+                        "--weak-model"
+                        "claude-3-5-haiku-latest"
+                        "--no-auto-accept-architect"
+                        "--analytics-disable"
+                        "--no-auto-commits"
+                        "--no-dirty-commits"
+                        "--no-attribute-author"
+                        "--no-attribute-committer"
+                        "--no-auto-lint"
+                        "--cache-prompts"
+                        "--no-stream"
+                        "--notifications"
+                        "--notifications-command \"say 'Aider is ready'\""
+                        ,(if (file-exists-p (concat project "CONVENTIONS.md"))
+                            (concat "--read " project "CONVENTIONS.md")
+                          ""))
+                      " "))
+        (vterm-send-return)))))
+
   :init
   ;; Redefinig with my changes since projectil overwrites `compilation-buffer-name-function`
   (cl-defun gopar/projectile--run-project-cmd
-    (command command-map &key show-prompt prompt-prefix save-buffers use-comint-mode)
-  "Run a project COMMAND, typically a test- or compile command.
+      (command command-map &key show-prompt prompt-prefix save-buffers use-comint-mode)
+    "Run a project COMMAND, typically a test- or compile command.
 
 Cache the COMMAND for later use inside the hash-table COMMAND-MAP.
 
@@ -1347,37 +1406,37 @@ If SAVE-BUFFERS is non-nil save all projectile buffers before
 running the command.
 
 The command actually run is returned."
-  (let* ((project-root (projectile-project-root))
-         (default-directory (projectile-compilation-dir))
-         (command (projectile-maybe-read-command show-prompt
-                                                 command
-                                                 prompt-prefix)))
-    (when command-map
-      (puthash default-directory command command-map)
-      (let ((hist (projectile--get-command-history project-root)))
-        (cond
-         ((eq projectile-cmd-hist-ignoredups t)
-          (unless (string= (car-safe (ring-elements hist)) command)
-            (ring-insert hist command)))
-         ((eq projectile-cmd-hist-ignoredups 'erase)
-          (let ((idx (ring-member hist command)))
-            (while idx
-              (ring-remove hist idx)
-              (setq idx (ring-member hist command))))
-          (ring-insert hist command))
-         (t (ring-insert hist command)))))
-    (when save-buffers
-      (save-some-buffers (not compilation-ask-about-save)
-                         (lambda ()
-                           (projectile-project-buffer-p (current-buffer)
-                                                        project-root))))
-    (when projectile-per-project-compilation-buffer
-      (setq compilation-buffer-name-function #'projectile-compilation-buffer-name)
-      (setq compilation-save-buffers-predicate #'projectile-current-project-buffer-p))
-    (unless (file-directory-p default-directory)
-      (mkdir default-directory))
-    (projectile-run-compilation command use-comint-mode)
-    command))
+    (let* ((project-root (projectile-project-root))
+           (default-directory (projectile-compilation-dir))
+           (command (projectile-maybe-read-command show-prompt
+                                                   command
+                                                   prompt-prefix)))
+      (when command-map
+        (puthash default-directory command command-map)
+        (let ((hist (projectile--get-command-history project-root)))
+          (cond
+           ((eq projectile-cmd-hist-ignoredups t)
+            (unless (string= (car-safe (ring-elements hist)) command)
+              (ring-insert hist command)))
+           ((eq projectile-cmd-hist-ignoredups 'erase)
+            (let ((idx (ring-member hist command)))
+              (while idx
+                (ring-remove hist idx)
+                (setq idx (ring-member hist command))))
+            (ring-insert hist command))
+           (t (ring-insert hist command)))))
+      (when save-buffers
+        (save-some-buffers (not compilation-ask-about-save)
+                           (lambda ()
+                             (projectile-project-buffer-p (current-buffer)
+                                                          project-root))))
+      (when projectile-per-project-compilation-buffer
+        (setq compilation-buffer-name-function #'projectile-compilation-buffer-name)
+        (setq compilation-save-buffers-predicate #'projectile-current-project-buffer-p))
+      (unless (file-directory-p default-directory)
+        (mkdir default-directory))
+      (projectile-run-compilation command use-comint-mode)
+      command))
   )
 #+end_src
 
@@ -2467,7 +2526,8 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
 #+begin_src emacs-lisp
 (use-package treemacs
   :ensure t
-  :hook (treemacs-mode . treemacs-project-follow-mode)
+  :hook ((treemacs-mode . treemacs-project-follow-mode)
+         (emacs-startup . treemacs))
   :bind ("<f5>" . treemacs)
   :custom
   (treemacs-hide-dot-git-directory nil)
@@ -2743,14 +2803,14 @@ Also start type break mode after start up since I might just be dragging along
   :init
   ;; Remove window if we exit vterm
   (add-hook 'vterm-exit-functions
-     (lambda (_ _)
-       (let* ((buffer (current-buffer))
-              (window (get-buffer-window buffer)))
-         (when (not (one-window-p))
-           (delete-window window))
-         (kill-buffer buffer))))
+            (lambda (_ _)
+              (let* ((buffer (current-buffer))
+                     (window (get-buffer-window buffer)))
+                (if (one-window-p)
+                    (kill-buffer buffer)
+                  (delete-window window)))))
 
-   (defun gopar/display-vterm-buffer (buffer alist)
+  (defun gopar/display-vterm-buffer (buffer alist)
     (let ((window (display-buffer-in-direction
                    buffer '((direction . bottom)
                             (split-height-threshold . 1)
@@ -2759,9 +2819,9 @@ Also start type break mode after start up since I might just be dragging along
           (select-window window)
         (message "No appropriate window found for displaying VTerm buffer"))))
 
-   (add-to-list 'display-buffer-alist
-             '("\\*vterm"
-               gopar/display-vterm-buffer))
+  (add-to-list 'display-buffer-alist
+               '("\\*vterm"
+                 gopar/display-vterm-buffer))
   :custom
   (vterm-max-scrollback 100000))
 #+end_src
@@ -2993,8 +3053,6 @@ Use Doom Themes since they have built in support for Solaire Mode
 
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
-  ;; Enable custom neotree theme (all-the-icons must be installed!)
-  (doom-themes-neotree-config)
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
 #+end_src

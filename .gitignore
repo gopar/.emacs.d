@@ -42,3 +42,4 @@ private.el
 /tree-sitter/
 /tmp/
 /.chatgpt-shell.el
+.aider*

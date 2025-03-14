@@ -14,6 +14,7 @@
                ":/Users/gopar/.nvm/versions/node/v16.14.2/bin/"
                ":/Library/TeX/texbin/"
                ":/opt/homebrew/opt/libpq/bin/"
+               ":/Users/gopar/.local/bin/"
                ))
       (PATH-ENV (getenv "PATH"))
       (non-existing-paths '()))
