@@ -11,7 +11,7 @@
                ":/Applications/Emacs.app/Contents/MacOS/"
                ":/Applications/Firefox.app/Contents/MacOS/"
                ":/opt/homebrew/bin/"
-               ":/Users/gopar/.nvm/versions/node/v16.14.2/bin/"
+               ":/Users/gopar/.nvm/versions/node/v22.14.0/bin/"
                ":/Library/TeX/texbin/"
                ":/opt/homebrew/opt/libpq/bin/"
                ":/Users/gopar/.local/bin/"

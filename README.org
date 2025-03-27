@@ -267,9 +267,11 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
                               "/usr/sbin"
                               "/sbin"
                               "/bin"
-                              "/Users/gopar/.nvm/versions/node/v16.14.2/bin/"
+                              "/Users/gopar/.nvm/versions/node/v22.14.0/bin"
                               )
-                            (split-string (getenv "PATH") ":")))))
+                            (split-string (getenv "PATH") ":")))
+    (setenv "PATH" (concat "/Users/gopar/.nvm/versions/node/v22.14.0/bin:" (getenv "PATH")))
+    ))
 #+end_src
 
 ** Diary
@@ -315,9 +317,9 @@ Main configuration
   (org-use-sub-superscripts nil)
   ;; Should everything be hidden?
   (org-startup-folded t)
-  (org-M-RET-may-split-line '((default . nil)))
-  ;; Don't hide stars
-  (org-hide-leading-stars nil)
+  (org-M-RET-may-split-line '((default . nnil)))
+  ;; Hide stars
+  (org-hide-leading-stars t)
   (org-hide-emphasis-markers nil)
   ;; Show as utf-8 chars
   (org-pretty-entities t)
@@ -1380,8 +1382,8 @@ Switch to the project specific term buffer if it already exists."
                         "--no-attribute-author"
                         "--no-attribute-committer"
                         "--no-auto-lint"
-                        "--cache-prompts"
-                        "--no-stream"
+                        ;; "--cache-prompts"
+                        ;; "--no-stream"
                         "--notifications"
                         "--notifications-command \"say 'Aider is ready'\""
                         ,(if (file-exists-p (concat project "CONVENTIONS.md"))
@@ -1811,7 +1813,7 @@ Compliment to xref
   (web-mode-markup-indent-offset 2)
   (web-mode-css-indent-offset 2)
   (web-mode-sql-indent-offset 2)
-  :mode (("\\.vue\\'" . web-mode)
+  :mode (;; ("\\.vue\\'" . web-mode)
          ("\\.html\\'" . web-mode)
          ("\\.js[x]?\\'" . web-mode)
          ))
@@ -2413,6 +2415,20 @@ Can honestly just rip out relevant part to remove lines vs installing this libra
   (js-jsx-indent-level 2))
 #+end_src
 
+** Vue
+#+begin_src emacs-lisp
+(use-package vue-mode
+  :ensure t
+  :defer
+  :hook ((vue-mode . flycheck-mode)
+         (vue-mode . (lambda () (jinx-mode -1))))
+  :init
+  (add-hook 'mmm-mode-hook
+            (lambda ()
+              (set-face-background 'mmm-default-submode-face nil)))
+  :config
+  (setq mmm-submode-decoration-level 0))
+#+end_src
 ** Pulse
 #+begin_src emacs-lisp
 (use-package pulse
@@ -2451,7 +2467,11 @@ For my mouse that also has left - right mouse scroll
 (use-package whitespace
   :ensure nil
   :defer
-  :hook (before-save . whitespace-cleanup))
+  :hook (before-save . whitespace-cleanup)
+  :init
+  (setq show-trailing-whitespace t)
+  :custom
+  (whitespace-line-column nil))
 #+end_src
 
 ** Auto revert
@@ -2810,18 +2830,18 @@ Also start type break mode after start up since I might just be dragging along
                     (kill-buffer buffer)
                   (delete-window window)))))
 
-  (defun gopar/display-vterm-buffer (buffer alist)
-    (let ((window (display-buffer-in-direction
-                   buffer '((direction . bottom)
-                            (split-height-threshold . 1)
-                            (window-height . .33)))))
-      (if window
-          (select-window window)
-        (message "No appropriate window found for displaying VTerm buffer"))))
+  ;; (defun gopar/display-vterm-buffer (buffer alist)
+  ;;   (let ((window (display-buffer-in-direction
+  ;;                  buffer '((direction . bottom)
+  ;;                           (split-height-threshold . 1)
+  ;;                           (window-height . .33)))))
+  ;;     (if window
+  ;;         (select-window window)
+  ;;       (message "No appropriate window found for displaying VTerm buffer"))))
 
-  (add-to-list 'display-buffer-alist
-               '("\\*vterm"
-                 gopar/display-vterm-buffer))
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '("\\*vterm"
+  ;;                gopar/display-vterm-buffer))
   :custom
   (vterm-max-scrollback 100000))
 #+end_src
@@ -2882,7 +2902,21 @@ Also start type break mode after start up since I might just be dragging along
   :hook (((python-mode python-ts-mode) . flycheck-mode))
   :bind (:map flycheck-mode-map
               ("C-c C-n" . flycheck-next-error)
-              ("C-c C-p" . flycheck-previous-error))
+              ("C-c C-p" . flycheck-previous-error)
+         :map projectile-command-map
+         ("l" . flycheck-list-errors)
+              )
+  :init
+  ;; (setq fit-window-to-buffer-horizontally t)
+  ;; (setq window-resize-pixelwise t)
+  (setq window-sides-vertical t)
+  (add-to-list 'display-buffer-alist
+               '("\\*Flycheck errors\\*"
+                 display-buffer-in-side-window
+                 (side . bottom)
+                 (slot . 0)
+                 (no-delete-other-windows . t)
+                 (window-height . .33)))
   :custom
   (flycheck-flake8rc '(".flake8" "setup.cfg" "tox.ini" "pyproject.toml")))
 #+end_src
@@ -2912,8 +2946,10 @@ Also start type break mode after start up since I might just be dragging along
                  (slot . 0)
                  (window-parameters . ((no-delete-other-windows . t)))
                  (dedicated . t)))
-  (setq chatgpt-shell-model-version "chatgpt-4o-latest")
+  (setq chatgpt-shell-model-version "o3-mini")
   :custom
+  (chatgpt-shell-system-prompt nil ;; 2
+                               )
   (chatgpt-shell-highlight-blocks t)
   (shell-maker-prompt-before-killing-buffer nil)
   (chatgpt-shell-openai-key
@@ -3244,6 +3280,17 @@ Useful for when making videos
 Perhaps one day when I have a few hours to customize.
 #+begin_src emacs-lisp
 
+#+end_src
+** Fretboard
+Guitar stuff
+#+begin_src emacs-lisp
+(use-package fretboard
+  :quelpa (fretboard :fetcher github :repo "skyefreeman/fretboard.el")
+  :defer t
+  :commands fretboard
+  :custom
+  (fretboard-fret-count 20)
+  )
 #+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
