@@ -33,7 +33,8 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          (after-init . toggle-frame-maximized)
          (after-init . (lambda () (scroll-bar-mode -1)))
          (after-init . (lambda () (window-divider-mode -1)))
-         (after-init . gopar/add-env-vars))
+         ;; (after-init . gopar/add-env-vars)
+         )
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
@@ -733,10 +734,6 @@ When called with a prefix aurgument, it will open annotations file."
 #+end_src
 
 ** Eshell
-:PROPERTIES:
-:ID: FCA3DA09-955C-4572-BA20-18D1C3543F1D
-:END:
-
 Some of the following are stolen from https://github.com/manateelazycat/aweshell
 #+begin_src emacs-lisp
 (use-package eshell
@@ -886,6 +883,14 @@ Stolen from aweshell."
   (capf-autosuggest-dwim-next-line nil))
 #+end_src
 
+*** [[https://github.com/Fuco1/eshell-bookmark/issues][Eshell Bookmarks]]
+#+begin_src emacs-lisp
+(use-package eshell-bookmark
+  :ensure t
+  :after eshell
+  :config
+  (add-hook 'eshell-mode-hook #'eshell-bookmark-setup))
+#+end_src
 ** Python
 Run on every fresh virtualenv install
 =pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest=
@@ -1004,7 +1009,7 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
         (set-window-dedicated-p (get-buffer-window "*pydoc*") t)))))
 #+end_src
 
-*** Jedi
+*** COMMENT Jedi
 Only use this for 'eldoc' documentation. Works most of the time.
 I say 'eldoc' in quotes b/c this doens't really use eldoc.
 It echos out the method/func signature instead of using eldoc.
@@ -1791,6 +1796,18 @@ Compliment to xref
   ;; (which-function-mode t) ;; enable which-function mode if you not
   )
 #+end_src
+
+** Eglot
+#+begin_src emacs-lisp
+(use-package eglot
+  :ensure t
+  :defer
+  :hook
+  (eglot-managed-mode . (lambda ()
+                          (setq xref-backend-functions '(gopar/xref-backend-html-template eglot-xref-backend dumb-jump-xref-activate t))))
+  :config
+  (add-to-list 'eglot-stay-out-of 'flymake))
+#+end_src
 ** Web Mode
 #+begin_src emacs-lisp
 (use-package web-mode
@@ -2512,7 +2529,7 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
 #+begin_src emacs-lisp
 (use-package neotree
   :ensure t
-  ;; :bind ("<f5>" . neotree-toggle)
+  :bind ("<f5>" . neotree-toggle)
   :custom
   (neo-theme 'icons)
   (neo-smart-open t)
@@ -2520,7 +2537,7 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
   (neo-window-width (gopar/neo-width))
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
-  (neo-show-hidden-files t)
+  (neo-show-hidden-files nil)
 
   :init
   (defun gopar/neo-width ()
@@ -2542,12 +2559,15 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
         (error "Unknown display type"))))))
 #+end_src
 
-** Treemacs
+** COMMENT Treemacs
 #+begin_src emacs-lisp
 (use-package treemacs
   :ensure t
   :hook ((treemacs-mode . treemacs-project-follow-mode)
-         (emacs-startup . treemacs))
+         (treemacs-mode . treemacs-hide-gitignored-files-mode)
+         (treemacs-mode . (lambda () (which-function-mode -1)))
+         ;; (emacs-startup . treemacs)
+         )
   :bind ("<f5>" . treemacs)
   :custom
   (treemacs-hide-dot-git-directory nil)
@@ -2846,6 +2866,15 @@ Also start type break mode after start up since I might just be dragging along
   (vterm-max-scrollback 100000))
 #+end_src
 
+** Exec From Shell
+#+begin_src emacs-lisp
+(use-package exec-path-from-shell
+  :ensure t
+  :init
+  (setq exec-path-from-shell-arguments nil)
+  (setq exec-path-from-shell-variables '("PATH" "MANPATH" "SSH_AUTH_SOCK" "NVM_DIR" "HOMEBREW_NO_AUTO_UPDATE"))
+  (exec-path-from-shell-initialize))
+#+end_src
 ** [[https://github.com/astoff/devdocs.el][Devdocs]]
 #+begin_src emacs-lisp
 (use-package devdocs
@@ -2938,6 +2967,7 @@ Also start type break mode after start up since I might just be dragging along
   :hook ((chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
          (eshell-first-time-mode . chatgpt-shell-add-??-command-to-eshell))
   :init
+  (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
   (setq shell-maker-root-path (concat user-emacs-directory "var/"))
   (add-to-list 'display-buffer-alist
                '("\\*chatgpt"
@@ -3244,11 +3274,7 @@ Useful for when making videos
 
 ** Garbage Collection
 #+begin_src emacs-lisp
-(use-package gcmh
-:ensure t
-:hook (after-init . gcmh-mode)
-:custom
-(gc-cons-percentage .9))
+
 #+end_src
 
 ** Dot Env Mode
