@@ -1,3 +1,4 @@
+#+STARTUP: showall
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :tangle README.el
 
@@ -33,11 +34,13 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          (after-init . toggle-frame-maximized)
          (after-init . (lambda () (scroll-bar-mode -1)))
          (after-init . (lambda () (window-divider-mode -1)))
+         (prog-mode . (lambda () (setq-local show-trailing-whitespace t))
          ;; (after-init . gopar/add-env-vars)
          )
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
+  (enable-recursive-minibuffers t)
   (debugger-stack-frame-as-list t)
   (narrow-to-defun-include-comments t)
   (use-short-answers t)
@@ -1270,15 +1273,13 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 #+begin_src emacs-lisp
 (use-package eww
   :defer t
-  :init
-  (add-hook 'eww-after-render-hook #'shrface-mode)
-  ;; (add-hook 'eww-mode-hook 'ewnium-mode)
+  :hook (eww-after-render . shrface-mode)
   :config
   (require 'shrface))
 
 #+end_src
 
-** COMMENT Ewnium
+** Ewnium
 #+begin_src emacs-lisp
 (use-package ewnium
   :ensure nil
@@ -1358,7 +1359,8 @@ be displayed in a different window.
 
 Switch to the project specific term buffer if it already exists."
     (let* ((project (projectile-acquire-root))
-           (buffer (projectile-generate-process-name "aider" new-process project)))
+           (buffer (projectile-generate-process-name "aider" new-process project))
+           (vterm-buffer-name-string nil))
       (unless (require 'vterm nil 'noerror)
         (error "Package 'vterm' is not available"))
       (if (buffer-live-p (get-buffer buffer))
@@ -1380,7 +1382,7 @@ Switch to the project specific term buffer if it already exists."
                         "claude-3-5-sonnet-latest"
                         "--weak-model"
                         "claude-3-5-haiku-latest"
-                        "--no-auto-accept-architect"
+                        ;; "--no-auto-accept-architect"
                         "--analytics-disable"
                         "--no-auto-commits"
                         "--no-dirty-commits"
@@ -1389,6 +1391,7 @@ Switch to the project specific term buffer if it already exists."
                         "--no-auto-lint"
                         ;; "--cache-prompts"
                         ;; "--no-stream"
+                        "--watch-files"
                         "--notifications"
                         "--notifications-command \"say 'Aider is ready'\""
                         ,(if (file-exists-p (concat project "CONVENTIONS.md"))
@@ -1618,6 +1621,8 @@ Also includes displaying of them
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
          ("C-x r b" . consult-bookmark)
+         ("C-x r s" . consult-register-store)
+         ("C-x r i" . consult-register)
          ("M-y" . consult-yank-pop)
          ;; M-g bindings (goto-map)
          ("M-g M-g" . consult-goto-line)
@@ -1805,8 +1810,11 @@ Compliment to xref
   :hook
   (eglot-managed-mode . (lambda ()
                           (setq xref-backend-functions '(gopar/xref-backend-html-template eglot-xref-backend dumb-jump-xref-activate t))))
+  :bind (:map projectile-command-map
+              ("R" . eglot-rename))
   :config
   (add-to-list 'eglot-stay-out-of 'flymake))
+
 #+end_src
 ** Web Mode
 #+begin_src emacs-lisp
@@ -1817,6 +1825,11 @@ Compliment to xref
   (setq-default web-mode-code-indent-offset 2)
   (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
   (setq web-mode-content-types-alist '(("jsx"  . "\\.js[x]?\\'")))
+  (setq web-mode-extra-snippets
+      '(("django" . (("ifelif"  . "{% if | %}\n\n{% elif %}\n\n{% else %}\n\n{% endif %}")
+                     ("ifelse"  . "{% if | %}\n\n{% else %}\n\n{% endif %}")
+                     ("include" . "{% include \"|\" %}")
+                     ("extends" . "{% extends \"|\" %}")))))
 
   :hook (web-mode . (lambda ()
                       (highlight-indentation-mode -1)
@@ -2485,8 +2498,6 @@ For my mouse that also has left - right mouse scroll
   :ensure nil
   :defer
   :hook (before-save . whitespace-cleanup)
-  :init
-  (setq show-trailing-whitespace t)
   :custom
   (whitespace-line-column nil))
 #+end_src
@@ -2530,36 +2541,20 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
 (use-package neotree
   :ensure t
   :bind ("<f5>" . neotree-toggle)
+  :hook (emacs-startup . neotree)
   :custom
   (neo-theme 'icons)
   (neo-smart-open t)
   (neo-autorefresh t)
-  (neo-window-width (gopar/neo-width))
+  (neo-window-width 35)
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
   (neo-show-hidden-files nil)
-
-  :init
-  (defun gopar/neo-width ()
-    "Detect if the display is an ultrawide monitor or a built-in Mac display."
-    (interactive)
-    (let* ((display-width (display-pixel-width))
-           (display-height (display-pixel-height))
-           (aspect-ratio (/ (float display-width) display-height)))
-      (cond
-       ;; Example conditions, need to adjust based on the specific resolution
-       ;; criteria you're using to differentiate displays.
-       ((and (> display-width 2500)
-             (> aspect-ratio 2.0))
-        40) ;; ~12 percent of ultra wide screen
-       ((and (<= display-width 2560)
-             (<= aspect-ratio 2.0))
-        30)
-       (t
-        (error "Unknown display type"))))))
+  )
 #+end_src
 
 ** COMMENT Treemacs
+It keeps breaking! I like how the icons look better but don't like that it keeps breaking
 #+begin_src emacs-lisp
 (use-package treemacs
   :ensure t
@@ -2583,35 +2578,7 @@ Sooo I manually copied the PR fix into the =init= section. Sigh.
 #+begin_src emacs-lisp
 (use-package dizzee
   :ensure t
-  :defer
-  :config
-  (dz-defservice bfd-runserver "python"
-                 :args ("manage.py" "runserver")
-                 :cd "/Users/gopar/work/fiagents/")
-  (dz-defservice bfd-flower "flower"
-                 :args ("-A" "core" "--host=127.0.0.1" "--port=9002")
-                 :cd "/Users/gopar/work/fiagents/")
-  (dz-defservice bfd-bot-run "python"
-                 :args ("manage.py" "bot" "run")
-                 :cd "/Users/gopar/work/fiagents/")
-  (dz-defservice bfd-celery-downloader-queue "celery"
-                 :args ("-A" "core" "worker" "-n" "Downloader" "-Q" "Downloader" "--concurrency=8" "--purge" "-l" "info")
-                 :cd "/Users/gopar/work/fiagents/")
-  (dz-defservice bfd-celery-slow-downloader-queue "celery"
-                 :args ("-A" "core" "worker" "-n" "SlowDownloader" "-Q" "SlowDownloader" "--concurrency=2" "--purge" "-l" "info")
-                 :cd "/Users/gopar/work/fiagents/")
-  (dz-defservice bfd-celery-diffbot-queue "celery"
-                 :args ("-A" "core" "worker" "-n" "Diffbot" "-Q" "Diffbot" "--concurrency=8" "--purge" "-l" "info")
-                 :cd "/Users/gopar/work/fiagents/")
-  (dz-defservice bfd-celery-launcher-queue "celery"
-                 :args ("-A" "core" "worker" "-n" "Launcher" "-Q" "Launcher" "--concurrency=8" "--purge" "-l" "info")
-                 :cd "/Users/gopar/work/fiagents/")
-  (dz-defservice-group bfd-celerys-flower-and-server (bfd-celery-diffbot-queue
-                                                      bfd-celery-downloader-queue
-                                                      bfd-celery-slow-downloader-queue
-                                                      bfd-celery-launcher-queue
-                                                      bfd-flower
-                                                      bfd-runserver)))
+  :defer)
 #+end_src
 
 ** String Inflection
@@ -2835,34 +2802,14 @@ Also start type break mode after start up since I might just be dragging along
 #+end_src
 
 ** Vterm
+Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-ov-file#vterm-buffer-name-string
 #+begin_src emacs-lisp
 (use-package vterm
   :ensure t
   :defer
   :bind (:map vterm-mode-map ("C-q" . vterm-send-next-key))
-  :init
-  ;; Remove window if we exit vterm
-  (add-hook 'vterm-exit-functions
-            (lambda (_ _)
-              (let* ((buffer (current-buffer))
-                     (window (get-buffer-window buffer)))
-                (if (one-window-p)
-                    (kill-buffer buffer)
-                  (delete-window window)))))
-
-  ;; (defun gopar/display-vterm-buffer (buffer alist)
-  ;;   (let ((window (display-buffer-in-direction
-  ;;                  buffer '((direction . bottom)
-  ;;                           (split-height-threshold . 1)
-  ;;                           (window-height . .33)))))
-  ;;     (if window
-  ;;         (select-window window)
-  ;;       (message "No appropriate window found for displaying VTerm buffer"))))
-
-  ;; (add-to-list 'display-buffer-alist
-  ;;              '("\\*vterm"
-  ;;                gopar/display-vterm-buffer))
   :custom
+  (vterm-buffer-name-string "*vterm %s*")
   (vterm-max-scrollback 100000))
 #+end_src
 
@@ -2924,6 +2871,7 @@ Also start type break mode after start up since I might just be dragging along
 #+end_src
 
 ** Flycheck
+
 #+begin_src emacs-lisp
 (use-package flycheck
   :ensure
@@ -3000,6 +2948,39 @@ Also start type break mode after start up since I might just be dragging along
       (auth-source-pick-first-password :host "api.openai.com"))
   (dall-e-shell-image-size "1024x1024")
   (dall-e-shell-image-output-directory "~/Downloads/dall_e_output/"))
+#+end_src
+*** Aidermacs
+#+begin_src emacs-lisp
+(use-package aidermacs
+  :bind (("M-g a" . aidermacs-transient-menu)
+         :map aidermacs-vterm-mode-map
+         ("M-RET" . aidermacs-vterm-send-return)
+         )
+  :init
+  (setopt aidermacs-vterm-use-theme-colors nil)
+  :custom
+  ; This doens't work along with M-RET. Need to open ticket
+  (aidermacs-vterm-multiline-newline-key "RET")
+  (aidermacs-use-architect-mode t)
+  (aidermacs-auto-accept-architect t)
+  (aidermacs-backend 'vterm)
+  (aidermacs-watch-files t)
+  (aidermacs-extra-args `(
+                        "--analytics-disable"
+                        "--no-auto-commits"
+                        "--no-dirty-commits"
+                        "--no-attribute-author"
+                        "--no-attribute-committer"
+                        "--no-auto-lint"
+                        "--notifications"
+                        "--notifications-command \"say 'Aider is ready'\""
+                        ,(if (file-exists-p (concat (projectile-acquire-root) "CONVENTIONS.md"))
+                            (concat "--read " (projectile-acquire-root) "CONVENTIONS.md")
+                          "")))
+  (aidermacs-architect-model "claude-3-7-sonnet-latest")
+  (aidermacs-editor-model "claude-3-5-sonnet-latest")
+  (aidermacs-weak-model "claude-3-5-haiku-latest")
+  (aidermacs-default-model "sonnet"))
 #+end_src
 ** Presentation
 #+begin_src emacs-lisp
