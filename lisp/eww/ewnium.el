@@ -1,7 +1,51 @@
-(require 'cl)
+;;; ewnium.el --- Vimium-like extensions for EWW -*- lexical-binding: t -*-
+
+;; Copyright (C) 2024 Free Software Foundation, Inc.
+
+;; Author: Original Author <author@example.com>
+;; Maintainer: Current Maintainer <maintainer@example.com>
+;; Created: 2024
+;; Version: 1.0
+;; Package-Requires: ((emacs "27.1") (avy "0.5.0") (consult "0.16" nil))
+;; Keywords: convenience, web
+;; URL: https://github.com/yourusername/ewnium
+
+;; This file is not part of GNU Emacs.
+
+;;; Commentary:
+
+;; Ewnium provides Vimium-like functionality for the EWW web browser in Emacs.
+;; It adds convenient keybindings for navigation, link following, and buffer
+;; management inspired by the popular Vimium browser extension.
+
+;; Key features:
+;; - Vim-style navigation keybindings
+;; - Quick link following with avy
+;; - Buffer management commands
+;; - URL manipulation utilities
+;; - Bookmark and history management
+
+;;; Code:
+(require 'cl-lib)
 (require 'eww)
 (require 'shr)
 (require 'view)
+
+(defgroup ewnium nil
+  "Vimium-like extensions for EWW."
+  :group 'eww)
+
+(defcustom ewnium-rename-buffers t
+  "Whether to rename EWW buffers based on page title."
+  :type 'boolean
+  :group 'ewnium)
+
+(defcustom ewnium-scroll-step 1
+  "Number of lines to scroll with j/k keys."
+  :type 'integer
+  :group 'ewnium)
+
+
 
 (defun ewnium-open-eww-with-recent-kill-ring (&optional arg)
   "Open current EWW with most recent item in kill ring.
@@ -24,8 +68,8 @@ Version 2017-11-10"
           (rename-buffer title t)
         (rename-buffer "eww" t)))))
 
-(defun ewnium--go-up-url-heirarchy ()
-  "Go up the URL heirarchy."
+(defun ewnium--go-up-url-hierarchy ()
+  "Go up the URL hierarchy."
   (interactive)
   (let ((url (url-generic-parse-url (eww-current-url))))
     (setq url (url-recreate-url
@@ -41,8 +85,8 @@ Version 2017-11-10"
                 (url-fullness url))))
     (eww-browse-url url)))
 
-(defun ewnium--go-to-root-url-heirarchy ()
-  "Go to root of current URL heirarchy"
+(defun ewnium--go-to-root-url-hierarchy ()
+  "Go to root of current URL hierarchy"
   (interactive)
   (let ((url (url-generic-parse-url (eww-current-url))))
     (setq url (url-recreate-url
@@ -142,53 +186,122 @@ Always set to 'history."
   "Show prompt to either open a new query, bookmark or history.
 Passing ARG as non-nil, means open in new eww buffer."
   (interactive "P")
-  (let (options titles choesn chosen-type chosen-buffer target-plist)
-    (setq options (ewnium--get-list-of-history-bookmarks-and-buffers t t t))
-    (setq titles (mapcar (lambda (plist) (plist-get plist :title)) options))
-    (setq chosen (completing-read "URL/Book mark/History: " titles))
-    (setq target-plist (car (seq-filter (lambda (plist) (equal (plist-get plist :title) chosen)) options)))
-    (setq chosen (or (plist-get target-plist :url) chosen)
-          chosen-type (plist-get target-plist :type)
-          chosen-buffer (plist-get target-plist :buffer))
+  (let* ((options (ewnium--get-list-of-history-bookmarks-and-buffers t t t))
+         ;; Filter out entries with nil titles
+         (options (seq-filter (lambda (plist)
+                               (or (plist-get plist :title)
+                                   (plist-get plist :buffer)))
+                             options))
+         ;; Create alist of (title . plist) for better lookup
+         (candidates (mapcar (lambda (plist)
+                              (let ((title (or (plist-get plist :title)
+                                              (when (plist-get plist :buffer)
+                                                (buffer-name (plist-get plist :buffer))))))
+                                (cons title plist)))
+                            options))
+         ;; Create annotation function that works with both default completion and consult
+         (annotf (lambda (cand)
+                  (let* ((plist (cdr (assoc cand candidates)))
+                         (type (plist-get plist :type)))
+                    (pcase type
+                      ('buffer " [Buffer]")
+                      ('bookmark " [Bookmark]")
+                      ('history " [History]")
+                      (_ "")))))
+         ;; Set completion properties
+         (completion-extra-properties `(:annotation-function ,annotf))
+         ;; For consult compatibility
+         (consult--read-config `((annotation-function . ,annotf)))
+         ;; Get just the titles for completion
+         (titles (mapcar #'car candidates))
+         ;; Prompt for selection
+         (chosen (completing-read "URL/Bookmark/History: " titles nil t))
+         ;; Get the selected plist
+         (target-plist (cdr (assoc chosen candidates))))
+
     (cond
-     ((eq chosen-type 'buffer)
-      (switch-to-buffer chosen-buffer))
-     ((eq chosen-type 'bookmark)
+     ;; Handle buffer selection
+     ((and target-plist (eq (plist-get target-plist :type) 'buffer))
+      (switch-to-buffer (plist-get target-plist :buffer)))
+
+     ;; Handle bookmark or history selection
+     ((and target-plist (plist-get target-plist :url))
+      (eww (plist-get target-plist :url) (if arg 4 nil)))
+
+     ;; Handle direct URL input
+     ((and chosen (not (string-empty-p chosen)))
       (eww chosen (if arg 4 nil)))
-     ((eq chosen-type 'history)
-      (eww chosen (if arg 4 nil)))
-     ;; When it's a string
+
+     ;; Handle no selection
+     (t (message "No valid selection made")))))
+
+(defun ewnium-open-history (&optional arg)
+  "Show prompt to open a page from history.
+With prefix ARG, open in new eww buffer."
+  (interactive "P")
+  (let* ((options (ewnium--get-list-of-history-bookmarks-and-buffers t nil nil))
+         (titles (mapcar (lambda (plist) (plist-get plist :title)) options))
+         (completion-extra-properties
+          `(:annotation-function ,(lambda (_) " [History]")))
+         (chosen (completing-read "History: " titles nil t))
+         (target-plist (car (seq-filter (lambda (plist)
+                                        (equal (plist-get plist :title) chosen))
+                                      options)))
+         (url (plist-get target-plist :url)))
+    (cond
+     ((null url)
+      (message "No history item chosen")
+      nil)
      (t
-      (eww chosen (if arg 4 nil))))))
+      (eww url (when arg 4))
+      url))))
 
 (defun ewnium-open-bookmark (&optional arg)
   "Show prompt to open a bookmark.
-Providing a prefix will open in new eww buffer."
+With prefix ARG, open in new eww buffer.
+Return nil if no bookmark was chosen, otherwise return the opened URL."
   (interactive "P")
-  (let ()
-    (setq options (ewnium--get-list-of-history-bookmarks-and-buffers nil t nil))
-    (setq titles (mapcar (lambda (plist) (plist-get plist :title)) options))
-    (setq chosen (completing-read "Book-mark: " titles))
-    (setq target-plist (car (seq-filter (lambda (plist) (equal (plist-get plist :title) chosen)) options)))
-    (setq chosen (plist-get target-plist :url))
-    (if (not chosen)
-        (message "No Bookmark chosen.")
-      (eww chosen (if arg 4 nil)))))
+  (let* ((options (ewnium--get-list-of-history-bookmarks-and-buffers nil t nil))
+         (titles (mapcar (lambda (plist) (plist-get plist :title)) options))
+         (completion-extra-properties
+          `(:annotation-function ,(lambda (_) " [Bookmark]")))
+         (chosen (completing-read "Bookmark: " titles nil t))
+         (target-plist (car (seq-filter (lambda (plist)
+                                        (equal (plist-get plist :title) chosen))
+                                      options)))
+         (url (plist-get target-plist :url)))
+    (cond
+     ((null url)
+      (message "No bookmark chosen")
+      nil)
+     (t
+      (eww url (when arg 4))
+      url))))
 
 (defun ewnium-open-buffers ()
   "Show a prompt of all EWW buffers to switch to."
   (interactive)
-  (let (chosen)
-    (setq options (ewnium--get-list-of-history-bookmarks-and-buffers t nil nil))
-    (setq titles (mapcar (lambda (plist) (plist-get plist :title)) options))
-    (setq chosen (completing-read "EWW Buffer: " titles))
-    (setq target-plist (car (seq-filter (lambda (plist) (equal (plist-get plist :title) chosen)) options)))
-    (setq chosen (plist-get target-plist :buffer))
-    (if (not chosen)
+  (let* ((options (ewnium--get-list-of-history-bookmarks-and-buffers nil nil t))
+         (titles (mapcar (lambda (plist)
+                          (or (plist-get plist :title)
+                              (buffer-name (plist-get plist :buffer))))
+                        options))
+         (completion-extra-properties
+          `(:annotation-function ,(lambda (_) " [Buffer]")))
+         (chosen (completing-read "EWW Buffer: " titles nil t))
+         (target-plist (car (seq-filter (lambda (plist)
+                                         (equal (or (plist-get plist :title)
+                                                   (buffer-name (plist-get plist :buffer)))
+                                                chosen))
+                                       options)))
+         (chosen-buffer (plist-get target-plist :buffer)))
+    (if (not chosen-buffer)
         (message "No Buffer chosen.")
-      (switch-to-buffer chosen))))
+      (switch-to-buffer chosen-buffer))))
 
 (defun ewnium-edit-current-url (&optional arg)
+  "Edit the current URL or enter a new search.
+With prefix ARG, open in a new EWW buffer."
   (interactive)
   (let* ((url (eww-copy-page-url))
          (uris (eww-suggested-uris)))
@@ -256,8 +369,6 @@ go through the search engine"
     (setq url (car args))
     (setq is-ddg (string-prefix-p "https://duckduckgo.com/l/?uddg=" url))
     (setq is-google (string-prefix-p "https://www.google.com/url?" url))
-    (print url)
-
     (when (or is-ddg is-google)
       (setq url (url-generic-parse-url url))
       (setq path-and-query (url-path-and-query url))
@@ -309,83 +420,128 @@ When ARG is non-nil, open in new EWW buffer."
     (avy-process
      (gopar/avy--property-candidates property beg end pred group prop-pred))))
 
-(defun ewnium--element-has-local-map-p ()
-  "Check if the current point is inside an element that has a local map in EWW."
+(defun ewnium--in-form-field-p ()
+  "Return t if point is in a form field that should receive input."
   (and (eq major-mode 'eww-mode)
        (get-text-property (point) 'local-map)))
 
-(defun ewnium--chose-keybinding-based-on-contenxt (original-binding)
-  "Allow normal keybinding behavior when not inside elements such as text input."
-  (if (keymapp original-binding)
-      (ewnium--add-context-check-to-keymap original-binding)
-    (lexical-let ((original-func original-binding))
-      (lambda ()
-        (interactive)
-        (if (ewnium--element-has-local-map-p)
-            (self-insert-command 1)
-          (funcall-interactively original-func))))))
+(defun ewnium-self-insert-or-command (original-command)
+  "Execute ORIGINAL-COMMAND unless point is in a form field.
+In form fields, insert the key that was pressed instead."
+  (if (ewnium--in-form-field-p)
+      (call-interactively #'self-insert-command)
+    (call-interactively original-command)))
 
-(defun ewnium--add-context-check-to-keymap (keymap)
-  (let ((modified-keymap (make-sparse-keymap)))
-    (map-keymap
-     (lambda (key command)
-       (let ((key-description (key-description (vector key))))
-         (when (string-match-p "^[[:lower:]][[:alpha:]]*" key-description)
-           (define-key modified-keymap (kbd key-description) (ewnium--chose-keybinding-based-on-contenxt command)))))
-     keymap)
-    modified-keymap))
-
-(defvar ewnium-g-prefix-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "g") #'beginning-of-buffer)
-    (define-key map (kbd "u") #'ewnium--go-up-url-heirarchy)
-    (define-key map (kbd "U") #'ewnium--go-to-root-url-heirarchy)
-    (define-key map (kbd "s") #'eww-view-source)
-    (define-key map (kbd "e") #'ewnium-edit-current-url)
-    (define-key map (kbd "i") #'(lambda ()
-                                  (interactive)
-                                  (gopar/avy-property-jump
-                                   'eww-form
-                                   :prop-pred (lambda (val prop-val) (string= "text" (plist-get prop-val :type))))))
-    map)
-  "Keymap for 'g' prefixed commands in ewnium-mode.")
-
-(defun ewnium--g-key-handler ()
-  "Handle 'g' key press in ewnium-mode."
+(defun ewnium-g-prefix ()
+  "Handle g prefix command.
+If in a form field, insert 'g'. Otherwise, wait for the next key and execute
+the corresponding command."
   (interactive)
-  (if (ewnium--element-has-local-map-p)
-      (insert "g")
-    (set-transient-map ewnium-g-prefix-map)))
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (let ((key (read-key "g-")))
+      (cond
+       ((eq key ?g) (beginning-of-buffer))
+       ((eq key ?u) (ewnium--go-up-url-hierarchy))
+       ((eq key ?U) (ewnium--go-to-root-url-hierarchy))
+       ((eq key ?s) (eww-view-source))
+       ((eq key ?e) (ewnium-edit-current-url))
+       ((eq key ?i) (gopar/avy-property-jump
+                     'eww-form
+                     :prop-pred (lambda (val prop-val)
+                                  (string= "text" (plist-get prop-val :type)))))
+       (t (message "g-%c is undefined" key))))))
 
-
-(defvar ewnium-y-prefix-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "y") #'eww-copy-page-url)
-    (define-key map (kbd "f") #'shr-maybe-probe-and-copy-url)
-    map)
-  "Keymap for 'y' prefixed commands in ewnium-mode.")
-
-(defun ewnium--y-key-handler ()
-  "Handle 'y' key press in ewnium-mode."
+(defun ewnium-y-prefix ()
+  "Handle y prefix command.
+If in a form field, insert 'y'. Otherwise, wait for the next key and execute
+the corresponding command."
   (interactive)
-  (if (ewnium--element-has-local-map-p)
-      (insert "y")
-    (set-transient-map ewnium-y-prefix-map)))
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (let ((key (read-key "y-")))
+      (cond
+       ((eq key ?y) (eww-copy-page-url))
+       ((eq key ?f) (shr-maybe-probe-and-copy-url))
+       (t (message "y-%c is undefined" key))))))
 
+(defun ewnium-open-bracket-prefix ()
+  "Handle [ prefix command.
+If in a form field, insert '['. Otherwise, wait for the next key and execute
+the corresponding command."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (let ((key (read-key "[-")))
+      (cond
+       ((eq key ?\[) (eww-back-url))
+       (t (message "[-%c is undefined" key))))))
 
+(defun ewnium-close-bracket-prefix ()
+  "Handle ] prefix command.
+If in a form field, insert ']'. Otherwise, wait for the next key and execute
+the corresponding command."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (let ((key (read-key "]-")))
+      (cond
+       ((eq key ?\]) (eww-forward-url))
+       (t (message "]-%c is undefined" key))))))
+
+(defun ewnium-scroll-down ()
+  "Scroll down one line unless in a form field."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (scroll-down 1)))
+
+(defun ewnium-scroll-up ()
+  "Scroll up one line unless in a form field."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (scroll-up 1)))
+
+(defun ewnium-show-alt-text ()
+  "Show alt text for image at point unless in a form field."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (shr-show-alt-text)))
+
+(defun ewnium-zoom-image ()
+  "Zoom image at point unless in a form field."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (shr-zoom-image)))
+
+(defun ewnium-next-link ()
+  "Move to next link unless in a form field."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (shr-next-link)))
+
+(defun ewnium-previous-link ()
+  "Move to previous link unless in a form field."
+  (interactive)
+  (if (ewnium--in-form-field-p)
+      (self-insert-command 1)
+    (shr-previous-link)))
 (defvar ewnium-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<tab>") #'shrface-outline-cycle)
     (define-key map (kbd "S-<tab>") #'shrface-outline-cycle-buffer)
-    ;; (define-key map (kbd "C-t") #'shrface-toggle-bullets)
     (define-key map (kbd "C-i") #'shrface-links-consult)
     (define-key map (kbd "C-o") #'shrface-headline-consult)
-    (define-key map (kbd "a") #'shr-show-alt-text)
-    (define-key map (kbd "z") #'shr-zoom-image)
-    (define-key map (kbd "i") #'shr-next-link)
-    (define-key map (kbd "I") #'shr-previous-link)
-    (define-key map (kbd "j") #'(lambda () (interactive) (scroll-up 1)))
-    (define-key map (kbd "k") #'(lambda () (interactive) (scroll-down 1)))
+    (define-key map (kbd "a") #'ewnium-show-alt-text)
+    (define-key map (kbd "z") #'ewnium-zoom-image)
+    (define-key map (kbd "i") #'ewnium-next-link)
+    (define-key map (kbd "I") #'ewnium-previous-link)
+    (define-key map (kbd "j") #'ewnium-scroll-up)
+    (define-key map (kbd "k") #'ewnium-scroll-down)
     (define-key map (kbd "n") #'shrface-next-headline)
     (define-key map (kbd "N") #'shrface-previous-headline)
     (define-key map (kbd "p") #'previous-line)
@@ -406,24 +562,12 @@ When ARG is non-nil, open in new EWW buffer."
     (define-key map (kbd "L") #'eww-forward-url)
     (define-key map (kbd "J") #'ewnium-previous-buffer)
     (define-key map (kbd "K") #'ewnium-next-buffer)
-    (define-key map (kbd "g") #'ewnium--g-key-handler)
-    ;; (define-key map (kbd "g g") #'beginning-of-buffer)
-    ;; (define-key map (kbd "g u") #'ewnium--go-up-url-heirarchy)
-    ;; (define-key map (kbd "g U") #'ewnium--go-to-root-url-heirarchy)
-    ;; (define-key map (kbd "g s") #'eww-view-source)
-    ;; (define-key map (kbd "g e") #'ewnium-edit-current-url)
-    ;; (define-key map (kbd "g i") #'(lambda ()
-    ;;                                 (interactive)
-    ;;                                 (gopar/avy-property-jump
-    ;;                                  'eww-form
-    ;;                                  :prop-pred (lambda (val prop-val) (string= "text" (plist-get prop-val :type))))))
-    ;; (define-key map (kbd "y y") #'eww-copy-page-url)
-    ;; (define-key map (kbd "y f") #'shr-maybe-probe-and-copy-url)
-    ;; (define-key map (kbd "y t") #'ewnium-noop)
-    (define-key map (kbd "y") #'ewnium--y-key-handler)
-    (define-key map (kbd "[ [") #'ewnium-open-bracket-map)
-    (define-key map (kbd "] ]") #'ewnium-close-bracket-map)
-    (ewnium--add-context-check-to-keymap map)))
+    (define-key map (kbd "g") #'ewnium-g-prefix)
+    (define-key map (kbd "y") #'ewnium-y-prefix)
+    (define-key map (kbd "[") #'ewnium-open-bracket-prefix)
+    (define-key map (kbd "]") #'ewnium-close-bracket-prefix)
+    map)
+  "Keymap for `ewnium-mode'.")
 
 ;;;###autoload
 (define-minor-mode ewnium-mode
