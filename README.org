@@ -3013,7 +3013,7 @@ M-x all-the-icons-install-fonts
 #+BEGIN_SRC emacs-lisp
 (use-package doom-modeline
   :ensure t
-  :init (doom-modeline-mode 1)
+  :hook (emacs-startup . doom-modeline-mode)
   :config (column-number-mode 1)
   :custom
   (doom-modeline-height 30)
@@ -3030,12 +3030,12 @@ M-x all-the-icons-install-fonts
   )
 #+END_SRC
 
-** COMMENT Doom Themes
+** Doom Themes
 Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
-  ;; :hook (after-init . (lambda () (load-theme 'vscode-dark-plus)))
+  :hook (emacs-startup . (lambda () (load-theme 'doom-gruvbox)))
   :config
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -3046,71 +3046,12 @@ Use Doom Themes since they have built in support for Solaire Mode
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
 #+end_src
-
-** COMMENT Themes
-Most of these themes are black/white colorless themes
-*** Leuven
-
-#+begin_src emacs-lisp
-(use-package leuven-theme
-  :ensure t
-  :custom-face
-  (doom-modeline-buffer-file ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal))))
-  (doom-modeline-buffer-path ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal))))
-  (which-func ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal :foreground "gray29"))))
-  (doom-modeline-buffer-major-mode ((t (:inherit (doom-modeline font-lock-doc-face) :weight normal :slant normal)))))
-#+end_src
-*** [[https://github.com/11111000000/tao-theme-emacs][Tao Theme]]
-My favorite theme
-
-#+BEGIN_SRC emacs-lisp
-(use-package tao-theme
-  :ensure t
-  :custom
-  (tao-theme-use-boxes t)
-  (tao-theme-use-height nil)
-  (tao-theme-use-sepia nil)
-  :init
-  (defvar after-load-theme-hook nil
-    "Hook run after a color theme is loaded using `load-theme'.")
-
-  (defadvice load-theme (after run-after-load-theme-hook activate)
-    "Run `after-load-theme-hook'."
-    (run-hooks 'after-load-theme-hook))
-
-  (defun update-doom-modeline-battery-faces ()
-  "Customize battery faces for tao-yin and tao-yang themes."
-  (cond
-   ((member 'tao-yin custom-enabled-themes)
-    ;; Customizations for tao-yin theme
-    (custom-set-faces
-     '(doom-modeline-battery-warning ((t (:foreground "black" :background "orange"))))
-     '(doom-modeline-battery-critical ((t (:foreground "black" :background "red"))))
-     ))
-   ((member 'tao-yang custom-enabled-themes)
-    ;; Customizations for tao-yang theme
-    (custom-set-faces
-     '(doom-modeline-battery-warning ((t (:foreground "black" :background "orange"))))
-     '(doom-modeline-battery-critical ((t (:foreground "black" :background "red"))))
-     ))))
-
-  (add-hook 'after-load-theme-hook 'update-doom-modeline-battery-faces))
-#+END_SRC
-*** VS Code Theme
-#+begin_src emacs-lisp
-(use-package vscode-dark-plus-theme
-  :ensure t
-  :custom-face
-  (org-indent ((t (:inherit SlateGray1)))))
-#+end_src
 ** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 
 #+begin_src emacs-lisp
 (use-package solaire-mode
   :ensure t
-  :hook (after-init . solaire-global-mode)
-  :custom
-  (solaire-mode-themes-to-face-swap '(tao-yin tao-yang)))
+  :hook (emacs-startup . solaire-global-mode))
 #+end_src
 
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
