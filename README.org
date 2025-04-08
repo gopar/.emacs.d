@@ -13,10 +13,7 @@ We are all different. Thanks for coming to my Ted Talk
 * Recommended Packages/Snippets to Have As Early as Possible
 #+begin_src emacs-lisp
 (setq load-prefer-newer t)
-(use-package no-littering :ensure t)
-
-(use-package quelpa :ensure t)
-(use-package quelpa-use-package :ensure t)
+(use-package no-littering :ensure t :demand t)
 #+end_src
 
 * Built-Ins
@@ -34,8 +31,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          (after-init . toggle-frame-maximized)
          (after-init . (lambda () (scroll-bar-mode -1)))
          (after-init . (lambda () (window-divider-mode -1)))
-         (prog-mode . (lambda () (setq-local show-trailing-whitespace t))
-         ;; (after-init . gopar/add-env-vars)
+         (prog-mode . (lambda () (setq-local show-trailing-whitespace t)))
          )
   :custom
   ;; flash the frame to represent a bell.
@@ -282,6 +278,7 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
 #+begin_src emacs-lisp
 (use-package calendar
   :ensure nil
+  :defer
   :mode ("\\diary\\'" . diary-mode)
   :custom
   (diary-file (concat user-emacs-directory "etc/diary"))
@@ -582,7 +579,7 @@ Main configuration
 *** Org Habit
 #+begin_src emacs-lisp
 (use-package org-habit
-  :ensure nil
+  :after org
   :custom
   (org-habit-graph-column 45))
 #+end_src
@@ -590,6 +587,7 @@ Main configuration
 #+begin_src emacs-lisp
 (use-package org-indent
   :ensure nil
+  :after org
   :diminish
   :custom
   (org-indent-mode-turns-on-hiding-stars nil))
@@ -633,23 +631,13 @@ I know this isn't built in but putting it here w/ org mode stuff
     (jump-to-register ?`)))
 #+end_src
 
-*** [[https://elpa.gnu.org/packages/org-edna.html][Org Edna]]
-Also not built in but putting it here
-#+begin_src emacs-lisp
-(use-package org-edna
-  :ensure t
-  :diminish
-  :custom
-  (org-edna-use-inheritance t)
-  ;; Global minor mode, lets enable it once
-  :hook (after-init . org-edna-mode))
-#+end_src
-
 *** [[https://github.com/org-roam/org-roam][Org Roam]]
 #+begin_src emacs-lisp
 (use-package org-roam
   :ensure t
-  :defer
+  :after org
+  :hook (org-mode . org-roam-db-autosync-mode)
+  :commands (org-roam-node-find)
   :custom
   (org-roam-directory (expand-file-name "~/.emacs.d/org/private/org-roam"))
   (org-roam-db-location (expand-file-name "~/.emacs.d/org/private/org-roam.db"))
@@ -674,8 +662,7 @@ Also not built in but putting it here
                ("C-c n g" . org-roam-graph)
                ("C-c n n" . org-roam-capture)
                ("C-c n d" . org-roam-dailies-capture-today)
-               ("C-c n s" . consult-org-roam-search)))
-  :hook (after-init . org-roam-db-autosync-mode))
+               ("C-c n s" . consult-org-roam-search))))
 #+end_src
 
 *** Org Annotate File
@@ -685,6 +672,7 @@ Also not built in but putting it here
   :ensure nil
   :load-path "lisp/org"
   :defer
+  ;; :hook (prog-mode)
   :custom
   (org-annotate-file-add-search t)
   (org-annotate-file-storage-file (concat user-emacs-directory "var/.org-annotate-file.org"))
@@ -741,6 +729,7 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
 #+begin_src emacs-lisp
 (use-package eshell
   :ensure nil
+  :defer t
   :hook ((eshell-directory-change . gopar/sync-dir-in-buffer-name)
          (eshell-mode . gopar/eshell-specific-outline-regexp)
          (eshell-mode . gopar/eshell-setup-keybinding)
@@ -849,8 +838,8 @@ Stolen from aweshell."
 #+begin_src emacs-lisp
 (use-package eshell-syntax-highlighting
   :ensure t
-  :config
-  (eshell-syntax-highlighting-global-mode +1)
+  :after eshell
+  :hook (eshell-first-time-mode . eshell-syntax-highlighting-global-mode)
   :init
   (defface eshell-syntax-highlighting-invalid-face
     '((t :inherit diff-error))
@@ -891,8 +880,7 @@ Stolen from aweshell."
 (use-package eshell-bookmark
   :ensure t
   :after eshell
-  :config
-  (add-hook 'eshell-mode-hook #'eshell-bookmark-setup))
+  :hook (eshell-mode . eshell-bookmark-setup))
 #+end_src
 ** Python
 Run on every fresh virtualenv install
@@ -951,8 +939,8 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
 #+begin_src emacs-lisp
 (use-package virtualenvwrapper
   :ensure t
-  :init
-  (venv-initialize-eshell))
+  :after eshell
+  :hook (eshell-first-time-mode . venv-initialize-eshell))
 #+end_src
 
 *** Pyvenv
@@ -1057,11 +1045,11 @@ Requires =pip install jedi epc= in all virtualenvs
 #+begin_src emacs-lisp
 (use-package treesit-auto
   :ensure t
+  :hook (emacs-startup . global-treesit-auto-mode)
   :custom
   (treesit-auto-install 'prompt)
   :config
-  (treesit-auto-add-to-auto-mode-alist 'all)
-  (global-treesit-auto-mode))
+  (treesit-auto-add-to-auto-mode-alist 'all))
 #+end_src
 ** Flycheck Kotlin
 #+begin_src emacs-lisp
@@ -1092,7 +1080,7 @@ Requires =pip install jedi epc= in all virtualenvs
   (compilation-max-output-line-length nil)
   (compilation-buffer-name-function 'gopar/compilation-buffer-name-function)
   :hook (compilation-mode . hl-line-mode)
-  :init
+  :config
   (defun gopar/compilation-buffer-name-function (compilation-mode)
     "Rename buffer to whatever command was used.
 eg. *python main.py*"
@@ -1116,7 +1104,7 @@ eg. *python main.py*"
 #+begin_src emacs-lisp
 (use-package fancy-compilation
   :ensure t
-  :defer 3
+  :after compile
   :config
   (fancy-compilation-mode)
   :custom
@@ -1129,15 +1117,15 @@ For TDD development
 #+begin_src emacs-lisp
 (use-package recompile-on-save
   :ensure t
-  ;; Kill the buffer message that pops up after running advice on compile
-  :hook (after-init . (lambda () (run-at-time 1 nil
-     (lambda ()
-        (when (get-buffer "*Compile-Log*")
-           (kill-buffer "*Compile-Log*"))
-        (delete-other-windows)))))
-
+  :after compile
+  :config
+  (recompile-on-save-advice compile)
   :init
-  (recompile-on-save-advice compile))
+  ;; Hide the buffer message that pops up after running advice on compile
+  (add-to-list 'display-buffer-alist
+             '("^\\*Compile-Log"
+               (display-buffer-no-window)
+               (allow-no-window . t))))
 #+end_src
 
 ** Winner
@@ -1221,6 +1209,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 ;; helm and ivy. The following is taken from doom-emacs
 (use-package minibuffer
   :ensure nil
+  :defer t
   :custom
   (completion-styles '(initials partial-completion flex)))
 #+end_src
@@ -1229,7 +1218,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 #+begin_src emacs-lisp
 (use-package time
   :ensure nil
-  ;; :hook (after-init . display-time-mode) ;; Usually just look at the OS time
+  :defer t
   :custom
   (world-clock-time-format "%A %d %B %r %Z")
   (display-time-day-and-date t)
@@ -1256,6 +1245,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 #+begin_src emacs-lisp
 (use-package browse-url
   :ensure nil
+  :defer t
   :custom
   ;; Emacs can't find browser binaries
   (browse-url-chrome-program "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
@@ -1331,9 +1321,10 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 #+begin_src emacs-lisp
 (use-package projectile
   :ensure
-  :load t
-  :commands projectile-project-root
-  :hook (after-init . projectile-global-mode)
+  :defer t
+  ;; :demand t
+  :commands (projectile-project-root projectile-switch-project)
+  ;; :hook (after-init . projectile-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map)
   :bind (:map projectile-command-map
@@ -1400,7 +1391,7 @@ Switch to the project specific term buffer if it already exists."
                       " "))
         (vterm-send-return)))))
 
-  :init
+  ;; :init
   ;; Redefinig with my changes since projectil overwrites `compilation-buffer-name-function`
   (cl-defun gopar/projectile--run-project-cmd
       (command command-map &key show-prompt prompt-prefix save-buffers use-comint-mode)
@@ -1496,8 +1487,8 @@ or by pressing last keybinding of previous command
 (use-package grep
   :ensure nil
   :defer
-  :custom
-  (grep-find-ignored-directories (append grep-find-ignored-directories '(".mypy_cache" ".pytest_cache" "htmlcov"))))
+  :config
+  (setq grep-find-ignored-directories (append grep-find-ignored-directories '(".mypy_cache" ".pytest_cache" "htmlcov"))))
 #+end_src
 
 ** ripgrep (rg)
@@ -1537,6 +1528,7 @@ Also includes displaying of them
           (consult-grep (:not posframe))
           (consult-imenu (:not posframe))
           (consult-outline (:not posframe))
+          (consult-yank-pop (:not posframe))
           (consult-imenu-multi (:not posframe))
           (t posframe))))
 
@@ -1550,6 +1542,7 @@ Also includes displaying of them
      (right-fringe . 8))))
 
 (use-package dabbrev
+  :defer t
   :custom
   (dabbrev-upcase-means-case-search t)
   (dabbrev-check-all-buffers nil)
@@ -1617,6 +1610,7 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :after projectile
+  :commands (gopar/consult-line consult-buffer)
   :bind (("C-s" . gopar/consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
@@ -1688,12 +1682,8 @@ If used with a prefix, it will search all buffers as well."
 (use-package consult-org-roam
   :ensure t
   :after org-roam
-  :init
-  (require 'consult-org-roam)
-  ;; Activate the minor mode
-  (consult-org-roam-mode 1)
   :custom
-  (consult-org-roam-grep-func #'consult-ag)
+  (consult-org-roam-grep-func #'consult-ripgrep)
   ;; Configure a custom narrow key for `consult-buffer'
   (consult-org-roam-buffer-narrow-key ?r)
   ;; Display org-roam buffers right after non-org-roam buffers
@@ -2205,7 +2195,8 @@ To use as a super capf with a few others
 #+begin_src emacs-lisp
 (use-package yasnippet-capf
   :ensure t
-  :quelpa (yasnippet-capf :fetcher github :repo "elken/yasnippet-capf"))
+  :vc (:url "https://github.com/elken/yasnippet-capf" :rev :newsest)
+  )
 #+end_src
 
 ** [[https://github.com/emacs-dashboard/emacs-dashboard/][Dashboard]]
@@ -2547,6 +2538,7 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
   (neo-smart-open t)
   (neo-autorefresh t)
   (neo-window-width 35)
+  (neo-toggle-window-keep-p t)
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
   (neo-show-hidden-files nil)
@@ -2720,7 +2712,7 @@ Also start type break mode after start up since I might just be dragging along
   :ensure t
   :defer
   :bind ("C-M-o" . windows-transient-window)
-  :init
+  :config
   (transient-define-prefix windows-transient-window ()
    "Display a transient buffer showing useful window manipulation bindings."
     [["Resize"
@@ -2746,10 +2738,7 @@ Also start type break mode after start up since I might just be dragging along
        (select-window (split-window-below))
        (windows-transient-window)) :transient nil)]
     ["Misc"
-     ("B" "switch buffer" (lambda ()
-                            (interactive)
-                            (consult-buffer)
-                            (windows-transient-window)))
+     ("b" "Balance Windows" balance-windows :transient t)
      ("z" "undo" (lambda ()
                   (interactive)
                   (winner-undo)
@@ -2761,44 +2750,14 @@ Also start type break mode after start up since I might just be dragging along
     ("l" "→" windmove-right :transient t)
     ("k" "↑" windmove-up :transient t)]
     ["Swap"
-     ("s" "Swap" ace-swap-window)
-     ]
-    ;; ("sh" "←" windmove-swap-states-left :transient t)
-    ;; ("sj" "↓" windmove-swap-states-down :transient t)
-    ;; ("sl" "→" windmove-swap-states-right :transient t)
-    ;; ("sk" "↑" windmove-swap-states-up :transient t)]
+     ("s" "Swap" ace-swap-window)]
     ["Delete"
     ("dh" "←" windmove-delete-left :transient t)
     ("dj" "↓" windmove-delete-down :transient t)
     ("dl" "→" windmove-delete-right :transient t)
     ("dk" "↑" windmove-delete-up :transient t)
     ("D" "This" delete-window :transient t)]
-    ["Transpose"
-    ("tt" "↜" (lambda ()
-                (interactive)
-                (transpose-frame)
-                (windows-transient-window)) :transient nil)
-    ("ti" "↕" (lambda ()
-                (interactive)
-                (flip-frame)
-                (windows-transient-window)) :transient nil)
-    ("to" "⟷" (lambda ()
-                (interactive)
-                (flop-frame)
-                (windows-transient-window)) :transient nil)
-    ("tc" "⟳" (lambda ()
-                (interactive)
-                (rotate-frame-clockwise)
-                (windows-transient-window)) :transient nil)
-    ("ta" "⟲" (lambda ()
-                (interactive)
-                (rotate-frame-anticlockwise)
-                (windows-transient-window)) :transient nil)]]))
-#+end_src
-
-** Transient Frame
-#+begin_src emacs-lisp
-(use-package transpose-frame :after transient :ensure t)
+    ]))
 #+end_src
 
 ** Vterm
@@ -3087,12 +3046,12 @@ M-x all-the-icons-install-fonts
   )
 #+END_SRC
 
-** Doom Themes
+** COMMENT Doom Themes
 Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
-  :hook (after-init . (lambda () (load-theme 'vscode-dark-plus)))
+  ;; :hook (after-init . (lambda () (load-theme 'vscode-dark-plus)))
   :config
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -3104,7 +3063,7 @@ Use Doom Themes since they have built in support for Solaire Mode
   (doom-themes-org-config))
 #+end_src
 
-** Themes
+** COMMENT Themes
 Most of these themes are black/white colorless themes
 *** Leuven
 
@@ -3292,12 +3251,11 @@ Perhaps one day when I have a few hours to customize.
 Guitar stuff
 #+begin_src emacs-lisp
 (use-package fretboard
-  :quelpa (fretboard :fetcher github :repo "skyefreeman/fretboard.el")
+  :ensure t
   :defer t
   :commands fretboard
   :custom
-  (fretboard-fret-count 20)
-  )
+  (fretboard-fret-count 20))
 #+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
