@@ -318,7 +318,7 @@ Main configuration
   (org-use-sub-superscripts nil)
   ;; Should everything be hidden?
   (org-startup-folded t)
-  (org-M-RET-may-split-line '((default . nnil)))
+  (org-M-RET-may-split-line '((default . nil)))
   ;; Hide stars
   (org-hide-leading-stars t)
   (org-hide-emphasis-markers nil)
@@ -593,6 +593,7 @@ Main configuration
   (org-indent-mode-turns-on-hiding-stars nil))
 #+end_src
 *** [[https://github.com/marcinkoziej/org-pomodoro][Org Pomodoro]]
+
 I know this isn't built in but putting it here w/ org mode stuff
 #+begin_src emacs-lisp
 (use-package org-pomodoro
@@ -609,12 +610,12 @@ I know this isn't built in but putting it here w/ org mode stuff
   :init
   (defun gopar/home-pomodoro ()
     (interactive)
-    (setq org-pomodoro-length 25
+    (setopt org-pomodoro-length 25
           org-pomodoro-short-break-length 5))
 
   (defun gopar/work-pomodoro ()
     (interactive)
-    (setq org-pomodoro-length 60
+    (setopt org-pomodoro-length 60
           org-pomodoro-short-break-length 20))
 
   (defun gopar/save-window-config-and-show-home-agenda ()
@@ -663,6 +664,29 @@ I know this isn't built in but putting it here w/ org mode stuff
                ("C-c n n" . org-roam-capture)
                ("C-c n d" . org-roam-dailies-capture-today)
                ("C-c n s" . consult-org-roam-search))))
+#+end_src
+
+*** [[https://github.com/minad/org-modern][Org Modern]]
+#+begin_src emacs-lisp
+(use-package org-modern
+  :ensure t
+  :after org
+  :custom
+  (org-modern-hide-stars nil)
+  (org-modern-fold-stars '(("▶" . "▼") ("▷" . "▽") ("⏵" . "⏷") ("▹" . "▿") ("▸" . "▾")))
+  :hook
+  (org-mode . org-modern-mode)
+  (org-agenda-finalize . org-modern-agenda))
+#+end_src
+
+*** Org Modern Indent
+#+begin_src emacs-lisp
+(use-package org-modern-indent
+  :ensure t
+  :after org
+  :vc (:url "https://github.com/jdtsmith/org-modern-indent/" :rev :newsest)
+  :init
+  (add-hook 'org-mode-hook #'org-modern-indent-mode 90))
 #+end_src
 
 *** Org Annotate File
@@ -734,7 +758,7 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
          (eshell-mode . gopar/eshell-specific-outline-regexp)
          (eshell-mode . gopar/eshell-setup-keybinding)
          (eshell-banner-load . (lambda ()
-                                 (setq eshell-banner-message
+                                 (setopt eshell-banner-message
                                        (concat (shell-command-to-string "fortune -s | cowsay") "\n\n"))))
          (eshell-mode . (lambda ()
                           (setq-local completion-styles '(basic)) ; maybe emacs21?
@@ -744,7 +768,7 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
                           (setq-local completion-at-point-functions '(pcomplete-completions-at-point cape-file)))))
   :custom
   (eshell-scroll-to-bottom-on-input t)
-  (eshell-highlight-prompt nil)
+  (eshell-highlight-prompt t)
   (eshell-history-size 1024)
   (eshell-hist-ignoredups t)
   (eshell-input-filter 'gopar/eshell-input-filter)
@@ -864,9 +888,7 @@ Stolen from aweshell."
 #+end_src
 
 *** [[https://elpa.gnu.org/packages/capf-autosuggest.html][Capf Auto Suggest]]
-:PROPERTIES:
-:ID:       3B47ABF2-4A35-47BA-964F-628D6299FAA6
-:END:
+
 #+begin_src emacs-lisp
 (use-package capf-autosuggest
   :ensure t
@@ -1204,14 +1226,9 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 
 ** Minibuffer
 #+begin_src emacs-lisp
-;; It may also be wise to raise gc-cons-threshold while the minibuffer is active,
-;; so the GC doesn't slow down expensive commands (or completion frameworks, like
-;; helm and ivy. The following is taken from doom-emacs
 (use-package minibuffer
   :ensure nil
-  :defer t
-  :custom
-  (completion-styles '(initials partial-completion flex)))
+  :defer t)
 #+end_src
 
 ** Time
@@ -1287,7 +1304,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (shrface-basic)
   (shrface-trial)
   (shrface-default-keybindings) ; setup default keybindings
-  (setq shrface-href-versatile t))
+  (setopt shrface-href-versatile t))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -1322,13 +1339,16 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 (use-package projectile
   :ensure
   :defer t
-  ;; :demand t
   :commands (projectile-project-root projectile-switch-project)
   ;; :hook (after-init . projectile-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map)
   :bind (:map projectile-command-map
-              ("x a" . gopar/projectile-run-aider))
+              ("x a" . gopar/projectile-run-aider)
+              ("b" . consult-project-buffer)
+              ("s r" . consult-ripgrep)
+              ("s g" . consult-grep)
+              )
 
   :custom
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
@@ -1488,7 +1508,7 @@ or by pressing last keybinding of previous command
   :ensure nil
   :defer
   :config
-  (setq grep-find-ignored-directories (append grep-find-ignored-directories '(".mypy_cache" ".pytest_cache" "htmlcov"))))
+  (setopt grep-find-ignored-directories (append grep-find-ignored-directories '(".mypy_cache" ".pytest_cache" "htmlcov"))))
 #+end_src
 
 ** ripgrep (rg)
@@ -1513,13 +1533,13 @@ Also includes displaying of them
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
   :init
   (vertico-mode)
-  (setq vertico-cycle t))
+  (setopt vertico-cycle t))
 
 (use-package vertico-multiform
   :ensure nil
   :hook (after-init . vertico-multiform-mode)
   :init
-  (setq vertico-multiform-commands
+  (setopt vertico-multiform-commands
         '((consult-line (:not posframe))
           (consult-xref (:not posframe))
           (gopar/consult-line (:not posframe))
@@ -1583,8 +1603,8 @@ Also includes displaying of them
   :custom
   (cape-dict-case-replace nil)
   :init
-  (setq cape-dabbrev-min-length 2)
-  (setq cape-dabbrev-check-other-buffers 'cape--buffers-major-mode)
+  (setopt cape-dabbrev-min-length 2
+          cape-dabbrev-check-other-buffers 'cape--buffers-major-mode)
 
   (defun gopar/cape-dict-only-in-comments ()
     (cape-wrap-inside-comment 'cape-dict))
@@ -1604,13 +1624,12 @@ Also includes displaying of them
   :ensure t
   :after consult
   :custom
-  (completion-styles '(orderless basic))
+  (completion-styles '(orderless basic initials flex))
   (completion-category-overrides '((file (styles basic partial-completion)))))
 
 (use-package consult
   :ensure
-  :after projectile
-  :commands (gopar/consult-line consult-buffer)
+  :commands (gopar/consult-line consult-buffer consult-bookmark consult-theme)
   :bind (("C-s" . gopar/consult-line)
          ("C-c M-x" . consult-mode-command)
          ("C-x b" . consult-buffer)
@@ -1627,16 +1646,14 @@ Also includes displaying of them
          ("C-z" . consult-theme)
          :map minibuffer-local-map
          ("M-s" . consult-history)                 ;; orig. next-matching-history-element
-         ("M-r" . consult-history)
-         :map projectile-command-map
-         ("b" . consult-project-buffer))
+         ("M-r" . consult-history))
 
-  :init
-  (setq consult-project-function (lambda (_) (projectile-project-root)))
-  (setq xref-show-xrefs-function #'consult-xref
+  :config
+  (setopt consult-project-function (lambda (_) (projectile-project-root)))
+  (setopt xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
-  (setq consult-narrow-key "<")
-  (setq consult-line-start-from-top nil)
+  (setopt consult-narrow-key "<")
+  (setopt consult-line-start-from-top nil)
 
   (defun gopar/consult-line (&optional arg)
     "Start consult search with selected region if any.
@@ -1648,15 +1665,6 @@ If used with a prefix, it will search all buffers as well."
             (deactivate-mark)
             (funcall cmd regionp))
         (funcall cmd "")))))
-
-(use-package consult-ag
-  :ensure
-  :defer
-  :bind (:map projectile-command-map
-              ("s s" . consult-ag)
-              ("s r" . consult-ripgrep)
-              ("s g" . consult-grep)))
-
 
 (use-package consult-org-roam
   :ensure t
@@ -1692,14 +1700,9 @@ If used with a prefix, it will search all buffers as well."
 #+end_src
 
 *** pcomplete
-:PROPERTIES:
-:ID:       C25D76A7-38FE-4A7F-908B-CFFA4512E592
-:END:
-
 #+begin_src emacs-lisp
 (use-package pcmpl-args
   :ensure t
-  :load t
   :hook (eshell-first-time-mode . gopar/add-pcmpl-custom-commands)
   :init
   (defun gopar/add-pcmpl-custom-commands ()
@@ -1792,9 +1795,9 @@ Compliment to xref
   :defer
   :init
   (setq-default web-mode-code-indent-offset 2)
-  (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
+  (setopt web-mode-engines-alist '(("django"    . "\\.html\\'")))
   (setq web-mode-content-types-alist '(("jsx"  . "\\.js[x]?\\'")))
-  (setq web-mode-extra-snippets
+  (setopt web-mode-extra-snippets
       '(("django" . (("ifelif"  . "{% if | %}\n\n{% elif %}\n\n{% else %}\n\n{% endif %}")
                      ("ifelse"  . "{% if | %}\n\n{% else %}\n\n{% endif %}")
                      ("include" . "{% include \"|\" %}")
@@ -2047,6 +2050,7 @@ Color the string of whatever color code they are holding
 ;; https://github.com/purcell/ibuffer-vc/blob/master/ibuffer-vc.el
 (use-package ibuffer-vc
   :ensure t
+  :defer
   :hook (ibuffer . (lambda ()
                      (ibuffer-vc-set-filter-groups-by-vc-root)
                      (unless (eq ibuffer-sorting-mode 'alphabetic)
@@ -2064,7 +2068,7 @@ Color the string of whatever color code they are holding
   :ensure nil
   :bind ("C-x /" . webjump)
   :config
-  (setq webjump-sites
+  (setopt webjump-sites
         '(("DuckDuckGo" . [simple-query "www.duckduckgo.com" "www.duckduckgo.com/?q=" ""])
           ("Google" . [simple-query "www.google.com" "www.google.com/search?q=" ""])
           ("YouTube" . [simple-query "www.youtube.com/feed/subscriptions" "www.youtube.com/results?search_query=" ""])
@@ -2099,7 +2103,7 @@ Color the string of whatever color code they are holding
   (magit-process-finish-apply-ansi-colors t)
   (magit-format-file-function #'magit-format-file-all-the-icons)
   :init
-  (setq magit-process-finish-apply-ansi-colors t)
+  (setopt magit-process-finish-apply-ansi-colors t)
   (defun magit/undo-last-commit (number-of-commits)
     "Undoes the latest commit or commits without loosing changes"
     (interactive "P")
@@ -2174,6 +2178,7 @@ To use as a super capf with a few others
 #+begin_src emacs-lisp
 (use-package yasnippet-capf
   :ensure t
+  :defer t
   :vc (:url "https://github.com/elken/yasnippet-capf" :rev :newsest)
   )
 #+end_src
@@ -2279,6 +2284,7 @@ Collides with compact-docstrings so turning off for programming modes
 
 (use-package files
   :ensure nil
+  :defer t
   :custom
   (insert-directory-program "gls") ; Will not work if system does not have GNU gls installed
   ;; Don't have backup
@@ -2427,7 +2433,7 @@ Can honestly just rip out relevant part to remove lines vs installing this libra
             (lambda ()
               (set-face-background 'mmm-default-submode-face nil)))
   :config
-  (setq mmm-submode-decoration-level 0))
+  (setopt mmm-submode-decoration-level 0))
 #+end_src
 ** Pulse
 #+begin_src emacs-lisp
@@ -2456,6 +2462,7 @@ For my mouse that also has left - right mouse scroll
 #+begin_src emacs-lisp
 (use-package mwheel
   :ensure nil
+  :defer
   :custom
   (mouse-wheel-tilt-scroll t)
   (mouse-wheel-scroll-amount-horizontal 2)
@@ -2476,9 +2483,8 @@ For my mouse that also has left - right mouse scroll
 #+begin_src emacs-lisp
 (use-package autorevert
   :ensure nil
-  :custom
-  ;; auto refresh files when changed from disk
-  (global-auto-revert-mode t))
+  :defer
+  :hook (emacs-startup . global-auto-revert-mode))
 #+end_src
 
 ** Simple
@@ -2829,7 +2835,7 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   :init
   ;; (setq fit-window-to-buffer-horizontally t)
   ;; (setq window-resize-pixelwise t)
-  (setq window-sides-vertical t)
+  (setopt window-sides-vertical t)
   (add-to-list 'display-buffer-alist
                '("\\*Flycheck errors\\*"
                  display-buffer-in-side-window
@@ -3036,10 +3042,12 @@ Use Doom Themes since they have built in support for Solaire Mode
 (use-package doom-themes
   :ensure t
   :hook (emacs-startup . (lambda () (load-theme 'doom-gruvbox)))
+  :custom
+  (doom-gruvbox-brighter-comments t)
   :config
   ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  (setopt doom-themes-enable-bold t    ; if nil, bold is universally disabled
+          doom-themes-enable-italic t) ; if nil, italics is universally disabled
 
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
