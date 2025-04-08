@@ -1632,27 +1632,6 @@ Also includes displaying of them
          ("b" . consult-project-buffer))
 
   :init
-  (defun remove-items (x y)
-    (setq y (cl-remove-if (lambda (item) (memq item x)) y))
-    y)
-
-  ;; Any themes that are incomplete/lacking don't work with centaur tabs/solair mode
-  (setq gopar/themes-blacklisted '(
-                                   ;; doom-tomorrow-night
-                                   ayu-dark
-                                   ayu-light
-                                   doom-acario-dark
-                                   doom-acario-light
-                                   doom-homage-black
-                                   doom-lantern
-                                   doom-manegarm
-                                   doom-meltbus
-                                   doom-rougue
-                                   light-blue
-                                   manoj-black
-                                   tao
-                                   ))
-  (setq consult-themes (remove-items gopar/themes-blacklisted (custom-available-themes)))
   (setq consult-project-function (lambda (_) (projectile-project-root)))
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
@@ -2760,6 +2739,11 @@ Also start type break mode after start up since I might just be dragging along
     ]))
 #+end_src
 
+** Ace Window
+#+begin_src emacs-lisp
+(use-package ace-window :ensure t :defer t)
+#+end_src
+
 ** Vterm
 Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-ov-file#vterm-buffer-name-string
 #+begin_src emacs-lisp
@@ -3138,21 +3122,7 @@ My favorite theme
               ("M-q" . fill-function-arguments-dwim)))
 #+end_src
 
-** COMMENT [[https://github.com/roman/golden-ratio.el][Golden Ration]]
-
-Use `golden-ratio-toggle-widescreen` if splits are too wide
-
-NOTE: Seems like its no longer actively maintained :/
-#+begin_src emacs-lisp
-(use-package golden-ratio
-  :ensure t
-  :hook (after-init . golden-ratio-mode)
-  :custom
-  (golden-ratio-auto-scale t)
-  (golden-ratio-exclude-modes '(treemacs-mode occur-mode chatgpt-shell-mode devdocs-mode vtem-mode eshell-mode)))
-#+end_src
-
-** [[https://github.com/jhgorrell/ssh-config-mode-el][SSH config Mode]]
+** ** [[https://github.com/jhgorrell/ssh-config-mode-el][SSH config Mode]]
 #+begin_src emacs-lisp
 (use-package ssh-config-mode
   :ensure t
@@ -3274,9 +3244,6 @@ Stuff I've made for myself that are modes
             (when (derived-mode-p 'prog-mode)
               (display-line-numbers-mode -1))))
         (remove-hook 'prog-mode-hook 'display-line-numbers-mode)
-
-        ;; disable all themes change to a friendlier theme
-        (mapcar 'disable-theme custom-enabled-themes)
         (setq gopar-pair-programming nil))
 
     (progn
@@ -3287,9 +3254,6 @@ Stuff I've made for myself that are modes
             (display-line-numbers-mode 1))))
       (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 
-      ;; disable all themes change to a friendlier theme
-      (mapcar 'disable-theme custom-enabled-themes)
-      (load-theme 'doom-shades-of-purple)
       (neotree)
       (setq gopar-pair-programming t))))
 #+end_src
