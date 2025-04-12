@@ -141,17 +141,6 @@ If given ARG, then it will insert an acutal semicolon."
           (t (call-interactively
               (lookup-key (current-global-map) (char-to-string arg))))))
 
-  (defun sudo-edit (&optional arg)
-    "Edit currently visited file as root.
-With a prefix ARG prompt for a file to visit.
-Will also prompt for a file to visit if current
-buffer is not visiting a file."
-    (interactive "P")
-    (if (or arg (not buffer-file-name))
-        (find-file (concat "/sudo:root@localhost:"
-                           (completing-read "Find file(as root): ")))
-      (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
-
   ;; Stolen from https://emacs.stackexchange.com/a/13096/8964
   (defun gopar/reload-dir-locals-for-current-buffer ()
     "Reload dir locals for the current buffer"
@@ -237,24 +226,6 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
     (re-search-backward "[.?!][   \n]+[A-Z]\\|\\.\\\\" nil t)
     (forward-char))
 
-  (defvar gopar-ansi-escape-re
-    (rx (or ?\233 (and ?\e ?\[))
-        (zero-or-more (char (?0 . ?\?)))
-        (zero-or-more (char ?\s ?- ?\/))
-        (char (?@ . ?~))))
-
-  (defun gopar/nuke-ansi-escapes (beg end)
-    (save-excursion
-      (goto-char beg)
-      (while (re-search-forward gopar-ansi-escape-re end t)
-        (replace-match ""))))
-
-  (defun gopar/toggle-window-dedication ()
-    "Toggles window dedication in the selected window."
-    (interactive)
-    (set-window-dedicated-p (selected-window)
-                            (not (window-dedicated-p (selected-window)))))
-
   (defun gopar/add-env-vars ()
     "Setup environment variables that I will need."
     (load-file "~/.emacs.d/etc/eshell/set_env.el")
@@ -270,8 +241,7 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
                               "/Users/gopar/.nvm/versions/node/v22.14.0/bin"
                               )
                             (split-string (getenv "PATH") ":")))
-    (setenv "PATH" (concat "/Users/gopar/.nvm/versions/node/v22.14.0/bin:" (getenv "PATH")))
-    ))
+    (setenv "PATH" (concat "/Users/gopar/.nvm/versions/node/v22.14.0/bin:" (getenv "PATH")))))
 #+end_src
 
 ** Diary
@@ -303,7 +273,6 @@ Appointment reminder
 *** Org
 Main configuration
 #+begin_src emacs-lisp
-;; https://stackoverflow.com/a/10091330/2178312
 (use-package org
   :defer
   :custom
@@ -314,6 +283,15 @@ Main configuration
   (org-archive-location (concat (expand-file-name "~/.emacs.d/org/private/org-roam/gtd/archives.org") "::"))
   ;; Make sure we see syntax highlighting
   (org-src-fontify-natively t)
+  (org-tag-alist '(("emacs" . ?e)
+                   ("car" . ?c)
+                   ("home" . ?o)
+                   ("project" . ?p)
+                   ("fun" . ?f)
+                   ("health" . ?h)
+                   ("misc" . ?i)
+                   ("tv" . ?t)
+                   ("money" . ?m)))
   ;; I dont use it for subs/super scripts
   (org-use-sub-superscripts nil)
   ;; Should everything be hidden?
@@ -432,14 +410,15 @@ Main configuration
    '(:maxlevel 2 :scope file :formula % ;; :properties ("Effort" "Points")
                :sort (5 . ?t) :compact t :block today))
   :bind (:map global-map
-              ("C-c j" . (lambda () (interactive) (org-clock-jump-to-current-clock)))
+              ("C-c j" . (lambda () (interactive) (org-clock-goto)))
               :map org-mode-map
               ("C-c C-x r" . (lambda () (interactive) (org-clock-report)))))
 #+end_src
 *** Org Agenda
 #+begin_src emacs-lisp
 (use-package org-agenda
-  :after org
+  :defer
+  :commands org-agenda
   :bind (("C-c a" . org-agenda))
   :hook ((org-agenda-finalize . hl-line-mode)
          (org-agenda-finalize . org-agenda-entry-text-mode))
@@ -523,8 +502,8 @@ Main configuration
 *** Org Capture
 #+begin_src emacs-lisp
 (use-package org-capture
-  :after org
   :bind (("C-c c" . org-capture))
+  :commands org-capture
   :custom
   ;; dont create a bookmark when calling org-capture
   (org-capture-bookmark nil)
@@ -636,8 +615,9 @@ I know this isn't built in but putting it here w/ org mode stuff
 #+begin_src emacs-lisp
 (use-package org-roam
   :ensure t
-  :after org
-  :hook (org-mode . org-roam-db-autosync-mode)
+  :defer
+  ;; :after org
+  ;; :hook (org-mode . org-roam-db-autosync-mode)
   :commands (org-roam-node-find)
   :custom
   (org-roam-directory (expand-file-name "~/.emacs.d/org/private/org-roam"))
@@ -1062,7 +1042,14 @@ Requires =pip install jedi epc= in all virtualenvs
 #+begin_src emacs-lisp
 (use-package kotlin-mode :ensure t :defer)
 #+end_src
-
+** Tree Sitter
+#+begin_src emacs-lisp
+(use-package treesit
+  :ensure nil
+  :defer
+  :custom
+  (treesit-font-lock-level 2))
+#+end_src
 ** Tree Sitter Auto Magic
 #+begin_src emacs-lisp
 (use-package treesit-auto
@@ -1540,17 +1527,18 @@ Also includes displaying of them
   :hook (after-init . vertico-multiform-mode)
   :init
   (setopt vertico-multiform-commands
-        '((consult-line (:not posframe))
-          (consult-xref (:not posframe))
-          (gopar/consult-line (:not posframe))
-          (consult-ag (:not posframe))
-          (consult-ripgrep (:not posframe))
-          (consult-grep (:not posframe))
-          (consult-imenu (:not posframe))
-          (consult-outline (:not posframe))
-          (consult-yank-pop (:not posframe))
-          (consult-imenu-multi (:not posframe))
-          (t posframe))))
+          '((consult-line (:not posframe))
+            (consult-xref (:not posframe))
+            (gopar/consult-line (:not posframe))
+            (consult-line-thing-at-point (:not posframe))
+            (consult-ag (:not posframe))
+            (consult-ripgrep (:not posframe))
+            (consult-grep (:not posframe))
+            (consult-imenu (:not posframe))
+            (consult-outline (:not posframe))
+            (consult-yank-pop (:not posframe))
+            (consult-imenu-multi (:not posframe))
+            (t posframe))))
 
 ;; just for looks
 (use-package vertico-posframe
@@ -1630,20 +1618,58 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :commands (gopar/consult-line consult-buffer consult-bookmark consult-theme)
-  :bind (("C-s" . gopar/consult-line)
+  :bind (("C-s" . consult-line-thing-at-point)
+         ("C-c m" . consult-man)
+         ("C-c i" . consult-info)
          ("C-c M-x" . consult-mode-command)
-         ("C-x b" . consult-buffer)
+         ;; C-x bindings in `ctl-x-map'
+         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+         ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
          ("C-x r b" . consult-bookmark)
          ("C-x r s" . consult-register-store)
          ("C-x r i" . consult-register)
-         ("M-y" . consult-yank-pop)
-         ;; M-g bindings (goto-map)
-         ("M-g M-g" . consult-goto-line)
+
+         ;; Custom M-# bindings for fast register access
+         ("M-#" . consult-register-load)
+         ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ("C-M-#" . consult-register)
+
+         ;; M-g bindings in `goto-map'
+         ("M-g e" . consult-compile-error)
+         ("M-g f" . consult-flycheck)               ;; Alternative: consult-flycheck
+         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
          ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
-         ("M-g i" . consult-imenu-multi)
          ("M-g m" . consult-mark)
          ("M-g k" . consult-global-mark)
+         ("M-g i" . consult-imenu)
+         ("M-g I" . consult-imenu-multi)
+
+         ;; M-s bindings in `search-map'
+         ("M-s d" . consult-find)
+         ("M-s c" . consult-locate)
+         ("M-s g" . consult-grep)
+         ("M-s G" . consult-git-grep)
+         ("M-s r" . consult-ripgrep)
+         ("M-s l" . consult-line)
+         ("M-s L" . consult-line-multi)
+         ("M-s k" . consult-keep-lines)
+         ("M-s f" . consult-focus-lines)
+
+         ;; Random bindings
          ("C-z" . consult-theme)
+         ("M-y" . consult-yank-pop)
+
+         ;; Isearch integration
+         ("M-s e" . consult-isearch-history)
+         :map isearch-mode-map
+         ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+         ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+         ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+         ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+
          :map minibuffer-local-map
          ("M-s" . consult-history)                 ;; orig. next-matching-history-element
          ("M-r" . consult-history))
@@ -1651,9 +1677,18 @@ Also includes displaying of them
   :config
   (setopt consult-project-function (lambda (_) (projectile-project-root)))
   (setopt xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
+          xref-show-definitions-function #'consult-xref)
   (setopt consult-narrow-key "<")
   (setopt consult-line-start-from-top nil)
+  (consult-customize
+   consult-line
+   :add-history (seq-some #'thing-at-point '(region symbol)))
+
+  (defalias 'consult-line-thing-at-point 'consult-line)
+
+  (consult-customize
+   consult-line-thing-at-point
+   :initial (thing-at-point 'symbol))
 
   (defun gopar/consult-line (&optional arg)
     "Start consult search with selected region if any.
@@ -1665,6 +1700,8 @@ If used with a prefix, it will search all buffers as well."
             (deactivate-mark)
             (funcall cmd regionp))
         (funcall cmd "")))))
+
+(use-package consult-flycheck :ensure t :defer t :commands consult-flycheck)
 
 (use-package consult-org-roam
   :ensure t
@@ -1957,27 +1994,12 @@ Color the string of whatever color code they are holding
 (use-package iedit
   :ensure t
   :defer
-  :bind (("C-c o" . iedit-dwim))
+  :commands iedit-mode
+  :bind (("C-c o" . iedit-mode))
   :custom
-  (iedit-toggle-key-default nil)
-  :init
-  ;; Stolen from mastering emacs
-  (defun iedit-dwim (arg)
-    "Starts iedit but uses \\[narrow-to-defun] to limit its scope."
-    (interactive "P")
-    (require 'iedit)
-    (if arg
-        (iedit-mode)
-      (save-excursion
-        (save-restriction
-          (widen)
-          ;; this function determines the scope of `iedit-start'.
-          (if iedit-mode
-              (iedit-done)
-            ;; `current-word' can of course be replaced by other
-            ;; functions.
-            (narrow-to-defun)
-            (iedit-start (current-word) (point-min) (point-max))))))))
+  (iedit-toggle-key-default (kbd "C-c o"))
+  (iedit-auto-narrow t)
+  (iedit-auto-save-occurrence-in-kill-ring nil))
 #+end_src
 
 ** Expand Region
@@ -2394,6 +2416,18 @@ Can honestly just rip out relevant part to remove lines vs installing this libra
   :defer
   :hook (compilation-filter . ansi-color-compilation-filter)
   :init
+  (defvar gopar-ansi-escape-re
+    (rx (or ?\233 (and ?\e ?\[))
+        (zero-or-more (char (?0 . ?\?)))
+        (zero-or-more (char ?\s ?- ?\/))
+        (char (?@ . ?~))))
+
+  (defun gopar/nuke-ansi-escapes (beg end)
+    (save-excursion
+      (goto-char beg)
+      (while (re-search-forward gopar-ansi-escape-re end t)
+        (replace-match ""))))
+
   (defun gopar/compilation-nuke-ansi-escapes ()
     (toggle-read-only)
     (gopar/nuke-ansi-escapes (point-min) (point-max))
@@ -2498,9 +2532,16 @@ Built in package that holds a few goodies
          (fundamental-mode . auto-fill-mode)
          (org-mode . auto-fill-mode))
   :custom
-  (save-interprogram-paste-before-kill t)
-  :init
+  (save-interprogram-paste-before-kill nil)
+  (kill-do-not-save-duplicates t)
+  (kill-read-only-ok t)
+  (kill-transform-function 'substring-no-properties)
+  (yank-excluded-properties t)
 
+  ;; Shell related things
+  (shell-command-prompt-show-cwd t)
+
+  :init
   (defun gopar/pulse-current-region (&rest _)
   "Pulse the current implicit or active region."
   (if mark-active
@@ -2527,7 +2568,17 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
   ;; takes too long to update on first try
   ;; (neo-vc-integration '(face char))
   (neo-show-hidden-files nil)
-  )
+  (neo-display-action '(gopar/neo-display-fn))
+  :init
+  (defun gopar/neo-display-fn (buffer _alist)
+    (message "hello")
+    (let ((window-pos (if (eq neo-window-position 'left) 'left 'right)))
+      (display-buffer-in-side-window buffer `((side . ,window-pos)
+                                              (inhibit-same-window . t)
+                                              (dedicated . t)
+                                              (window-parameters
+                                               (no-delete-other-windows . t)
+                                               (no-other-window . t)))))))
 #+end_src
 
 ** COMMENT Treemacs
@@ -2826,12 +2877,8 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   :ensure
   :defer
   :hook (((python-mode python-ts-mode) . flycheck-mode))
-  :bind (:map flycheck-mode-map
-              ("C-c C-n" . flycheck-next-error)
-              ("C-c C-p" . flycheck-previous-error)
-         :map projectile-command-map
-         ("l" . flycheck-list-errors)
-              )
+  :bind (:map projectile-command-map
+         ("l" . flycheck-list-errors))
   :init
   ;; (setq fit-window-to-buffer-horizontally t)
   ;; (setq window-resize-pixelwise t)
@@ -2901,6 +2948,7 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
 *** Aidermacs
 #+begin_src emacs-lisp
 (use-package aidermacs
+  :ensure t
   :bind (("M-g a" . aidermacs-transient-menu)
          :map aidermacs-vterm-mode-map
          ("M-RET" . aidermacs-vterm-send-return)
@@ -2911,6 +2959,7 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   ; This doens't work along with M-RET. Need to open ticket
   (aidermacs-vterm-multiline-newline-key "RET")
   (aidermacs-use-architect-mode t)
+  (aidermacs-show-diff-after-change nil)
   (aidermacs-auto-accept-architect t)
   (aidermacs-backend 'vterm)
   (aidermacs-watch-files t)
@@ -3041,7 +3090,7 @@ Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
-  :hook (emacs-startup . (lambda () (load-theme 'doom-gruvbox)))
+  :hook (emacs-startup . (lambda () (load-theme 'modus-vivendi-tinted)))
   :custom
   (doom-gruvbox-brighter-comments t)
   :config
