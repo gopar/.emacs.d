@@ -1142,8 +1142,9 @@ Window Management
 #+begin_src emacs-lisp
 (use-package winner
   :ensure nil
-  :hook after-init
-  :commands (winner-undo winnner-redo)
+  :commands (winner-undo winner-redo)
+  :config
+  (winner-mode)
   :custom
   (winner-boring-buffers '("*Completions*" "*Help*" "*Apropos*"
                            "*Buffer List*" "*info*" "*Compile-Log*")))
@@ -1163,7 +1164,7 @@ Window Management
 #+begin_src emacs-lisp
 (use-package midnight
   :ensure nil
-  :hook (after-init . midnight-mode)
+  :defer 30
   :custom
   (clean-buffer-list-delay-general 0)
   (clean-buffer-list-delay-special 0)
@@ -1273,10 +1274,11 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 
 #+end_src
 
-** Ewnium
+** COMMENT Ewnium
 #+begin_src emacs-lisp
 (use-package ewnium
   :ensure nil
+  :defer
   :load-path "lisp/eww"
   :hook (eww-mode . ewnium-mode))
 #+end_src
@@ -1334,8 +1336,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
               ("x a" . gopar/projectile-run-aider)
               ("b" . consult-project-buffer)
               ("s r" . consult-ripgrep)
-              ("s g" . consult-grep)
-              )
+              ("s g" . consult-grep))
 
   :custom
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
@@ -1538,6 +1539,7 @@ Also includes displaying of them
             (consult-outline (:not posframe))
             (consult-yank-pop (:not posframe))
             (consult-imenu-multi (:not posframe))
+            (consult-yasnippet (:not posframe))
             (t posframe))))
 
 ;; just for looks
@@ -1617,7 +1619,7 @@ Also includes displaying of them
 
 (use-package consult
   :ensure
-  :commands (gopar/consult-line consult-buffer consult-bookmark consult-theme)
+  :commands (gopar/consult-line consult-buffer consult-bookmark consult-theme consult-line-thing-at-point)
   :bind (("C-s" . consult-line-thing-at-point)
          ("C-c m" . consult-man)
          ("C-c i" . consult-info)
@@ -2183,9 +2185,8 @@ Color the string of whatever color code they are holding
          (fundamental-mode . yas-minor-mode)
          (text-mode . yas-minor-mode)
          (eshell-mode . yas-minor-mode)
-         (after-init . yas-reload-all))
-  :bind (:map yas-minor-mode-map
-              ("C-c C-SPC" . yas-insert-snippet)))
+         ;; (after-init . yas-reload-all)
+         ))
 #+end_src
 
 *** Actual Snippets
@@ -2203,6 +2204,16 @@ To use as a super capf with a few others
   :defer t
   :vc (:url "https://github.com/elken/yasnippet-capf" :rev :newsest)
   )
+#+end_src
+
+
+*** Consult Yasnippet
+#+begin_src emacs-lisp
+(use-package consult-yasnippet
+  :ensure t
+  :after yasnippet
+  :bind (:map yas-minor-mode-map
+              ("C-c C-SPC" . consult-yasnippet)))
 #+end_src
 
 ** [[https://github.com/emacs-dashboard/emacs-dashboard/][Dashboard]]
@@ -2571,7 +2582,6 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
   (neo-display-action '(gopar/neo-display-fn))
   :init
   (defun gopar/neo-display-fn (buffer _alist)
-    (message "hello")
     (let ((window-pos (if (eq neo-window-position 'left) 'left 'right)))
       (display-buffer-in-side-window buffer `((side . ,window-pos)
                                               (inhibit-same-window . t)
@@ -2739,7 +2749,9 @@ Also start type break mode after start up since I might just be dragging along
 (use-package compact-docstrings
   :ensure t
   :defer
-  :hook (prog-mode . compact-docstrings-mode))
+  :hook (prog-mode . compact-docstrings-mode)
+  :custom
+  (compact-docstrings-only-doc-blocks nil))
 #+end_src
 
 ** Transient
@@ -2764,15 +2776,7 @@ Also start type break mode after start up since I might just be dragging along
     ("x" "horizontal" (lambda ()
        (interactive)
        (split-window-below)
-       (windmove-down)) :transient t)
-    ("wv" "win-vertical" (lambda ()
-       (interactive)
-       (select-window (split-window-right))
-       (windows-transient-window)) :transient nil)
-    ("wx" "win-horizontal" (lambda ()
-       (interactive)
-       (select-window (split-window-below))
-       (windows-transient-window)) :transient nil)]
+       (windmove-down)) :transient t)]
     ["Misc"
      ("b" "Balance Windows" balance-windows :transient t)
      ("z" "undo" (lambda ()
@@ -2946,6 +2950,7 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   (dall-e-shell-image-output-directory "~/Downloads/dall_e_output/"))
 #+end_src
 *** Aidermacs
+
 #+begin_src emacs-lisp
 (use-package aidermacs
   :ensure t
