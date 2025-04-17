@@ -1002,34 +1002,6 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
         (set-window-dedicated-p (get-buffer-window "*pydoc*") t)))))
 #+end_src
 
-*** COMMENT Jedi
-Only use this for 'eldoc' documentation. Works most of the time.
-I say 'eldoc' in quotes b/c this doens't really use eldoc.
-It echos out the method/func signature instead of using eldoc.
-
-Requires =pip install jedi epc= in all virtualenvs
-
-*NOTE*: Needs this [[https://github.com/tkf/emacs-jedi/pull/372][PR]] in order to work in newer python versions
-
-#+begin_src emacs-lisp
-(use-package jedi
-  :ensure t
-  :defer
-  :commands (jedi-mode)
-  :hook ((python-mode python-ts-mode) . jedi-mode)
-  :custom
-  (jedi:tooltip-method nil)
-  (jedi:mode-function nil)
-  (jedi:setup-function nil)
-  :init
-  ;; Only until PR is resolved above cause the warning buffer is to dang annoying
-  (add-to-list 'display-buffer-alist
-             '("^\\*Warnings\\*$"
-               (display-buffer-no-window)
-               (allow-no-window . t)))
-  )
-#+end_src
-
 *** Pip Requirements
 #+begin_src emacs-lisp
 (use-package pip-requirements
@@ -1160,6 +1132,18 @@ Window Management
   (recenter-positions '(middle top bottom)))
 #+end_src
 
+** Frame
+#+begin_src emacs-lisp
+(use-package frame
+  :ensure nil
+  :defer
+  :hook (emacs-startup . window-divider-mode)
+  :custom-face
+  (window-divider ((t (:foreground "gold"))))
+  :custom
+  (window-divider-default-places t))
+#+end_src
+
 ** Midnight
 #+begin_src emacs-lisp
 (use-package midnight
@@ -1202,7 +1186,9 @@ Look up word at point using dict.org in readme/text/org-mode buffers
          :map org-mode-map
               ("M-." . dictionary-lookup-definition)
          :map dictionary-mode-map
-              ("M-." . dictionary-lookup-definition))
+              ("M-." . dictionary-lookup-definition)
+         :map eww-mode-map
+         ("M-." . dictionary-lookup-definition))
   :init
   (add-to-list 'display-buffer-alist
                '("^\\*Dictionary\\*" display-buffer-in-side-window
@@ -1259,9 +1245,19 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (browse-url-firefox-new-window-is-tab t)
   ;; Default to using eww for browsing
   (browse-url-browser-function 'eww-browse-url)
+  (browse-url-handlers '(;; Work urls
+                         ("teams\\.microsoft\\.com"  . browse-url-chrome)
+                         ("outlook\\.office365\\.com" . browse-url-chrome)
+                         ("*.\\.atlassian\\.net" . browse-url-chrome)
+                         ;; Anything with summit will be considered work related
+                         ("summit" . browse-url-chrome)
+                         ;; Personal urls
+                         (".*youtube\\.com"        . browse-url-firefox)
+                         (".*"                    . eww-browse-url)))
   :config
   (put 'browse-url-handlers 'safe-local-variable (lambda (x) t))
-  (put 'browse-url-browser-function 'safe-local-variable (lambda (x) t)))
+  (put 'browse-url-browser-function 'safe-local-variable (lambda (x) t))
+  )
 #+end_src
 
 ** Eww
@@ -1269,6 +1265,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 (use-package eww
   :defer t
   :hook (eww-after-render . shrface-mode)
+  :custom
+  (eww-auto-rename-buffer 'title)
   :config
   (require 'shrface))
 
@@ -1289,10 +1287,13 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 (use-package shrface
   :ensure t
   :defer t
+  :bind (:map eww-mode-map
+              ("M-g o" . shrface-headline-consult)
+              ("C-c C-o" . shrface-occur))
   :config
   (shrface-basic)
   (shrface-trial)
-  (shrface-default-keybindings) ; setup default keybindings
+  ;; (shrface-default-keybindings)
   (setopt shrface-href-versatile t))
 #+end_src
 
@@ -1620,7 +1621,7 @@ Also includes displaying of them
 (use-package consult
   :ensure
   :commands (gopar/consult-line consult-buffer consult-bookmark consult-theme consult-line-thing-at-point)
-  :bind (("C-s" . consult-line-thing-at-point)
+  :bind (("C-s" . gopar/consult-line)
          ("C-c m" . consult-man)
          ("C-c i" . consult-info)
          ("C-c M-x" . consult-mode-command)
@@ -1795,24 +1796,6 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   (add-hook 'xref-backend-functions #'gopar/xref-backend-html-template))
 #+end_src
 
-** TODO COMMENT [[https://github.com/eval-exec/super-hint.el][Super Hints]]
-Compliment to xref
-#+begin_src emacs-lisp
-(use-package super-hint
-  :load-path "~/.emacs.d/tmp/super-hint.el/"
-
-  :config
-  (require 'rg)
-  (require 'super-hint-rg)
-  (super-hint-rg-mode 1) ;; then M-x rg-project to enjoy super-hint
-
-  (require 'super-hint-xref)
-  (super-hint-xref-mode 1) ;; then M-x xref-find-references to enjoy super-hint
-
-  ;; (which-function-mode t) ;; enable which-function mode if you not
-  )
-#+end_src
-
 ** Eglot
 #+begin_src emacs-lisp
 (use-package eglot
@@ -1936,7 +1919,7 @@ Color the string of whatever color code they are holding
 ** Which Key
 #+begin_src emacs-lisp
 (use-package which-key
-  :ensure t
+  :ensure nil
   :hook (after-init . which-key-mode)
   :custom
   (which-key-idle-delay 2))
@@ -2347,7 +2330,6 @@ Collides with compact-docstrings so turning off for programming modes
 (use-package replace
   :ensure nil
   :defer
-  :hook (occur-mode . occur-rename-buffer)
   :custom
   (list-matching-lines-default-context-lines 0)
   (list-matching-lines-face nil)
@@ -2591,22 +2573,6 @@ Here since treemacs keeps on breaking, and this is backup. Works pretty well
                                                (no-other-window . t)))))))
 #+end_src
 
-** COMMENT Treemacs
-It keeps breaking! I like how the icons look better but don't like that it keeps breaking
-#+begin_src emacs-lisp
-(use-package treemacs
-  :ensure t
-  :hook ((treemacs-mode . treemacs-project-follow-mode)
-         (treemacs-mode . treemacs-hide-gitignored-files-mode)
-         (treemacs-mode . (lambda () (which-function-mode -1)))
-         ;; (emacs-startup . treemacs)
-         )
-  :bind ("<f5>" . treemacs)
-  :custom
-  (treemacs-hide-dot-git-directory nil)
-  (treemacs-is-never-other-window t)
-  (treemacs-project-follow-into-home t))
-#+end_src
 ** Dizze
 Unfortunately need this:
 https://github.com/davidmiller/dizzee/pull/5
@@ -2814,7 +2780,10 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   :bind (:map vterm-mode-map ("C-q" . vterm-send-next-key))
   :custom
   (vterm-buffer-name-string "*vterm %s*")
-  (vterm-max-scrollback 100000))
+  (vterm-max-scrollback 100000)
+  :config
+  (add-to-list 'vterm-keymap-exceptions "C--")
+  (add-to-list 'vterm-keymap-exceptions "M--"))
 #+end_src
 
 ** Exec From Shell
@@ -3050,7 +3019,7 @@ Only being used with =org-present=
   (visual-fill-column-center-text t))
 #+end_src
 
-** [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
+** COMMENT [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
 adds padding around windows and frames
 
 #+begin_src emacs-lisp
@@ -3095,7 +3064,6 @@ Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
-  :hook (emacs-startup . (lambda () (load-theme 'modus-vivendi-tinted)))
   :custom
   (doom-gruvbox-brighter-comments t)
   :config
@@ -3108,8 +3076,7 @@ Use Doom Themes since they have built in support for Solaire Mode
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
 #+end_src
-** [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
-
+** COMMENT [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 #+begin_src emacs-lisp
 (use-package solaire-mode
   :ensure t
@@ -3139,8 +3106,8 @@ Use Doom Themes since they have built in support for Solaire Mode
   :defer
   :hook (;; (eshell-mode . hide-mode-line-mode)
          ;; (vterm-mode . hide-mode-line-mode)
-         (occur-mode . hide-mode-line-mode)
-         (treemacs-mode . hide-mode-line-mode)))
+         ;; (occur-mode . hide-mode-line-mode)
+         (neotree-mode . hide-mode-line-mode)))
 #+end_src
 
 ** Sqlite
@@ -3215,11 +3182,6 @@ Useful for when making videos
          (typescript-ts-mode . (lambda () (focus-mode -1)))
          (web-mode . (lambda () (focus-mode -1)))))
 #+end_src
-** COMMENT [[https://github.com/ema2159/centaur-tabs][Centaur Tabs]]
-Perhaps one day when I have a few hours to customize.
-#+begin_src emacs-lisp
-
-#+end_src
 ** Fretboard
 Guitar stuff
 #+begin_src emacs-lisp
@@ -3229,6 +3191,72 @@ Guitar stuff
   :commands fretboard
   :custom
   (fretboard-fret-count 20))
+#+end_src
+** Newsticker
+#+begin_src emacs-lisp
+(use-package newsticker
+  :ensure nil
+  :defer t
+  :bind ("C-c C-x g" . newsticker-show-news)
+  :custom
+  ;; (newsticker-obsolete-item-max-age (* 60 60 24 7)) ; Lets keep entries around for a week at least
+  (newsticker-automatically-mark-items-as-old nil)
+  (newsticker-treeview-automatically-mark-displayed-items-as-old nil)
+  (newsticker-treeview-listwindow-height 15)
+  :init
+  (setq newsticker-url-list-defaults '(("Howardism" "https://www.howardism.org/index.xml" nil nil)
+                                    ("r/Emacs" "https://www.reddit.com/r/emacs/.rss" nil nil)
+                                    ("irreal" "https://irreal.org/blog/?tag=emacs&feed=rss2" nil nil)
+                                    ("xenodium" "https://xenodium.com/rss.xml" nil nil)
+                                    ("Pragmatic Emacs" "https://pragmaticemacs.wordpress.com/feed/" nil nil)
+                                    ("Emacs Ninja" "https://emacsninja.com/emacs.atom" nil nil)
+                                    ("Mastering Emacs" "https://www.masteringemacs.org/feed" nil nil)
+                                    ("Emacs Horrors" "https://emacshorrors.com/feed.atom" nil nil)
+                                    ("Sachas Blog" "https://sachachua.com/blog/category/emacs/feed/index.xml" nil nil)
+                                    ("Prog Blog" "https://protesilaos.com/codelog.xml" nil nil)
+                                    ("Adam Johnson" "https://adamj.eu/tech/atom.xml" nil nil)
+                                    ("Caktus Group" "https://www.caktusgroup.com/feeds/main/" nil nil))))
+#+end_src
+** Solar
+#+begin_src emacs-lisp
+(use-package solar
+  :ensure nil
+  :config
+  (setq calendar-latitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.latitude"))
+        calendar-longitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.longtitude"))))
+#+end_src
+** [[https://github.com/guidoschmidt/circadian.el][Circadian]]
+#+begin_src emacs-lisp
+(use-package circadian
+  :ensure t
+  :after solar
+  :config
+  (setq circadian-themes '((:sunrise . modus-operandi-tinted)
+                           (:sunset  . modus-vivendi-tinted)))
+  (circadian-setup))
+#+end_src
+** Popper
+#+begin_src emacs-lisp
+(use-package popper
+  :ensure t
+  :defer
+  :bind (("C--"   . popper-toggle)
+         ("M--"   . popper-cycle)
+         ("C-M--" . popper-toggle-type))
+  :hook ((emacs-startup . popper-mode)
+         (emacs-startup . popper-echo-mode))
+  :custom
+  (popper-display-control t)
+  (popper-group-function 'popper-group-by-directory)
+  (popper-reference-buffers
+   '("\\*Messages\\*"
+     "Output\\*$"
+     "\\*Async Shell Command\\*"
+     helpful-mode
+     help-mode
+     eshell-mode
+     vterm-mode
+     compilation-mode)))
 #+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
