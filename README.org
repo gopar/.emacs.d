@@ -31,8 +31,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          (after-init . toggle-frame-maximized)
          (after-init . (lambda () (scroll-bar-mode -1)))
          (after-init . (lambda () (window-divider-mode -1)))
-         (prog-mode . (lambda () (setq-local show-trailing-whitespace t)))
-         )
+         (prog-mode . (lambda () (setq-local show-trailing-whitespace t))))
   :custom
   ;; flash the frame to represent a bell.
   (visible-bell t)
@@ -1115,8 +1114,7 @@ Window Management
 (use-package winner
   :ensure nil
   :commands (winner-undo winner-redo)
-  :config
-  (winner-mode)
+  :hook emacs-startup
   :custom
   (winner-boring-buffers '("*Completions*" "*Help*" "*Apropos*"
                            "*Buffer List*" "*info*" "*Compile-Log*")))
@@ -1159,6 +1157,7 @@ Window Management
 #+begin_src emacs-lisp
 (use-package executable
   :ensure nil
+  :defer
   :hook (after-save . executable-make-buffer-file-executable-if-script-p))
 #+end_src
 
@@ -1167,6 +1166,7 @@ If on new system, might need to install =enchant= and =pkg-config=
 #+begin_src emacs-lisp
 (use-package jinx
   :ensure t
+  :defer
   :hook (after-init . global-jinx-mode)
   :bind (("C-." . jinx-correct)
          ("C-," . jinx-next)
@@ -1216,10 +1216,12 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   (display-time-default-load-average nil)
   (display-time-mail-string "")
   (zoneinfo-style-world-list
-  '(("America/Los_Angeles" "Seattle")
-    ("America/New_York" "New York")
-    ("America/Halifax" "Nova Scotia")
-    ("Asia/Tokyo" "Tokyo"))))
+  '(("America/Los_Angeles" "Sacramento, CA")
+    ("America/New_York" "Buffalo, NY")
+    ("America/Chicago" "Tulsa, OK")
+    ("America/Chicago" "Chicago, IL")
+    ("Asia/Tokyo" "Tokyo")
+    ("Europe/Madrid" "Barcelona"))))
 #+end_src
 
 ** Proced
@@ -1256,8 +1258,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
                          (".*"                    . eww-browse-url)))
   :config
   (put 'browse-url-handlers 'safe-local-variable (lambda (x) t))
-  (put 'browse-url-browser-function 'safe-local-variable (lambda (x) t))
-  )
+  (put 'browse-url-browser-function 'safe-local-variable (lambda (x) t)))
 #+end_src
 
 ** Eww
@@ -1267,12 +1268,13 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :hook (eww-after-render . shrface-mode)
   :custom
   (eww-auto-rename-buffer 'title)
+  (eww-browse-url-new-window-is-tab nil)
   :config
   (require 'shrface))
 
 #+end_src
 
-** COMMENT Ewnium
+** Ewnium
 #+begin_src emacs-lisp
 (use-package ewnium
   :ensure nil
@@ -1929,6 +1931,7 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package helpful
   :ensure t
+  :hook (helpful-mode . view-mode)
   :defer
   :bind (("C-h f" . helpful-callable)
          ("C-h v" . helpful-variable)
@@ -2075,11 +2078,16 @@ Color the string of whatever color code they are holding
   :ensure nil
   :bind ("C-x /" . webjump)
   :config
-  (setopt webjump-sites
-        '(("DuckDuckGo" . [simple-query "www.duckduckgo.com" "www.duckduckgo.com/?q=" ""])
-          ("Google" . [simple-query "www.google.com" "www.google.com/search?q=" ""])
-          ("YouTube" . [simple-query "www.youtube.com/feed/subscriptions" "www.youtube.com/results?search_query=" ""])
-          ("CCBV" . [simple-query "https://ccbv.co.uk/" "https://ccbv.co.uk/" ""]))))
+  (setopt webjump-sites '(("DuckDuckGo" . [simple-query "html.duckduckgo.com" "html.duckduckgo.com/html?q=" ""])
+                          ("Django Query" . [simple-query "html.duckduckgo.com" "html.duckduckgo.com/html?q=django+" ""])
+                          ("Django Rest Framework DRF" . "https://www.django-rest-framework.org/")
+                          ("Django Classy Docs" . [simple-query "https://ccbv.co.uk/" "https://duckduckgo.com/?q=" "+site%3Ahttps%3A%2F%2Fccbv.co.uk&t=h_&ia=web" ])
+                          ("DRF Classy Docs" . [simple-query "https://www.cdrf.co/" "https://duckduckgo.com/?t=h_&q=" "+site%3Ahttps%3A%2F%2Fwww.cdrf.co%2F"])))
+  :config
+  ;; Redefine read string so that we can have pre selected input
+  (defun webjump-read-string (prompt)
+    (let ((input (read-string (concat prompt ": ") (if (use-region-p) (buffer-substring-no-properties (region-beginning) (region-end)) nil))))
+      (if (webjump-null-or-blank-string-p input) nil input))))
 #+end_src
 
 ** RFC Browsing
@@ -2309,6 +2317,8 @@ Collides with compact-docstrings so turning off for programming modes
   (auto-save-default nil)
   ;; If file doesn't end with a newline on save, automatically add one.
   (require-final-newline t)
+  ;; Switch to view-mode when in read-only mode
+  (view-read-only t)
   :config
   (add-to-list 'auto-mode-alist '("Pipfile" . conf-toml-mode)))
 #+end_src
@@ -2783,7 +2793,11 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   (vterm-max-scrollback 100000)
   :config
   (add-to-list 'vterm-keymap-exceptions "C--")
-  (add-to-list 'vterm-keymap-exceptions "M--"))
+  (add-to-list 'vterm-keymap-exceptions "M--")
+  (add-to-list 'vterm-keymap-exceptions "C-M--")
+  ;; Doesn't seem to work??
+  ;; (add-to-list 'vterm-keymap-exceptions "C-M-o")
+  )
 #+end_src
 
 ** Exec From Shell
@@ -2954,71 +2968,6 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   (aidermacs-weak-model "claude-3-5-haiku-latest")
   (aidermacs-default-model "sonnet"))
 #+end_src
-** Presentation
-#+begin_src emacs-lisp
-(use-package org-present
-  :ensure t
-  :defer
-  :hook ((org-present-mode . gopar/org-present-start)
-         (org-present-mode-quit . gopar/org-present-end))
-  :config
-  (defun gopar/org-present-start ()
-    ; Tweak font sizes
-    (setq-local face-remapping-alist '((default (:height 1.5) default)
-                                       (header-line (:height 4.0) header-line)
-                                       (org-document-title (:height 1.75) org-document-title)
-                                       (org-code org-verbatim)
-                                       (org-verbatim (:height 1.55) org-verbatim)
-                                       (org-block (:height 1.25) org-block)
-                                       (org-block-begin-line (:height 0.7) org-block)))
-
-    ;; Set a blank header line string to create blank space at the top
-    (setq header-line-format " ")
-
-    ;; Display inline images automatically
-    (org-display-inline-images)
-    (visual-fill-column-mode 1)
-    (visual-line-mode 1)
-    (read-only-mode))
-
-  (defun gopar/org-present-end ()
-    ;; Reset font customizations
-    (setq-local face-remapping-alist '((default variable-pitch default)))
-
-    ;; Clear the header line string so that it isn't displayed
-    (setq header-line-format nil)
-
-    ;; Stop displaying inline images
-    (org-remove-inline-images)
-    (visual-fill-column-mode -1)
-    (visual-line-mode -1)
-    (read-only-mode -1))
-
-  (defun my/org-present-prepare-slide (buffer-name heading)
-    ;; Show only top-level headlines
-    (org-overview)
-
-    ;; Unfold the current entry
-    (org-show-entry)
-
-    ;; Show only direct subheadings of the slide but don't expand them
-    (org-show-children))
-
-  (add-hook 'org-present-after-navigate-functions 'my/org-present-prepare-slide))
-#+end_src
-
-** Visual Fill Column
-Only being used with =org-present=
-
-#+begin_src emacs-lisp
-(use-package visual-fill-column
-  :ensure t
-  :defer
-  :custom
-  (visual-fill-column-width 140)
-  (visual-fill-column-center-text t))
-#+end_src
-
 ** COMMENT [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
 adds padding around windows and frames
 
@@ -3152,11 +3101,6 @@ Useful for when making videos
      (mouse-event-p nil nil))))
 #+end_src
 
-** Garbage Collection
-#+begin_src emacs-lisp
-
-#+end_src
-
 ** Dot Env Mode
 #+begin_src emacs-lisp
 (use-package dotenv-mode
@@ -3192,44 +3136,13 @@ Guitar stuff
   :custom
   (fretboard-fret-count 20))
 #+end_src
-** Newsticker
-#+begin_src emacs-lisp
-(use-package newsticker
-  :ensure nil
-  :defer t
-  :bind ("C-c C-x g" . newsticker-show-news)
-  :custom
-  ;; (newsticker-obsolete-item-max-age (* 60 60 24 7)) ; Lets keep entries around for a week at least
-  (newsticker-automatically-mark-items-as-old nil)
-  (newsticker-treeview-automatically-mark-displayed-items-as-old nil)
-  (newsticker-treeview-listwindow-height 15)
-  :init
-  (setq newsticker-url-list-defaults '(("Howardism" "https://www.howardism.org/index.xml" nil nil)
-                                    ("r/Emacs" "https://www.reddit.com/r/emacs/.rss" nil nil)
-                                    ("irreal" "https://irreal.org/blog/?tag=emacs&feed=rss2" nil nil)
-                                    ("xenodium" "https://xenodium.com/rss.xml" nil nil)
-                                    ("Pragmatic Emacs" "https://pragmaticemacs.wordpress.com/feed/" nil nil)
-                                    ("Emacs Ninja" "https://emacsninja.com/emacs.atom" nil nil)
-                                    ("Mastering Emacs" "https://www.masteringemacs.org/feed" nil nil)
-                                    ("Emacs Horrors" "https://emacshorrors.com/feed.atom" nil nil)
-                                    ("Sachas Blog" "https://sachachua.com/blog/category/emacs/feed/index.xml" nil nil)
-                                    ("Prog Blog" "https://protesilaos.com/codelog.xml" nil nil)
-                                    ("Adam Johnson" "https://adamj.eu/tech/atom.xml" nil nil)
-                                    ("Caktus Group" "https://www.caktusgroup.com/feeds/main/" nil nil))))
-#+end_src
-** Solar
-#+begin_src emacs-lisp
-(use-package solar
-  :ensure nil
-  :config
-  (setq calendar-latitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.latitude"))
-        calendar-longitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.longtitude"))))
-#+end_src
 ** [[https://github.com/guidoschmidt/circadian.el][Circadian]]
 #+begin_src emacs-lisp
 (use-package circadian
   :ensure t
-  :after solar
+  :init
+  (setq calendar-latitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.latitude"))
+        calendar-longitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.longtitude")))
   :config
   (setq circadian-themes '((:sunrise . modus-operandi-tinted)
                            (:sunset  . modus-vivendi-tinted)))
@@ -3252,10 +3165,13 @@ Guitar stuff
    '("\\*Messages\\*"
      "Output\\*$"
      "\\*Async Shell Command\\*"
+     "\\*Warnings\\*"
      helpful-mode
      help-mode
      eshell-mode
      vterm-mode
+     world-clock-mode
+     eww-buffers-mode
      compilation-mode)))
 #+end_src
 * 1st Party Modes
@@ -3294,6 +3210,34 @@ Stuff I've made for myself that are modes
 (use-package boolcase
   :load-path "lisp/modes/boolcase"
   :hook ((python-mode python-ts-mode) . boolcase-mode))
+#+end_src
+
+** Vim Navigation
+Poor mans Vim Emulation for read only files
+
+#+begin_src emacs-lisp
+(use-package vim-navigation
+  :ensure nil
+  :defer t
+  :hook (view-mode . enable/disable-vim-nav)
+  :init
+  (define-minor-mode vim-navigation-mode
+    "Minimal vim–like movement mode."
+    :keymap (let ((map (make-sparse-keymap)))
+              (define-key map (kbd "j") 'next-line)
+              (define-key map (kbd "k") 'previous-line)
+              (define-key map (kbd "h") 'backward-char)
+              (define-key map (kbd "l") 'forward-char)
+              (define-key map (kbd "k") 'previous-line)
+              (define-key map (kbd "gg") 'beginning-of-buffer)
+              (define-key map (kbd "G")  'end-of-buffer)
+              (define-key map (kbd "d") 'scroll-up-command)
+              (define-key map (kbd "u") 'scroll-down-command)
+              map))
+  (defun enable/disable-vim-nav ()
+    (if view-mode
+        (vim-navigation-mode 1)
+      (vim-navigation-mode -1))))
 #+end_src
 
 ** YouTube
