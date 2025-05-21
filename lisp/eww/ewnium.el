@@ -545,6 +545,8 @@ the corresponding command."
     (define-key map (kbd "j") #'ewnium-scroll-up)
     (define-key map (kbd "J") #'ewnium-previous-buffer)
     (define-key map (kbd "k") #'ewnium-scroll-down)
+    (define-key map (kbd "L") #'(lambda () (interactive) (ewnium-self-insert-or-command 'eww-forward-url)))
+    (define-key map (kbd "l") #'(lambda () (interactive) (ewnium-self-insert-or-command 'recenter-top-bottom)))
     (define-key map (kbd "K") #'ewnium-next-buffer)
     (define-key map (kbd "n") #'(lambda () (interactive) (ewnium-self-insert-or-command 'shrface-next-headline)))
     (define-key map (kbd "N") #'(lambda () (interactive) (ewnium-self-insert-or-command 'shrface-previous-headline)))
@@ -563,7 +565,6 @@ the corresponding command."
     ;; (define-key map (kbd "b") #'ewnium-open-bookmark)
     (define-key map (kbd "T") #'ewnium-open-buffers)
     (define-key map (kbd "H") #'(lambda () (interactive) (ewnium-self-insert-or-command 'eww-back-url)))
-    (define-key map (kbd "L") #'(lambda () (interactive) (ewnium-self-insert-or-command 'eww-forward-url)))
     (define-key map (kbd "g") #'ewnium-g-prefix)
     (define-key map (kbd "y") #'ewnium-y-prefix)
     (define-key map (kbd "[") #'ewnium-open-bracket-prefix)
@@ -574,10 +575,6 @@ the corresponding command."
 ;;;###autoload
 (define-minor-mode ewnium-mode
   "Eww's version of the Vimium plugin"
-  :keymap ewnium-mode-map
-  ;; (if ewnium-mode
-  ;;     (add-hook 'eww-after-render-hook 'ewnium--rename-eww-buffer)
-  ;;   (remove-hook 'eww-after-render-hook 'ewnium--rename-eww-buffer))
-  )
+  :keymap ewnium-mode-map)
 
 (provide 'ewnium)

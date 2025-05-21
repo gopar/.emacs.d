@@ -43,7 +43,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   ;; Dont Treat manual switching of buffers the same as programatic
   (switch-to-buffer-obey-display-actions nil)
   (switch-to-buffer-in-dedicated-window nil)
-  (window-sides-slots '(3 0 3 3))
+  (window-sides-slots '(3 3 3 3))
   ;; Sentences end with 1 space not 2
   (sentence-end-double-space nil)
   ;; make cursor the width of the character it is under
@@ -1595,10 +1595,9 @@ Also includes displaying of them
   :bind ("C-c SPC" . cape-dabbrev)
   :custom
   (cape-dict-case-replace nil)
-  :init
-  (setopt cape-dabbrev-min-length 2
-          cape-dabbrev-check-other-buffers 'cape--buffers-major-mode)
+  (cape-dabbrev-buffer-function 'cape-same-mode-buffers)
 
+  :init
   (defun gopar/cape-dict-only-in-comments ()
     (cape-wrap-inside-comment 'cape-dict))
 
@@ -1850,11 +1849,6 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 (use-package emmet-mode
   :ensure t
   :defer t
-  :config
-  (defun emmet-jsx-supported-mode? ()
-    "Is the current mode we're on enabled for jsx class attribute expansion?"
-    (or (member major-mode emmet-jsx-major-modes)
-        (and (string= major-mode "web-mode") (string= web-mode-content-type "jsx"))))
   :hook (web-mode . emmet-mode))
 #+end_src
 
@@ -1908,6 +1902,14 @@ Color the string of whatever color code they are holding
   :hook (prog-mode . rainbow-mode))
 #+end_src
 
+** Rainbow mode delimeters
+#+begin_src emacs-lisp
+(use-package rainbow-delimiters
+  :ensure t
+  :defer
+  :hook prog-mode)
+#+end_src
+
 ** Alert
 #+begin_src emacs-lisp
 (use-package alert
@@ -1931,7 +1933,8 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package helpful
   :ensure t
-  :hook (helpful-mode . view-mode)
+  :hook ((helpful-mode . view-mode)
+         (help-mode . view-mode))
   :defer
   :bind (("C-h f" . helpful-callable)
          ("C-h v" . helpful-variable)
@@ -2287,6 +2290,7 @@ Collides with compact-docstrings so turning off for programming modes
 #+begin_src emacs-lisp
 (use-package dired
   :ensure nil
+  :bind ("C-x C-d" . dired)
   :defer
   :hook ((dired-mode . dired-hide-details-mode)
          (dired-mode . hl-line-mode))
@@ -2863,9 +2867,14 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
 (use-package flycheck
   :ensure
   :defer
-  :hook (((python-mode python-ts-mode) . flycheck-mode))
+  :hook (((python-mode python-ts-mode) . flycheck-mode)
+         (flycheck-after-syntax-check . gopar/flycheck-update-error-list))
   :bind (:map projectile-command-map
-         ("l" . flycheck-list-errors))
+              ("l" . flycheck-list-errors)
+              :map flycheck-mode-map
+              ("M-g n" . flycheck-next-error)
+              ("M-g p" . flycheck-previous-error)
+              )
   :init
   ;; (setq fit-window-to-buffer-horizontally t)
   ;; (setq window-resize-pixelwise t)
@@ -2874,9 +2883,20 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
                '("\\*Flycheck errors\\*"
                  display-buffer-in-side-window
                  (side . bottom)
-                 (slot . 0)
+                 (slot . -1)
                  (no-delete-other-windows . t)
-                 (window-height . .33)))
+                 (window-height . .15)))
+
+  ;; Experimental
+  (defun gopar/flycheck-update-error-list ()
+    "Display errors using flycheck-list-errors if there are any errors.
+If there are no errors, kill the '*Flycheck errors*' buffer."
+    (if flycheck-current-errors
+        (flycheck-list-errors)
+      (let ((errors-buffer (get-buffer "*Flycheck errors*")))
+        (when errors-buffer
+          (kill-buffer errors-buffer)))))
+
   :custom
   (flycheck-flake8rc '(".flake8" "setup.cfg" "tox.ini" "pyproject.toml")))
 #+end_src
@@ -3169,10 +3189,20 @@ Guitar stuff
      helpful-mode
      help-mode
      eshell-mode
-     vterm-mode
+     ;; vterm-mode
      world-clock-mode
      eww-buffers-mode
      compilation-mode)))
+#+end_src
+** Shift Number
+Not sure why I got rid of this. Its handy
+
+#+begin_src emacs-lisp
+(use-package shift-number
+  :ensure t
+  :defer
+  :bind (("M-+" . shift-number-up)
+         ("M-_" . shift-number-down)))
 #+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
