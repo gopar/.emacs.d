@@ -1925,6 +1925,7 @@ Color the string of whatever color code they are holding
 (use-package which-key
   :ensure nil
   :hook (after-init . which-key-mode)
+  :commands (which-key-enable-god-mode-support)
   :custom
   (which-key-idle-delay 2))
 #+end_src
@@ -1933,8 +1934,9 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package helpful
   :ensure t
-  :hook ((helpful-mode . view-mode)
-         (help-mode . view-mode))
+  :hook (helpful-mode . god-local-mode)
+  ;; :hook ((helpful-mode . view-mode)
+  ;;        (help-mode . view-mode))
   :defer
   :bind (("C-h f" . helpful-callable)
          ("C-h v" . helpful-variable)
@@ -2322,7 +2324,7 @@ Collides with compact-docstrings so turning off for programming modes
   ;; If file doesn't end with a newline on save, automatically add one.
   (require-final-newline t)
   ;; Switch to view-mode when in read-only mode
-  (view-read-only t)
+  ;; (view-read-only t)
   :config
   (add-to-list 'auto-mode-alist '("Pipfile" . conf-toml-mode)))
 #+end_src
@@ -3228,6 +3230,27 @@ Not sure why I got rid of this. Its handy
   :bind (("M-+" . shift-number-up)
          ("M-_" . shift-number-down)))
 #+end_src
+** God Mode
+Experimental
+
+#+begin_src emacs-lisp
+(use-package god-mode
+  :ensure t
+  :defer
+  :hook ((after-init . god-mode-all))
+  :config
+  (which-key-enable-god-mode-support)
+  (global-set-key (kbd "C-x C-1") #'delete-other-windows)
+  (global-set-key (kbd "C-x C-2") #'split-window-below)
+  (global-set-key (kbd "C-x C-3") #'split-window-right)
+  (global-set-key (kbd "C-x C-0") #'delete-window)
+
+  (define-key god-local-mode-map (kbd "[") #'backward-paragraph)
+  (define-key god-local-mode-map (kbd "]") #'forward-paragraph)
+
+  (define-key god-local-mode-map (kbd "i") #'god-local-mode)
+  (global-set-key (kbd "<escape>") #'(lambda () (interactive) (god-local-mode 1))))
+#+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
 
@@ -3266,7 +3289,7 @@ Stuff I've made for myself that are modes
   :hook ((python-mode python-ts-mode) . boolcase-mode))
 #+end_src
 
-** Vim Navigation
+** COMMENT Vim Navigation
 Poor mans Vim Emulation for read only files
 
 #+begin_src emacs-lisp
