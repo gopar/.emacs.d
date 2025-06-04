@@ -1934,7 +1934,8 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package helpful
   :ensure t
-  :hook (helpful-mode . god-local-mode)
+  :hook ((helpful-mode . god-local-mode)
+         (help-mode . god-local-mode))
   ;; :hook ((helpful-mode . view-mode)
   ;;        (help-mode . view-mode))
   :defer
@@ -3231,15 +3232,32 @@ Not sure why I got rid of this. Its handy
          ("M-_" . shift-number-down)))
 #+end_src
 ** God Mode
-Experimental
+Experimental - perhaps
 
 #+begin_src emacs-lisp
 (use-package god-mode
   :ensure t
   :defer
-  :hook ((after-init . god-mode-all))
+  :hook ((after-init . god-mode-all)
+         ;;(god-local-mode . read-only-mode)
+         )
+  :init
+  (setq god-mode-enable-function-key-translation nil)
+
+  (defun gopar/god-mode-enable-insert ()
+    (interactive)
+    (god-local-mode -1)
+    (read-only-mode -1))
+
+  (defun my-god-mode-update-cursor-type ()
+    (setq cursor-type (if (or god-local-mode buffer-read-only) 'hbar 'box)))
+
+  (add-hook 'post-command-hook #'my-god-mode-update-cursor-type)
+
   :config
   (which-key-enable-god-mode-support)
+  (add-to-list 'god-exempt-major-modes 'vterm-mode)
+
   (global-set-key (kbd "C-x C-1") #'delete-other-windows)
   (global-set-key (kbd "C-x C-2") #'split-window-below)
   (global-set-key (kbd "C-x C-3") #'split-window-right)
@@ -3248,7 +3266,7 @@ Experimental
   (define-key god-local-mode-map (kbd "[") #'backward-paragraph)
   (define-key god-local-mode-map (kbd "]") #'forward-paragraph)
 
-  (define-key god-local-mode-map (kbd "i") #'god-local-mode)
+  (define-key god-local-mode-map (kbd "i") #'gopar/god-mode-enable-insert)
   (global-set-key (kbd "<escape>") #'(lambda () (interactive) (god-local-mode 1))))
 #+end_src
 * 1st Party Modes
