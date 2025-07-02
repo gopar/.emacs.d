@@ -113,6 +113,33 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          ("C-x C-k" . (lambda () (interactive) (kill-buffer))))
 
   :init
+  (defun gopar/er-keyboard-quit-dwim ()
+    ;; Copied from https://emacsredux.com/blog/2025/06/01/let-s-make-keyboard-quit-smarter/
+    "Do-What-I-Mean behaviour for a general `keyboard-quit'.
+
+The generic `keyboard-quit' does not do the expected thing when
+the minibuffer is open.  Whereas we want it to close the
+minibuffer, even without explicitly focusing it.
+
+The DWIM behaviour of this command is as follows:
+
+- When the region is active, disable it.
+- When a minibuffer is open, but not focused, close the minibuffer.
+- When the Completions buffer is selected, close it.
+- In every other case use the regular `keyboard-quit'."
+    (interactive)
+    (cond
+     ((region-active-p)
+      (keyboard-quit))
+     ((derived-mode-p 'completion-list-mode)
+      (delete-completion-window))
+     ((> (minibuffer-depth) 0)
+      (abort-recursive-edit))
+     (t
+      (keyboard-quit))))
+  (global-set-key [remap keyboard-quit] #'gopar/er-keyboard-quit-dwim)
+
+
   (defun gopar/copy-filename-to-kill-ring ()
     (interactive)
     (kill-new (buffer-file-name))
@@ -2993,11 +3020,13 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   :custom
   ; This doens't work along with M-RET. Need to open ticket
   (aidermacs-vterm-multiline-newline-key "RET")
-  (aidermacs-use-architect-mode t)
+  (aidermacs-default-chat-mode 'architect)
   (aidermacs-show-diff-after-change nil)
   (aidermacs-auto-accept-architect t)
   (aidermacs-backend 'vterm)
   (aidermacs-watch-files t)
+  (aidermacs-exit-kills-buffer t)
+  (aidermacs-vterm-use-theme-colors nil)
   (aidermacs-extra-args `(
                         "--analytics-disable"
                         "--no-auto-commits"
@@ -3268,6 +3297,14 @@ Experimental - perhaps
 
   (define-key god-local-mode-map (kbd "i") #'gopar/god-mode-enable-insert)
   (global-set-key (kbd "<escape>") #'(lambda () (interactive) (god-local-mode 1))))
+#+end_src
+** Code Cognitive Complexity
+
+#+begin_src emacs-lisp
+(use-package cognitive-complexity
+  :ensure t
+  :vc (:rev :newest :url "https://github.com/emacs-vs/cognitive-complexity")
+  :hook (python-ts-mode . cognitive-complexity-mode))
 #+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
