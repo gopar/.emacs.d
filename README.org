@@ -94,6 +94,7 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   :bind (("C-z" . nil)
          ("C-x C-z" . nil)
          ("C-x C-k RET" . nil)
+         ("M-SPC" . nil)
          ("RET" . newline-and-indent)
          ("C-j" . newline)
          ("M-\\" . cycle-spacing)
@@ -1534,7 +1535,9 @@ or by pressing last keybinding of previous command
 (use-package rg
   :ensure t
   :defer
-  :hook (rg-mode . rg-save-search))
+  :hook (rg-mode . rg-save-search)
+  :config
+  (rg-enable-menu))
 #+end_src
 ** wgrep
 #+begin_src emacs-lisp
@@ -2173,6 +2176,11 @@ Color the string of whatever color code they are holding
           (words (s-split-words (magit-get-current-branch))))
       (if has-ticket-title
           (insert (format "[%s-%s] " (car words) (car (cdr words))))))))
+
+(use-package magit-todos
+  :ensure t
+  :after magit
+  :config (magit-todos-mode 1))
 
 (use-package git-gutter
   :ensure t
