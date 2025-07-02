@@ -1964,8 +1964,8 @@ Color the string of whatever color code they are holding
 #+begin_src emacs-lisp
 (use-package helpful
   :ensure t
-  :hook ((helpful-mode . god-local-mode)
-         (help-mode . god-local-mode))
+  ;; :hook ((helpful-mode . god-local-mode)
+  ;;        (help-mode . god-local-mode))
   ;; :hook ((helpful-mode . view-mode)
   ;;        (help-mode . view-mode))
   :defer
@@ -3268,7 +3268,7 @@ Not sure why I got rid of this. Its handy
   :bind (("M-+" . shift-number-up)
          ("M-_" . shift-number-down)))
 #+end_src
-** God Mode
+** COMMENT God Mode
 Experimental - perhaps
 
 #+begin_src emacs-lisp
