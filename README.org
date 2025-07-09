@@ -2929,14 +2929,10 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
 (use-package flycheck
   :ensure
   :defer
-  :hook (((python-mode python-ts-mode) . flycheck-mode)
-         (flycheck-after-syntax-check . gopar/flycheck-update-error-list))
-  :bind (:map projectile-command-map
-              ("l" . flycheck-list-errors)
-              :map flycheck-mode-map
+  :hook (((python-mode python-ts-mode) . flycheck-mode))
+  :bind (:map flycheck-mode-map
               ("M-g n" . flycheck-next-error)
-              ("M-g p" . flycheck-previous-error)
-              )
+              ("M-g p" . flycheck-previous-error))
   :init
   ;; (setq fit-window-to-buffer-horizontally t)
   ;; (setq window-resize-pixelwise t)
