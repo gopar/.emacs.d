@@ -2844,7 +2844,8 @@ Also start type break mode after start up since I might just be dragging along
                          (?T aw-transpose-frame "Transpose Frame")
                          ;; ?i ?r ?t are used by hyperbole.el
                          (?? aw-show-dispatch-help)))
-  )
+  :config
+  (add-to-list 'aw-ignored-buffers " *NeoTree*"))
 #+end_src
 
 ** Vterm
