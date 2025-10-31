@@ -258,6 +258,7 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
     (load-file "~/.emacs.d/etc/eshell/set_env.el")
     (setq-default eshell-path-env (getenv "PATH"))
     (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
+    (setenv "OPENAI_API_KEY"    (auth-source-pick-first-password :host "api.openai.com"))
 
     (setq exec-path (append exec-path
                             `("/usr/local/bin"
@@ -376,8 +377,7 @@ Main configuration
   (org-refile-targets '(("~/.emacs.d/org/private/org-roam/gtd/gtd.org" :maxlevel . 3)
                         ("~/.emacs.d/org/private/org-roam/gtd/someday.org" :level . 1)
                         ("~/.emacs.d/org/private/org-roam/gtd/tickler.org" :maxlevel . 1)
-                        ("~/.emacs.d/org/private/org-roam/gtd/repeat.org" :maxlevel . 1)
-                        ))
+                        ("~/.emacs.d/org/private/org-roam/gtd/repeat.org" :maxlevel . 1)))
   ;; Lets customize which modules we load up
   (org-modules '(;; ol-eww
                  ;; Stuff I've enabled below
@@ -1047,7 +1047,7 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
   :ensure nil
   :defer
   :custom
-  (treesit-font-lock-level 2))
+  (treesit-font-lock-level 3))
 #+end_src
 ** Tree Sitter Auto Magic
 #+begin_src emacs-lisp
@@ -2960,6 +2960,19 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (flycheck-flake8rc '(".flake8" "setup.cfg" "tox.ini" "pyproject.toml")))
 #+end_src
 
+*** Flyover (Nice UI)
+#+begin_src emacs-lisp
+(use-package flyover
+  :ensure
+  :defer
+  :hook flycheck-mode
+  :custom
+  (flyover-line-position-offset 0)
+  (flyover-show-at-eol t)
+  (flyover-display-mode 'hide-on-same-line)
+  )
+#+end_src
+
 ** AI Stuff
 *** [[https://github.com/xenodium/chatgpt-shell][ChatGPT]]
 #+begin_src emacs-lisp
@@ -2978,6 +2991,7 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
          (eshell-first-time-mode . chatgpt-shell-add-??-command-to-eshell))
   :init
   (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
+  (setenv "OPENAI_API_KEY"    (auth-source-pick-first-password :host "api.openai.com"))
   (setq shell-maker-root-path (concat user-emacs-directory "var/"))
   (add-to-list 'display-buffer-alist
                '("\\*chatgpt"
@@ -3025,6 +3039,7 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   :custom
   ; This doens't work along with M-RET. Need to open ticket
   (aidermacs-vterm-multiline-newline-key "RET")
+  (aidermacs-program "aider")
   (aidermacs-default-chat-mode 'architect)
   (aidermacs-show-diff-after-change nil)
   (aidermacs-auto-accept-architect t)
@@ -3044,10 +3059,11 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
                         ,(if (file-exists-p (concat (projectile-acquire-root) "CONVENTIONS.md"))
                             (concat "--read " (projectile-acquire-root) "CONVENTIONS.md")
                           "")))
-  (aidermacs-architect-model "claude-3-7-sonnet-latest")
-  (aidermacs-editor-model "claude-3-5-sonnet-latest")
+  (aidermacs-architect-model "claude-sonnet-4-5")
+  ;; (aidermacs-architect-model "openai/gpt-5")
+  (aidermacs-editor-model "claude-3-7-sonnet-latest")
   (aidermacs-weak-model "claude-3-5-haiku-latest")
-  (aidermacs-default-model "sonnet"))
+  (aidermacs-default-model "claude-sonnet-4-5"))
 #+end_src
 ** COMMENT [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
 adds padding around windows and frames
@@ -3106,6 +3122,15 @@ Use Doom Themes since they have built in support for Solaire Mode
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
 #+end_src
+
+** South Theme
+#+begin_src emacs-lisp
+(use-package south-theme
+  :vc (:url "https://github.com/SophieBosio/south"
+       :rev :newest
+       :branch "main"))
+#+end_src
+
 ** COMMENT [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
 #+begin_src emacs-lisp
 (use-package solaire-mode
@@ -3422,13 +3447,6 @@ Functions that are handy for setting up recording in youtube
 
 ** Private
 Things that I want to keep private/out of git
-
-#+begin_src emacs-lisp
-(use-package private
-  :load-path "lisp"
-  :commands (gopar/random-friend)
-  )
-#+end_src
 
 * End
 #+begin_src emacs-lisp
