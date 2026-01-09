@@ -14,6 +14,7 @@
                ":/Users/gopar/.nvm/versions/node/v22.14.0/bin/"
                ":/Library/TeX/texbin/"
                ":/opt/homebrew/opt/libpq/bin/"
+               ":/opt/homebrew/opt/llvm/bin/"
                ":/Users/gopar/.local/bin/"
                ))
       (PATH-ENV (getenv "PATH"))

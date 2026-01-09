@@ -43,3 +43,4 @@ private.el
 /tmp/
 /.chatgpt-shell.el
 .aider*
+.cecli*

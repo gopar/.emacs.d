@@ -114,6 +114,8 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
          ("C-x C-k" . (lambda () (interactive) (kill-buffer))))
 
   :init
+  (setq-default line-spacing 0.1)
+
   (defun gopar/er-keyboard-quit-dwim ()
     ;; Copied from https://emacsredux.com/blog/2025/06/01/let-s-make-keyboard-quit-smarter/
     "Do-What-I-Mean behaviour for a general `keyboard-quit'.
@@ -267,9 +269,14 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
                               "/sbin"
                               "/bin"
                               "/Users/gopar/.nvm/versions/node/v22.14.0/bin"
+                              "/opt/homebrew/opt/llvm/bin/"
                               )
                             (split-string (getenv "PATH") ":")))
-    (setenv "PATH" (concat "/Users/gopar/.nvm/versions/node/v22.14.0/bin:" (getenv "PATH")))))
+    (setenv "PATH" (concat "/Users/gopar/.nvm/versions/node/v22.14.0/bin:" (getenv "PATH"))))
+
+  (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
+  (setenv "OPENAI_API_KEY"    (auth-source-pick-first-password :host "api.openai.com"))
+  )
 #+end_src
 
 ** Diary
@@ -413,7 +420,9 @@ Main configuration
   (add-to-list 'org-structure-template-alist '("p" . "src python"))
   (add-to-list 'org-structure-template-alist '("j" . "src java"))
   (add-to-list 'org-structure-template-alist '("k" . "src kotlin"))
-  (add-to-list 'org-structure-template-alist '("sh" . "src sh")))
+  (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
+  (add-to-list 'org-structure-template-alist '("ss" . "src sql"))
+  )
 #+end_src
 *** Org Clock
 #+begin_src emacs-lisp
@@ -785,6 +794,7 @@ Some of the following are stolen from https://github.com/manateelazycat/aweshell
   (eshell-last-dir-unique t)
   (eshell-last-dir-ring-size 32)
   :config
+  (add-to-list 'eshell-modules-list 'eshell-elecslash)
   (advice-add #'eshell-add-input-to-history
                 :around
                 #'gopar/adviced-eshell-add-input-to-history)
@@ -911,9 +921,19 @@ Stolen from aweshell."
   :after eshell
   :hook (eshell-mode . eshell-bookmark-setup))
 #+end_src
+
+** Tramp
+#+begin_src emacs-lisp
+(use-package tramp
+  :ensure nil
+  :defer t
+  :custom
+  (tramp-histfile-override nil))
+#+end_src
+
 ** Python
 Run on every fresh virtualenv install
-=pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest=
+=pip install jedi epc importmagic ruff mypy coverage pytest-cov pytest pyright=
 
 I get some weird auto completion in inferior python shell mode when I leave the default completion
 function. Lets just have in buffer completion
@@ -951,7 +971,7 @@ function. Lets just have in buffer completion
     (let* ((manage-directory (locate-dominating-file default-directory "manage.py"))
            (default-directory (or manage-directory default-directory)))
       (if manage-directory
-          (run-python (format "python manage.py shell_plus" manage-directory) python-shell-dedicated 0)
+          (run-python (format "%s manage.py shell_plus" (python-shell-calculate-command) manage-directory) python-shell-dedicated 0)
         (run-python (python-shell-calculate-command) python-shell-dedicated 0))))
   :custom
   (python-shell-dedicated 'project)
@@ -979,8 +999,7 @@ I'm keeping this function around since it's convineint to be able to create venv
 (use-package pyvenv
   :ensure t
   :defer
-  :commands (pyvenv-create)
-  )
+  :commands (pyvenv-create))
 #+end_src
 
 *** [[https://github.com/scop/emacs-ruff-format][Ruff]]
@@ -1037,6 +1056,77 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
   :hook (pip-requirements-mode . (lambda () (focus-mode -1)))
   )
 #+end_src
+
+*** UV
+#+begin_src emacs-lisp
+(use-package uv-mode
+  :ensure
+  :bind (:map uv-mode-map
+              ("C-c C-s" . nil)
+              ("C-c C-u" . nil))
+  :hook (python-base-mode . uv-mode-auto-activate-hook))
+#+end_src
+
+** C++ (cpp)
+#+begin_src emacs-lisp
+(use-package c-ts-mode
+  :ensure t
+  :defer
+  :hook ((c-ts-base-mode . eglot-ensure)
+         (c-ts-base-mode . flycheck-mode)
+         (c-ts-base-mode . clang-format-on-save-mode)
+         (c++-ts-mode . (lambda () (setq-local flycheck-clang-language-standard "c++20")))
+         )
+  :init
+  (defun gopar/easy-underscore-for-C (arg)
+    "In C/C++ mode: type '_' instead of ';'.
+If the previous character was '_', replace it with a semicolon.
+With prefix ARG, insert a literal semicolon."
+    (interactive "P")
+    (if arg
+        (insert ";")
+      (if (and (memq major-mode '(c++-mode c-mode c++-ts-mode c-ts-mode))
+               (not (bobp))
+               (eq (char-before) ?_))
+          (progn
+            (delete-char -1)
+            (insert ";"))
+        (insert "_"))))
+
+  (defun gopar/easy-smart-dash ()
+    "Press - once for '-', twice for '->', three times for '--'."
+    (interactive)
+    (let ((prev (char-before))
+          (prev2 (char-before (1- (point)))))
+      (cond
+       ;; if previous is '-' and before that is '-', change to "--"
+       ((and prev prev2 (eq prev ?>) (eq prev2 ?-))
+        (delete-char -1)
+        (insert "-"))
+       ;; if previous is '-', then add '>' to make '->'
+       ((and prev (eq prev ?-))
+        (insert ">"))
+       ;; otherwise, just insert '-'
+       (t
+        (insert "-")))))
+
+  :bind (:map c-ts-base-mode-map
+              (";" . gopar/easy-underscore-for-C)
+              ("-" . gopar/easy-smart-dash)))
+#+end_src
+** COMMENT Flycheck C++ (cpp)
+#+begin_src emacs-lisp
+(use-package flycheck-clang-tidy
+  :ensure t
+  :hook
+  (flycheck-mode . flycheck-clang-tidy-setup))
+#+end_src
+** Cmake
+#+begin_src emacs-lisp
+(use-package cmake-mode
+  :ensure
+  :defer)
+#+end_src
 ** Kotlin
 #+begin_src emacs-lisp
 (use-package kotlin-mode :ensure t :defer)
@@ -1047,7 +1137,17 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
   :ensure nil
   :defer
   :custom
-  (treesit-font-lock-level 3))
+  (treesit-font-lock-level 2)
+  :init
+  (defun gopar/treesit-font-lock-level-cycle (arg)
+    (interactive "P")
+    (let ((level (if arg
+                     (read-number "Set treesit font-lock level (1-4): " 1)
+                   (1+ treesit-font-lock-level))))
+      (when (> level 4)
+        (setq level 1))
+      (setopt treesit-font-lock-level level)
+      (message "treesit-font-lock-level = %d" level))))
 #+end_src
 ** Tree Sitter Auto Magic
 #+begin_src emacs-lisp
@@ -1149,7 +1249,6 @@ Window Management
 #+end_src
 
 ** Window
-
 #+begin_src emacs-lisp
 (use-package window
   :ensure nil
@@ -1358,9 +1457,8 @@ Look up word at point using dict.org in readme/text/org-mode buffers
 #+begin_src emacs-lisp
 (use-package projectile
   :ensure
-  :defer t
   :commands (projectile-project-root projectile-switch-project)
-  ;; :hook (after-init . projectile-mode)
+  :hook (after-init . projectile-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map)
   :bind (:map projectile-command-map
@@ -1651,7 +1749,7 @@ Also includes displaying of them
 
 (use-package consult
   :ensure
-  :commands (gopar/consult-line consult-buffer consult-bookmark consult-theme consult-line-thing-at-point)
+  ;; :commands (gopar/consult-line consult-buffer consult-bookmark consult-theme consult-line-thing-at-point)
   :bind (("C-s" . gopar/consult-line)
          ("C-c m" . consult-man)
          ("C-c i" . consult-info)
@@ -1770,6 +1868,15 @@ If used with a prefix, it will search all buffers as well."
 ;;   :after embark)
 #+end_src
 
+*** Kind Icon
+#+begin_src emacs-lisp
+(use-package kind-icon
+  :ensure t
+  :after corfu
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+#+end_src
+
 *** pcomplete
 #+begin_src emacs-lisp
 (use-package pcmpl-args
@@ -1832,15 +1939,52 @@ A basic 'go to' functionality that works really well. So I don't need LSP
 (use-package eglot
   :ensure t
   :defer
+  :init
+  (setq gopar/ty-uvx-command
+      '("uvx" "--from" "ty==0.0.8" "ty" "server"))
+  (setq gopar/pyright-uvx-command '("uvx" "--from" "pyright==1.1.407" "pyright-langserver" "--stdio"))
   :hook
   (eglot-managed-mode . (lambda ()
                           (setq xref-backend-functions '(gopar/xref-backend-html-template eglot-xref-backend dumb-jump-xref-activate t))))
   :bind (:map projectile-command-map
               ("R" . eglot-rename))
   :config
+  ;; (add-to-list 'eglot-server-programs `(python-mode . ,gopar/pyright-uvx-command))
+  (add-to-list 'eglot-server-programs `(python-mode . ,gopar/ty-uvx-command))
   (add-to-list 'eglot-stay-out-of 'flymake))
 
 #+end_src
+
+** Elgot Header Line
+#+begin_src emacs-lisp
+(use-package eglot-header-line
+  :ensure t
+  :after eglot
+  :vc (:url "https://github.com/soerlemans/eglot-header-line")
+  :hook
+  (eglot-managed-mode . eglot-header-line-mode))
+#+end_src
+
+** [[https://github.com/casouri/eldoc-box][Eldoc]]
+To keep eldoc from displaying documentation at point without enabling any minor mode above: (add-to-list 'eglot-ignored-server-capabilites :hoverProvider).
+#+begin_src emacs-lisp
+(use-package eldoc-box
+  :ensure t
+  :defer t
+  :hook (eglot-managed-mode . eldoc-box-hover-at-point-mode)
+  :custom
+  (eldoc-box-clear-with-C-g t)
+  )
+#+end_src
+
+*** [[https://github.com/ikirill/eldoc-cmake][Eldoc Cmake]]
+#+begin_src emacs-lisp
+(use-package eldoc-cmake
+  :ensure t
+  :defer t
+  :hook (cmake-ts-mode . eldoc-cmake-enable))
+#+end_src
+
 ** Web Mode
 #+begin_src emacs-lisp
 (use-package web-mode
@@ -2181,6 +2325,11 @@ Color the string of whatever color code they are holding
   :ensure t
   :after magit
   :config (magit-todos-mode 1))
+
+(use-package magit-pre-commit
+  :ensure t
+  :vc (:url "https://github.com/DamianB-BitFlipper/magit-pre-commit.el" :rev :newsest)
+  :after magit)
 
 (use-package git-gutter
   :ensure t
@@ -2914,7 +3063,11 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
                                                                           "javascript"
                                                                           "typescript"
                                                                           "vitest"
-                                                                          "moment"))))))
+                                                                          "moment"))))
+         ((c++-ts-mode c++-mode) . (lambda () (setq-local devdocs-current-docs '("cpp"))))
+         (devdocs-mode . (lambda () (toggle-truncate-lines) ;; (toggle-word-wrap)
+                           ))
+         ))
 #+end_src
 
 ** Link Hint
@@ -2960,7 +3113,7 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (flycheck-flake8rc '(".flake8" "setup.cfg" "tox.ini" "pyproject.toml")))
 #+end_src
 
-*** Flyover (Nice UI)
+*** COMMENT Flyover (Nice UI)
 #+begin_src emacs-lisp
 (use-package flyover
   :ensure
@@ -2970,11 +3123,12 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (flyover-line-position-offset 0)
   (flyover-show-at-eol t)
   (flyover-display-mode 'hide-on-same-line)
+  (flyover-use-theme-colors t)
   )
 #+end_src
 
 ** AI Stuff
-*** [[https://github.com/xenodium/chatgpt-shell][ChatGPT]]
+*** COMMENT [[https://github.com/xenodium/chatgpt-shell][ChatGPT]]
 #+begin_src emacs-lisp
 (use-package chatgpt-shell
   :ensure t
@@ -3011,20 +3165,6 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (chatgpt-shell-transmitted-context-length 5)
   (chatgpt-shell-model-versions '("gpt-4o-2024-08-06")))
 #+end_src
-*** Dall-E
-#+begin_src emacs-lisp
-(use-package dall-e-shell
-  :ensure t
-  :defer
-  :bind (:map dall-e-shell-mode-map
-               (("RET" . newline)
-               ("M-RET" . shell-maker-submit)))
-  :custom
-  (dall-e-shell-openai-key
-      (auth-source-pick-first-password :host "api.openai.com"))
-  (dall-e-shell-image-size "1024x1024")
-  (dall-e-shell-image-output-directory "~/Downloads/dall_e_output/"))
-#+end_src
 *** Aidermacs
 
 #+begin_src emacs-lisp
@@ -3039,7 +3179,7 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   :custom
   ; This doens't work along with M-RET. Need to open ticket
   (aidermacs-vterm-multiline-newline-key "RET")
-  (aidermacs-program "aider")
+  (aidermacs-program "/Users/gopar/projs/cecli/.venv/bin/cecli")
   (aidermacs-default-chat-mode 'architect)
   (aidermacs-show-diff-after-change nil)
   (aidermacs-auto-accept-architect t)
@@ -3047,6 +3187,7 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (aidermacs-watch-files t)
   (aidermacs-exit-kills-buffer t)
   (aidermacs-vterm-use-theme-colors nil)
+  (aidermacs-project-read-only-files '("CONVENTIONS.md"))
   (aidermacs-extra-args `(
                         "--analytics-disable"
                         "--no-auto-commits"
@@ -3056,14 +3197,15 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
                         "--no-auto-lint"
                         "--notifications"
                         "--notifications-command \"say 'Aider is ready'\""
-                        ,(if (file-exists-p (concat (projectile-acquire-root) "CONVENTIONS.md"))
-                            (concat "--read " (projectile-acquire-root) "CONVENTIONS.md")
-                          "")))
-  (aidermacs-architect-model "claude-sonnet-4-5")
+                        "--yes-always"
+                        "--no-detect-urls"
+                        "--linear-output"
+                        ,(concat "--mcp-servers-file " (expand-file-name "~/") ".config/mcp/mcp.json")))
+  (aidermacs-architect-model "claude-opus-4-5")
   ;; (aidermacs-architect-model "openai/gpt-5")
   (aidermacs-editor-model "claude-3-7-sonnet-latest")
   (aidermacs-weak-model "claude-3-5-haiku-latest")
-  (aidermacs-default-model "claude-sonnet-4-5"))
+  (aidermacs-default-model "claude-opus-4-5"))
 #+end_src
 ** COMMENT [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
 adds padding around windows and frames
@@ -3123,12 +3265,22 @@ Use Doom Themes since they have built in support for Solaire Mode
   (doom-themes-org-config))
 #+end_src
 
-** South Theme
+** [[https://github.com/11111000000/tao-theme-emacs][Tao Themes]]
 #+begin_src emacs-lisp
-(use-package south-theme
-  :vc (:url "https://github.com/SophieBosio/south"
-       :rev :newest
-       :branch "main"))
+(use-package tao-theme
+  :ensure t
+  :custom
+  (tao-theme-use-sepia nil)
+  (tao-theme-use-height nil) ;; doens't look that great in org mode
+  :init
+  (add-hook 'enable-theme-functions
+            (lambda (theme)
+              (when (eq theme 'tao-yin)
+                (custom-set-faces
+                 '(flycheck-error ((t (:underline (:color "#ff5f5f" :style wave)))))
+                 '(flycheck-warning ((t (:underline (:color "#ffaf00" :style wave)))))
+                 '(flycheck-info ((t (:underline (:color "#5fff87" :style wave)))))))))
+  )
 #+end_src
 
 ** COMMENT [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
@@ -3408,6 +3560,8 @@ Functions that are handy for setting up recording in youtube
 #+begin_src emacs-lisp
 (defvar gopar/orginal-font-height nil)
 (defvar gopar/youtube-font-height 220)
+(defvar gopar/original-neo-width 35)
+
 (defun gopar/youtube-setup ()
   (when (null gopar/orginal-font-height)
     (setq gopar/orginal-font-height (face-attribute 'default :height)))
@@ -3419,29 +3573,30 @@ Functions that are handy for setting up recording in youtube
   (display-time-mode -1)
   (type-break-mode -1)
   (keycast-header-line-mode)
-  (let ((dashboard-items '((vocabulary) (bookmarks . 5)))
-        (dashboard-banner-logo-title "✨ Memberships are available. Thank you for the support! ✨"))
+  (setq neo-window-width 20)
+  (let ((dashboard-items '((vocabulary) ;; (bookmarks . 5)
+                           ))
+        ;; (dashboard-banner-logo-title "✨ Memberships are available. Thank you for the support! ✨")
+        )
     (dashboard-open)))
 
-(defun gopar/youtube-setup-emacs-goodies-series ()
-  (interactive)
-  (consult-theme 'doom-shades-of-purple)
-  (gopar/youtube-setup))
+(defun gopar/youtube-setup-v2 ()
+  (progn
+    (add-to-list 'default-frame-alist `(font . "Hack 19"))
+    (set-face-attribute 'default nil :font "Hack 19"))
 
-(defun gopar/youtube-setup-python-series ()
-  (interactive)
-  (consult-theme 'doom-nord-aurora)
-  (gopar/youtube-setup))
+  (set-frame-size (selected-frame) 172 47)
 
-(defun gopar/youtube-setup-refactor-series ()
-  (interactive)
-  (consult-theme 'haki)
-  (gopar/youtube-setup))
+  (delete-other-windows)
+  (keycast-header-line-mode)
+  (setq neo-window-width 20)
+  (let ((dashboard-items '((vocabulary))))
+    (dashboard-open)))
 
-(defun gopar/youtube-setup-design-patterns-series ()
+(defun gopar/youtube ()
   (interactive)
-  (consult-theme 'manoj-dark)
-  (gopar/youtube-setup))
+  (consult-theme 'modus-vivendi-tritanopia)
+  (gopar/youtube-setup-v2))
 
 #+end_src
 
@@ -3450,12 +3605,20 @@ Things that I want to keep private/out of git
 
 * End
 #+begin_src emacs-lisp
-;; (progn
-;;   (add-to-list 'default-frame-alist `(font . "Hack 16"))
-;;   (set-face-attribute 'default nil :font "Hack 16"))
 (progn
-  (add-to-list 'default-frame-alist `(font . "IBM Plex Mono 16"))
-  (set-face-attribute 'default nil :font "IBM Plex Mono 16"))
+  (add-to-list 'default-frame-alist `(font . "Hack 16"))
+  (set-face-attribute 'default nil :font "Hack 16"))
+;; (progn
+;;   (add-to-list 'default-frame-alist `(font . "IBM Plex Mono 16"))
+;;   (set-face-attribute 'default nil :font "IBM Plex Mono 16"))
+
+;; (progn
+;;   (add-to-list 'default-frame-alist `(font . "Fira Code 16"))
+;;   (set-face-attribute 'default nil :font "Fira Code 16"))
+
+;; (progn
+;;   (add-to-list 'default-frame-alist `(font . "mononoki 16"))
+;;   (set-face-attribute 'default nil :font "mononoki 16"))
 #+end_src
 
 ;;; Local Variables: ***
