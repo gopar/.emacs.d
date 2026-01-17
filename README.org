@@ -981,7 +981,7 @@ function. Lets just have in buffer completion
   (python-shell-completion-native-disabled-interpreters '("python" "pypy")))
 #+end_src
 
-*** Virtualenv
+*** COMMENT Virtualenv
 Handy mode that takes care of envs for me.
 Downside is that I have to explicitly set where to find venvs instead of auto finding them
 
@@ -992,7 +992,7 @@ Downside is that I have to explicitly set where to find venvs instead of auto fi
   :hook (eshell-first-time-mode . venv-initialize-eshell))
 #+end_src
 
-*** Pyvenv
+*** COMMENT Pyvenv
 I'm keeping this function around since it's convineint to be able to create venvs from
 `pyvenv-create` and then do `venv-workon` in dir locals.
 #+begin_src emacs-lisp
@@ -3002,10 +3002,14 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
 #+begin_src emacs-lisp
 (use-package vterm
   :ensure t
-  :defer
-  :bind (:map vterm-mode-map ("C-q" . vterm-send-next-key))
+  :after projectile
+  :bind ((:map vterm-mode-map ("C-q" . vterm-send-next-key))
+         ;; :map projectile-command-map
+         ;; ("x v" . gopar/projectile-vterm)
+         )
   :custom
-  (vterm-buffer-name-string "*vterm %s*")
+  (vterm-buffer-name-string nil ;; "*vterm %s*"
+                            )
   (vterm-max-scrollback 100000)
   :config
   (add-to-list 'vterm-keymap-exceptions "C--")
@@ -3013,6 +3017,105 @@ Set up directory tracking: https://github.com/akermu/emacs-libvterm?tab=readme-o
   (add-to-list 'vterm-keymap-exceptions "C-M--")
   ;; Doesn't seem to work??
   ;; (add-to-list 'vterm-keymap-exceptions "C-M-o")
+  :init
+  (defvar gopar/vterm-main-session "main"
+    "Fallback tmux session name.")
+
+  (defun gopar/project-tmux-session-name ()
+    "Return tmux session name matching zsh auto-tmux logic.
+Uses presence of git worktrees directory as the primary signal."
+    (when (projectile-project-p)
+      (let* ((root (directory-file-name (projectile-project-root)))
+             (git-common-dir (string-trim
+                              (shell-command-to-string
+                               "git rev-parse --git-common-dir 2>/dev/null")))
+
+             ;; does this repo use worktrees?
+             (has-worktrees
+              (file-directory-p
+               (expand-file-name "worktrees" git-common-dir)))
+
+             ;; repo naming logic
+             (repo
+              (if has-worktrees
+                  ;; linked worktree → repo is parent of worktree root
+                  (file-name-nondirectory
+                   (directory-file-name
+                    (file-name-directory root)))
+                ;; normal repo OR main worktree
+                (file-name-nondirectory root)))
+
+             ;; branch name
+             (branch (string-trim
+                      (shell-command-to-string
+                       "git branch --show-current 2>/dev/null"))))
+
+        ;; detached HEAD handling
+        (when (string-empty-p branch)
+          (setq branch "detached"))
+
+        ;; sanitize for tmux
+        (replace-regexp-in-string
+         "[^[:alnum:]_-]" "_"
+         (format "%s__%s" repo branch)))))
+
+
+  (defun gopar/get-or-create-vterm (&optional new)
+    "Return the main vterm buffer.
+If NEW is non-nil, always create a new vterm."
+    (if new
+        (vterm "*vterm*")
+      (or (get-buffer "*vterm*")
+          (vterm "*vterm*"))))
+
+  (defun gopar/vterm-switch-tmux-session (buf session directory)
+    "Tell tmux inside BUF to switch to SESSION."
+    (with-current-buffer buf
+      (when (derived-mode-p 'vterm-mode)
+        (let* ((cmd
+                (format
+                 "tmux has-session -t %s 2>/dev/null || \
+tmux new-session -ds %s -c %s -n shell \\; \
+new-window -t %s -c %s -n cecli; \
+tmux switch-client -t %s\n"
+                 session session directory
+                 session directory
+                 session)))
+          (vterm-send-string cmd)
+          (vterm-send-return)))))
+
+  (defun gopar/projectile-vterm (&optional arg)
+    "Open a single shared vterm and switch tmux session.
+With prefix ARG, create a new vterm."
+    (interactive "P")
+    (let* ((session (or (gopar/project-tmux-session-name)
+                        gopar/vterm-main-session))
+           (buf (gopar/get-or-create-vterm arg)))
+      (pop-to-buffer buf)
+      (unless arg
+        (gopar/vterm-switch-tmux-session buf session (projectile-project-root)))))
+
+  ;; (defun gopar/kill-primary-vterm ()
+;;     "Kill the primary *vterm* buffer if it exists."
+;;     (let ((buf (get-buffer "*vterm*"))
+;;           (kill-buffer-query-functions nil))
+;;       (when (and buf (buffer-live-p buf))
+;;         (kill-buffer buf))))
+
+;;   (defun (gopar/vterm) (&optional arg)
+;;     "Create a new vterm.
+;; Without prefix: replace *vterm*.
+;; With prefix: create an additional vterm."
+;;     (interactive "P")
+;;     (if arg
+;;         ;; Extra vterm (side-by-side, debug, etc)
+;;         (vterm)
+;;       ;; Primary illusion
+;;       (gopar/kill-primary-vterm)
+;;       (let ((buf (vterm)))
+;;         (with-current-buffer buf
+;;           (rename-buffer "*vterm*" t))
+;;         (pop-to-buffer buf))))
   )
 #+end_src
 
@@ -3382,6 +3485,7 @@ Useful for when making videos
   :hook ((prog-mode . focus-mode)
          (docker-ts-mode . (lambda () (focus-mode -1)))
          (typescript-ts-mode . (lambda () (focus-mode -1)))
+         (sh-mode . (lambda () (focus-mode -1)))
          (web-mode . (lambda () (focus-mode -1)))))
 #+end_src
 ** Fretboard
@@ -3424,6 +3528,7 @@ Guitar stuff
      "Output\\*$"
      "\\*Async Shell Command\\*"
      "\\*Warnings\\*"
+     "\\*tmux-help\\*"
      helpful-mode
      help-mode
      eshell-mode
@@ -3598,6 +3703,110 @@ Functions that are handy for setting up recording in youtube
   (consult-theme 'modus-vivendi-tritanopia)
   (gopar/youtube-setup-v2))
 
+#+end_src
+
+** tmux
+Still learning tmux commands so this helps
+#+begin_src emacs-lisp
+(defun tmux-help ()
+  "Show a temporary buffer with default tmux keybindings and common inspection commands."
+  (interactive)
+  (let ((buf (get-buffer-create "*tmux-help*")))
+    (with-current-buffer buf
+      (read-only-mode -1)
+      (erase-buffer)
+
+      (insert
+       "TMUX QUICK HELP (default keybindings)\n"
+       "==================================\n\n"
+
+       "Prefix key: C-b\n\n"
+
+       "SESSIONS\n"
+       "--------\n"
+       "C-b d        Detach from session\n"
+       "C-b s        Choose session (tree view)\n"
+       "C-b $        Rename current session\n"
+       "C-b (        Switch to previous session\n"
+       "C-b )        Switch to next session\n\n"
+
+       "WINDOWS\n"
+       "-------\n"
+       "C-b c        Create new window\n"
+       "C-b w        Choose window (tree view)\n"
+       "C-b n        Next window\n"
+       "C-b p        Previous window\n"
+       "C-b ,        Rename window\n"
+       "C-b &        Kill window\n"
+       "C-b 0–9      Switch to window number\n\n"
+
+       "PANES\n"
+       "-----\n"
+       "C-b %        Split pane vertically\n"
+       "C-b \"        Split pane horizontally\n"
+       "C-b o        Next pane\n"
+       "C-b ;        Last active pane\n"
+       "C-b x        Kill pane\n"
+       "C-b z        Zoom pane (toggle)\n"
+       "C-b q        Show pane numbers\n"
+       "C-b {        Move pane left\n"
+       "C-b }        Move pane right\n\n"
+
+       "RESIZE PANES\n"
+       "------------\n"
+       "C-b + Arrow  Resize pane (hold prefix)\n\n"
+
+       "COPY / SCROLL MODE\n"
+       "------------------\n"
+       "C-b [        Enter copy mode\n"
+       "Space        Start selection (vi/emacs mode dependent)\n"
+       "Enter        Copy selection\n"
+       "C-b ]        Paste buffer\n\n"
+
+       "SEARCH (copy mode)\n"
+       "------------------\n"
+       "/            Search forward\n"
+       "?            Search backward\n"
+       "n / N        Next / previous match\n\n"
+
+       "COMMAND PROMPT\n"
+       "--------------\n"
+       "C-b :        Open tmux command prompt\n\n"
+
+       "HELP\n"
+       "----\n"
+       "C-b ?        List all keybindings\n\n"
+
+       "INSPECTING TMUX SETTINGS (runtime)\n"
+       "----------------------------------\n"
+       "Show all options:\n"
+       "  tmux show-options -g\n\n"
+       "Show one option value:\n"
+       "  tmux show-options -g status-left\n\n"
+       "Show window options:\n"
+       "  tmux show-window-options -g\n\n"
+       "Show current keybindings:\n"
+       "  tmux list-keys\n\n"
+       "Check what command a key runs:\n"
+       "  tmux list-keys | grep '<key>'\n\n"
+
+       "Symbol    Meaning\n"
+       "   *         Denotes the current window.\n"
+       "   -         Marks the last window (previously selected).\n"
+       "   #         Window activity is monitored and activits been detected.\n"
+       "   !         Window bells are monitored and a bell has occurred in the window.\n"
+       "   ~         The window has been silent for the monitor-silence interval.\n"
+       "   M         The window contains the marked pane.\n"
+       "   Z         The window's active pane is zoomed.\n\n"
+
+       "Tip: tmux config is evaluated at startup,\n"
+       "but you can reload it live with:\n"
+       "  tmux source-file ~/.tmux.conf\n\n")
+
+      (goto-char (point-min))
+      (view-mode 1))
+
+    (pop-to-buffer buf)))
 #+end_src
 
 ** Private
