@@ -1093,13 +1093,6 @@ With prefix ARG, insert a literal semicolon."
               (";" . gopar/easy-underscore-for-C)
               ("-" . gopar/easy-smart-dash)))
 #+end_src
-** COMMENT Flycheck C++ (cpp)
-#+begin_src emacs-lisp
-(use-package flycheck-clang-tidy
-  :ensure t
-  :hook
-  (flycheck-mode . flycheck-clang-tidy-setup))
-#+end_src
 ** Cmake
 #+begin_src emacs-lisp
 (use-package cmake-mode
@@ -3195,58 +3188,8 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (flycheck-flake8rc '(".flake8" "setup.cfg" "tox.ini" "pyproject.toml")))
 #+end_src
 
-*** COMMENT Flyover (Nice UI)
-#+begin_src emacs-lisp
-(use-package flyover
-  :ensure
-  :defer
-  :hook flycheck-mode
-  :custom
-  (flyover-line-position-offset 0)
-  (flyover-show-at-eol t)
-  (flyover-display-mode 'hide-on-same-line)
-  (flyover-use-theme-colors t)
-  )
-#+end_src
 
 ** AI Stuff
-*** COMMENT [[https://github.com/xenodium/chatgpt-shell][ChatGPT]]
-#+begin_src emacs-lisp
-(use-package chatgpt-shell
-  :ensure t
-  :commands (chatgpt-shell--primary-buffer chatgpt-shell chatgpt-shell-prompt-compose)
-  :bind (("C-x m" . chatgpt-shell)
-         ("C-c C-e" . chatgpt-shell-prompt-compose)
-         (:map chatgpt-shell-mode-map
-               (("RET" . newline)
-                ("M-RET" . shell-maker-submit)
-                ("M-." . dictionary-lookup-definition)))
-         (:map eshell-mode-map
-               ("C-c C-e" . chatgpt-shell-prompt-compose)))
-  :hook ((chatgpt-shell-mode . (lambda () (setq-local completion-at-point-functions nil)))
-         (eshell-first-time-mode . chatgpt-shell-add-??-command-to-eshell))
-  :init
-  (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
-  (setenv "OPENAI_API_KEY"    (auth-source-pick-first-password :host "api.openai.com"))
-  (setq shell-maker-root-path (concat user-emacs-directory "var/"))
-  (add-to-list 'display-buffer-alist
-               '("\\*chatgpt"
-                 display-buffer-in-side-window
-                 (side . right)
-                 (slot . 0)
-                 (window-parameters . ((no-delete-other-windows . t)))
-                 (dedicated . t)))
-  (setq chatgpt-shell-model-version "o3-mini")
-  :custom
-  (chatgpt-shell-system-prompt nil ;; 2
-                               )
-  (chatgpt-shell-highlight-blocks t)
-  (shell-maker-prompt-before-killing-buffer nil)
-  (chatgpt-shell-openai-key
-   (auth-source-pick-first-password :host "api.openai.com"))
-  (chatgpt-shell-transmitted-context-length 5)
-  (chatgpt-shell-model-versions '("gpt-4o-2024-08-06")))
-#+end_src
 *** Aidermacs
 
 #+begin_src emacs-lisp
@@ -3363,13 +3306,6 @@ Use Doom Themes since they have built in support for Solaire Mode
                  '(flycheck-warning ((t (:underline (:color "#ffaf00" :style wave)))))
                  '(flycheck-info ((t (:underline (:color "#5fff87" :style wave)))))))))
   )
-#+end_src
-
-** COMMENT [[https://github.com/hlissner/emacs-solaire-mode][Solaire]]
-#+begin_src emacs-lisp
-(use-package solaire-mode
-  :ensure t
-  :hook (emacs-startup . solaire-global-mode))
 #+end_src
 
 ** [[https://github.com/davidshepherd7/fill-function-arguments][Fill Function Arguments]]
