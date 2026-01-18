@@ -276,7 +276,7 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
 
   (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
   (setenv "OPENAI_API_KEY"    (auth-source-pick-first-password :host "api.openai.com"))
-  )
+  (setenv "DEEPSEEK_API_KEY"    (auth-source-pick-first-password :host "api.deepseek.com")))
 #+end_src
 
 ** Diary
@@ -979,27 +979,6 @@ function. Lets just have in buffer completion
   (python-shell-interpreter-args "")
   (python-forward-sexp-function nil)
   (python-shell-completion-native-disabled-interpreters '("python" "pypy")))
-#+end_src
-
-*** COMMENT Virtualenv
-Handy mode that takes care of envs for me.
-Downside is that I have to explicitly set where to find venvs instead of auto finding them
-
-#+begin_src emacs-lisp
-(use-package virtualenvwrapper
-  :ensure t
-  :after eshell
-  :hook (eshell-first-time-mode . venv-initialize-eshell))
-#+end_src
-
-*** COMMENT Pyvenv
-I'm keeping this function around since it's convineint to be able to create venvs from
-`pyvenv-create` and then do `venv-workon` in dir locals.
-#+begin_src emacs-lisp
-(use-package pyvenv
-  :ensure t
-  :defer
-  :commands (pyvenv-create))
 #+end_src
 
 *** [[https://github.com/scop/emacs-ruff-format][Ruff]]
@@ -3592,6 +3571,13 @@ Experimental - perhaps
   :ensure t
   :vc (:rev :newest :url "https://github.com/emacs-vs/cognitive-complexity")
   :hook (python-ts-mode . cognitive-complexity-mode))
+#+end_src
+** [[https://github.com/purcell/envrc][envrc (direnv)]]
+#+begin_src emacs-lisp
+(use-package envrc
+  :ensure t
+  :defer
+  :hook (after-init . envrc-global-mode))
 #+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
