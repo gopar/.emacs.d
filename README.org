@@ -30,7 +30,6 @@ Customizing some things that should be defaults ¯\_(ツ)_/¯
   :hook ((after-init . pending-delete-mode)
          (after-init . toggle-frame-maximized)
          (after-init . (lambda () (scroll-bar-mode -1)))
-         (after-init . (lambda () (window-divider-mode -1)))
          (prog-mode . (lambda () (setq-local show-trailing-whitespace t))))
   :custom
   ;; flash the frame to represent a bell.
@@ -1229,7 +1228,7 @@ Window Management
   (recenter-positions '(middle top bottom)))
 #+end_src
 
-** Frame
+** COMMENT Frame
 #+begin_src emacs-lisp
 (use-package frame
   :ensure nil
@@ -2230,8 +2229,8 @@ Color the string of whatever color code they are holding
   :ensure nil
   :bind ("C-x /" . webjump)
   :config
-  (setopt webjump-sites '(("DuckDuckGo" . [simple-query "html.duckduckgo.com" "html.duckduckgo.com/html?q=" ""])
-                          ("Django Query" . [simple-query "html.duckduckgo.com" "html.duckduckgo.com/html?q=django+" ""])
+  (setopt webjump-sites '(("DuckDuckGo" . [simple-query "lite.duckduckgo.com" "lite.duckduckgo.com/lite?q=" ""])
+                          ("Django Query" . [simple-query "lite.duckduckgo.com" "lite.duckduckgo.com/lite?q=django+" ""])
                           ("Django Rest Framework DRF" . "https://www.django-rest-framework.org/")
                           ("Django Classy Docs" . [simple-query "https://ccbv.co.uk/" "https://duckduckgo.com/?q=" "+site%3Ahttps%3A%2F%2Fccbv.co.uk&t=h_&ia=web" ])
                           ("DRF Classy Docs" . [simple-query "https://www.cdrf.co/" "https://duckduckgo.com/?t=h_&q=" "+site%3Ahttps%3A%2F%2Fwww.cdrf.co%2F"])))
@@ -3232,17 +3231,6 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (aidermacs-weak-model "claude-3-5-haiku-latest")
   (aidermacs-default-model "claude-opus-4-5"))
 #+end_src
-** COMMENT [[https://elpa.gnu.org/packages/spacious-padding.html][Spacious padding mode]]
-adds padding around windows and frames
-
-#+begin_src emacs-lisp
-(use-package spacious-padding
-  :ensure t
-  :defer
-  :hook (after-init . spacious-padding-mode)
-  )
-#+end_src
-
 ** [[https://github.com/seagle0128/doom-modeline/][Doom Modeline]]
 Better UI for Modeline.
 Need to install fonts first by doing this
@@ -3277,6 +3265,7 @@ Use Doom Themes since they have built in support for Solaire Mode
 #+begin_src emacs-lisp
 (use-package doom-themes
   :ensure t
+  :hook (after-init . (lambda () (load-theme 'modus-vivendi-tritanopia)))
   :custom
   (doom-gruvbox-brighter-comments t)
   :config
@@ -3412,18 +3401,6 @@ Guitar stuff
   :commands fretboard
   :custom
   (fretboard-fret-count 20))
-#+end_src
-** [[https://github.com/guidoschmidt/circadian.el][Circadian]]
-#+begin_src emacs-lisp
-(use-package circadian
-  :ensure t
-  :init
-  (setq calendar-latitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.latitude"))
-        calendar-longitude (string-to-number (auth-source-pick-first-password :host "emacs.solar.longtitude")))
-  :config
-  (setq circadian-themes '((:sunrise . modus-operandi-tinted)
-                           (:sunset  . modus-vivendi-tinted)))
-  (circadian-setup))
 #+end_src
 ** Popper
 #+begin_src emacs-lisp
