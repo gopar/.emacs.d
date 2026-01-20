@@ -3203,33 +3203,12 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   :custom
   ; This doens't work along with M-RET. Need to open ticket
   (aidermacs-vterm-multiline-newline-key "RET")
-  (aidermacs-program "/Users/gopar/projs/cecli/.venv/bin/cecli")
-  (aidermacs-default-chat-mode 'architect)
-  (aidermacs-show-diff-after-change nil)
-  (aidermacs-auto-accept-architect t)
-  (aidermacs-backend 'vterm)
-  (aidermacs-watch-files t)
-  (aidermacs-exit-kills-buffer t)
   (aidermacs-vterm-use-theme-colors nil)
-  (aidermacs-project-read-only-files '("CONVENTIONS.md"))
-  (aidermacs-extra-args `(
-                        "--analytics-disable"
-                        "--no-auto-commits"
-                        "--no-dirty-commits"
-                        "--no-attribute-author"
-                        "--no-attribute-committer"
-                        "--no-auto-lint"
-                        "--notifications"
-                        "--notifications-command \"say 'Aider is ready'\""
-                        "--yes-always"
-                        "--no-detect-urls"
-                        "--linear-output"
-                        ,(concat "--mcp-servers-file " (expand-file-name "~/") ".config/mcp/mcp.json")))
-  (aidermacs-architect-model "claude-opus-4-5")
-  ;; (aidermacs-architect-model "openai/gpt-5")
-  (aidermacs-editor-model "claude-3-7-sonnet-latest")
-  (aidermacs-weak-model "claude-3-5-haiku-latest")
-  (aidermacs-default-model "claude-opus-4-5"))
+  (aidermacs-backend 'vterm)
+  (aidermacs-exit-kills-buffer t)
+  (aidermacs-program "~/projs/cecli/.venv/bin/cecli")
+  (aidermacs-config-file "~/.config/cecli/cecli.conf.yml")
+  )
 #+end_src
 ** [[https://github.com/seagle0128/doom-modeline/][Doom Modeline]]
 Better UI for Modeline.
