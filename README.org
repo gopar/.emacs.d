@@ -1045,6 +1045,17 @@ Calling `C-u gopar/pydoc-at-point' closes the dedicated window."
   :hook (python-base-mode . uv-mode-auto-activate-hook))
 #+end_src
 
+*** [[https://github.com/vale981/py-vterm-interaction.el][py-vterm-interaction]]
+Run python repl in a vterm process
+#+begin_src emacs-lisp
+(use-package py-vterm-interaction
+  :hook (python-base-mode . py-vterm-interaction-mode)
+  :config
+  (setq-default py-vterm-interaction-repl-program "ipython")
+  (setq-default py-vterm-interaction-silent-cells t)
+  )
+#+end_src
+
 ** C++ (cpp)
 #+begin_src emacs-lisp
 (use-package c-ts-mode
@@ -1344,15 +1355,16 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   ;; Neat trick to open that route to different places
   (browse-url-firefox-new-window-is-tab t)
   ;; Default to using eww for browsing
-  (browse-url-browser-function 'eww-browse-url)
+  (browse-url-browser-function #'eww-browse-url)
   (browse-url-handlers '(;; Work urls
                          ("teams\\.microsoft\\.com"  . browse-url-chrome)
                          ("outlook\\.office365\\.com" . browse-url-chrome)
-                         ("*.\\.atlassian\\.net" . browse-url-chrome)
+                         (".*\\.atlassian\\.net" . browse-url-chrome)
                          ;; Anything with summit will be considered work related
                          ("summit" . browse-url-chrome)
                          ;; Personal urls
                          (".*youtube\\.com"        . browse-url-firefox)
+                         (".*chatgpt\\.com"         . browse-url-firefox)
                          (".*"                    . eww-browse-url)))
   :config
   (put 'browse-url-handlers 'safe-local-variable (lambda (x) t))
@@ -1441,6 +1453,7 @@ Look up word at point using dict.org in readme/text/org-mode buffers
   :custom
   (projectile-indexing-method 'hybrid)  ;; Not sure if this still needed?
   (projectile-per-project-compilation-buffer nil)
+  (projectile-git-submodule-command nil)
   :config
   (setq frame-title-format '(:eval (if (projectile-project-root) (projectile-project-root) "%b")))
   (advice-add 'projectile--run-project-cmd :override #'gopar/projectile--run-project-cmd)
@@ -2229,7 +2242,8 @@ Color the string of whatever color code they are holding
   :ensure nil
   :bind ("C-x /" . webjump)
   :config
-  (setopt webjump-sites '(("DuckDuckGo" . [simple-query "lite.duckduckgo.com" "lite.duckduckgo.com/lite?q=" ""])
+  (setopt webjump-sites '(("ChatGPT" . [simple-query "https://chatgpt.com" "https://chatgpt.com/?prompt=" ""])
+                          ("DuckDuckGo" . [simple-query "lite.duckduckgo.com" "lite.duckduckgo.com/lite?q=" ""])
                           ("Django Query" . [simple-query "lite.duckduckgo.com" "lite.duckduckgo.com/lite?q=django+" ""])
                           ("Django Rest Framework DRF" . "https://www.django-rest-framework.org/")
                           ("Django Classy Docs" . [simple-query "https://ccbv.co.uk/" "https://duckduckgo.com/?q=" "+site%3Ahttps%3A%2F%2Fccbv.co.uk&t=h_&ia=web" ])
