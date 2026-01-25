@@ -1662,6 +1662,7 @@ Also includes displaying of them
   :ensure t
   :hook (after-init . vertico-posframe-mode)
   :custom
+  (vertico-posframe-poshandler 'posframe-poshandler-frame-top-center)
   (vertico-posframe-parameters
    '((left-fringe . 8)
      (right-fringe . 8))))
@@ -1746,6 +1747,7 @@ Also includes displaying of them
          ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
          ("C-x r b" . consult-bookmark)
          ("C-x r s" . consult-register-store)
+         ("C-x r l" . consult-register-load)
          ("C-x r i" . consult-register)
 
          ;; Custom M-# bindings for fast register access
@@ -3699,6 +3701,106 @@ Still learning tmux commands so this helps
       (view-mode 1))
 
     (pop-to-buffer buf)))
+#+end_src
+
+** PGCli
+PostgreSQL CLI
+#+begin_src emacs-lisp
+;;;; gopar-pgcli.el — pgcli launcher with safety + UX
+
+(require 'cl-lib)
+
+(defun gopar/pgcli-parse-alias-dsn (&optional file)
+  "Parse the [alias_dsn] section from pgcli config FILE.
+Return alist of (ALIAS . DSN)."
+  (let* ((file (or file (expand-file-name "~/.config/pgcli/config")))
+         (lines (with-temp-buffer
+                  (insert-file-contents file)
+                  (split-string (buffer-string) "\n")))
+         (in-section nil)
+         (result '()))
+    (dolist (line lines)
+      (cond
+       ((string-match-p "^\\[alias_dsn\\]" line)
+        (setq in-section t))
+       ((and in-section (string-match-p "^\\[" line))
+        (setq in-section nil))
+       ((and in-section
+             (string-match
+              "^\\([^#[:space:]]+\\)[[:space:]]*=[[:space:]]*\\(.+\\)$"
+              line))
+        (push (cons (match-string 1 line)
+                    (match-string 2 line))
+              result))))
+    (nreverse result)))
+
+;;; ------------------------------------------------------------
+;;; UX helpers
+;;; ------------------------------------------------------------
+
+(defun gopar/pgcli-annotate-alias (alias)
+  "Return ALIAS propertized for safety display."
+  (cond
+   ((string-match-p "prod" alias)
+    (propertize alias 'face 'error))
+   ((string-match-p "test" alias)
+    (propertize alias 'face 'warning))
+   (t
+    (propertize alias 'face 'success))))
+
+(defun gopar/pgcli--confirm-prod (dsn &optional alias)
+  "Confirm before connecting to production."
+  (when (or (and alias (string-match-p "prod" alias))
+            (string-match-p "prod" dsn))
+    (unless (yes-or-no-p "⚠️  Connect to PROD database? ")
+      (user-error "Aborted prod connection"))))
+
+(defun gopar/pgcli--safe-buffer-label (dsn &optional alias)
+  "Generate a safe buffer label without passwords or hosts."
+  (let* ((user (when (string-match "//\\([^:@/]+\\)" dsn)
+                 (match-string 1 dsn)))
+         (db   (when (string-match "/\\([^/?]+\\)$" dsn)
+                 (match-string 1 dsn))))
+    (format "%s@%s/%s"
+            (or user "user")
+            (or alias "custom")
+            (or db "db"))))
+
+(defun gopar/pgcli--run-vterm (dsn &optional alias)
+  "Launch pgcli as the primary vterm process."
+  (gopar/pgcli--confirm-prod dsn alias)
+  (let* ((label (gopar/pgcli--safe-buffer-label dsn alias))
+         (buffer-name (format "*pgcli: %s*" label))
+         (vterm-buffer-name buffer-name)
+         (vterm-shell (format "pgcli %s" (shell-quote-argument dsn)))
+         (vterm-kill-buffer-on-exit nil))
+    (unless (get-buffer buffer-name)
+      (with-current-buffer (vterm)
+        (setq-local vterm-max-scrollback 5000)))
+    (pop-to-buffer buffer-name)))
+
+
+;;; Main interactive command
+(defun gopar/pgcli ()
+  "Select pgcli alias or enter custom DSN, run in vterm."
+  (interactive)
+  (let* ((aliases (gopar/pgcli-parse-alias-dsn))
+         (display-alist
+          (mapcar (lambda (pair)
+                    (cons (gopar/pgcli-annotate-alias (car pair))
+                          pair))
+                  aliases))
+         (choices (mapcar #'car display-alist))
+         (selection
+          (completing-read
+           "pgcli (alias or DSN): "
+           choices
+           nil nil))
+         (pair (cdr (assoc selection display-alist))))
+    (if pair
+        (gopar/pgcli--run-vterm (cdr pair) (car pair))
+      ;; Free-form DSN typed by user
+      (gopar/pgcli--run-vterm selection "custom"))))
 #+end_src
 
 ** Private
