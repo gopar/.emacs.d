@@ -2284,6 +2284,8 @@ Color the string of whatever color code they are holding
   (magit-diff-refine-hunk 'all)
   (magit-process-finish-apply-ansi-colors t)
   (magit-format-file-function #'magit-format-file-all-the-icons)
+  ;; Experimental speed boost (Mac only): https://www.reddit.com/r/emacs/comments/1qlnde7/comment/o1fq5lj/
+  (magit-process-connection-type nil)
   :init
   (setopt magit-process-finish-apply-ansi-colors t)
   (defun magit/undo-last-commit (number-of-commits)
