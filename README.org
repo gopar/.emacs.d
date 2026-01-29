@@ -258,9 +258,6 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
     "Setup environment variables that I will need."
     (load-file "~/.emacs.d/etc/eshell/set_env.el")
     (setq-default eshell-path-env (getenv "PATH"))
-    (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
-    (setenv "OPENAI_API_KEY"    (auth-source-pick-first-password :host "api.openai.com"))
-
     (setq exec-path (append exec-path
                             `("/usr/local/bin"
                               "/usr/bin"
@@ -271,11 +268,7 @@ If file is not in a git repo or file is not a real file (aka buffer), then do no
                               "/opt/homebrew/opt/llvm/bin/"
                               )
                             (split-string (getenv "PATH") ":")))
-    (setenv "PATH" (concat "/Users/gopar/.nvm/versions/node/v22.14.0/bin:" (getenv "PATH"))))
-
-  (setenv "ANTHROPIC_API_KEY" (auth-source-pick-first-password :host "api.anthropic.com"))
-  (setenv "OPENAI_API_KEY"    (auth-source-pick-first-password :host "api.openai.com"))
-  (setenv "DEEPSEEK_API_KEY"    (auth-source-pick-first-password :host "api.deepseek.com")))
+    (setenv "PATH" (concat "/Users/gopar/.nvm/versions/node/v22.14.0/bin:" (getenv "PATH")))))
 #+end_src
 
 ** Diary
@@ -1927,8 +1920,8 @@ A basic 'go to' functionality that works really well. So I don't need LSP
   :defer
   :init
   (setq gopar/ty-uvx-command
-      '("uvx" "--from" "ty==0.0.8" "ty" "server"))
-  (setq gopar/pyright-uvx-command '("uvx" "--from" "pyright==1.1.407" "pyright-langserver" "--stdio"))
+      '("uvx" "--from" "ty==0.0.13" "ty" "server"))
+  ;; (setq gopar/pyright-uvx-command '("uvx" "--from" "pyright==1.1.407" "pyright-langserver" "--stdio"))
   :hook
   (eglot-managed-mode . (lambda ()
                           (setq xref-backend-functions '(gopar/xref-backend-html-template eglot-xref-backend dumb-jump-xref-activate t))))
@@ -2214,7 +2207,7 @@ Color the string of whatever color code they are holding
            ,(if all-the-icons-ibuffer-icon
                 (propertize " " 'display `(space :align-to 8))
               "")
-           (name 18 18 :left :elide)
+           (name 25 25 :left :elide)
            " " (size-h 9 -1 :right)
            " " (mode+ 16 16 :left :elide)
            " " (vc-status 16 16 :left)
@@ -3113,8 +3106,7 @@ With prefix ARG, create a new vterm."
 (use-package exec-path-from-shell
   :ensure t
   :init
-  (setq exec-path-from-shell-arguments nil)
-  (setq exec-path-from-shell-variables '("PATH" "MANPATH" "SSH_AUTH_SOCK" "NVM_DIR" "HOMEBREW_NO_AUTO_UPDATE"))
+  (setq exec-path-from-shell-variables '("PATH" "MANPATH" "SSH_AUTH_SOCK" "NVM_DIR" "HOMEBREW_NO_AUTO_UPDATE" "OPENAI_API_KEY" "ANTHROPIC_API_KEY" "DEEPSEEK_API_KEY"))
   (exec-path-from-shell-initialize))
 #+end_src
 ** [[https://github.com/astoff/devdocs.el][Devdocs]]
@@ -3224,6 +3216,7 @@ If there are no errors, kill the '*Flycheck errors*' buffer."
   (aidermacs-vterm-use-theme-colors nil)
   (aidermacs-backend 'vterm)
   (aidermacs-exit-kills-buffer t)
+  (aidermacs-show-diff-after-change nil)
   (aidermacs-program "~/projs/cecli/.venv/bin/cecli")
   (aidermacs-config-file "~/.config/cecli/cecli.conf.yml")
   )
@@ -3488,6 +3481,18 @@ Experimental - perhaps
   :ensure t
   :defer
   :hook (after-init . envrc-global-mode))
+#+end_src
+** GNU Ledger
+#+begin_src emacs-lisp
+(use-package ledger-mode
+  :ensure t
+  :defer t)
+#+end_src
+** Flycheck Ledger
+#+begin_src emacs-lisp
+(use-package flycheck-ledger
+  :ensure t
+  :defer t)
 #+end_src
 * 1st Party Modes
 Stuff I've made for myself that are modes
