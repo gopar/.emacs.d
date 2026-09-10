@@ -1,6 +1,10 @@
 #+STARTUP: showall
-#+TITLE: Emacs Configuration
+#+TITLE: Emacs Configuration [⚠️ No Longer Maintained]
 #+PROPERTY: header-args :tangle README.el
+
+I moved my config to a private repo with my other dotfiles.
+I wont be touching this repo, but i'll leave it up as some might
+get some ideas/tips from it.
 
 My Emacs Configuration as an org file cause I wanna be like the cool kids 😎
 
